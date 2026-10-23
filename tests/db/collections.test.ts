@@ -36,19 +36,40 @@ afterAll(async () => {
 describe('record_send', () => {
   it('logs reminder + message, is idempotent per stage/channel, and audits', async () => {
     const inv = await invoice();
-    const a = await db.query<{ record_send: string }>('select public.record_send($1,$2,$3,$4,$5)', [orgId, inv, 'pre_due', 'whatsapp', 'hello']);
-    const b = await db.query<{ record_send: string }>('select public.record_send($1,$2,$3,$4,$5)', [orgId, inv, 'pre_due', 'whatsapp', 'hello']);
+    const a = await db.query<{ record_send: string }>('select public.record_send($1,$2,$3,$4,$5)', [
+      orgId,
+      inv,
+      'pre_due',
+      'whatsapp',
+      'hello',
+    ]);
+    const b = await db.query<{ record_send: string }>('select public.record_send($1,$2,$3,$4,$5)', [
+      orgId,
+      inv,
+      'pre_due',
+      'whatsapp',
+      'hello',
+    ]);
     expect(a.rows[0]!.record_send).toBe(b.rows[0]!.record_send);
     const m = await db.query('select 1 from messages where invoice_id = $1', [inv]);
     expect(m.rows).toHaveLength(1);
-    const log = await db.query(`select 1 from audit_log where table_name in ('reminders','messages') and org_id = $1`, [orgId]);
+    const log = await db.query(
+      `select 1 from audit_log where table_name in ('reminders','messages') and org_id = $1`,
+      [orgId],
+    );
     expect(log.rows.length).toBeGreaterThanOrEqual(2);
   });
 
   it('allows only one outbound message per customer per day', async () => {
     const inv = await invoice();
     await expect(
-      db.query('select public.record_send($1,$2,$3,$4,$5)', [orgId, inv, 'due_today', 'email', 'second today']),
+      db.query('select public.record_send($1,$2,$3,$4,$5)', [
+        orgId,
+        inv,
+        'due_today',
+        'email',
+        'second today',
+      ]),
     ).rejects.toThrow(/daily message limit/);
   });
 
@@ -72,10 +93,17 @@ describe('disputes keep invoices.disputed in step', () => {
   it('open dispute sets it, resolving clears it, two disputes need both resolved', async () => {
     const inv = await invoice();
     const flag = async () =>
-      (await db.query<{ disputed: boolean }>('select disputed from invoices where id = $1', [inv])).rows[0]!.disputed;
+      (await db.query<{ disputed: boolean }>('select disputed from invoices where id = $1', [inv]))
+        .rows[0]!.disputed;
     expect(await flag()).toBe(false);
-    const d1 = await db.query<{ id: string }>(`insert into disputes (org_id, invoice_id, reason) values ($1,$2,'wrong qty') returning id`, [orgId, inv]);
-    const d2 = await db.query<{ id: string }>(`insert into disputes (org_id, invoice_id, reason) values ($1,$2,'price') returning id`, [orgId, inv]);
+    const d1 = await db.query<{ id: string }>(
+      `insert into disputes (org_id, invoice_id, reason) values ($1,$2,'wrong qty') returning id`,
+      [orgId, inv],
+    );
+    const d2 = await db.query<{ id: string }>(
+      `insert into disputes (org_id, invoice_id, reason) values ($1,$2,'price') returning id`,
+      [orgId, inv],
+    );
     expect(await flag()).toBe(true);
     await db.query(`update disputes set status = 'resolved' where id = $1`, [d1.rows[0]!.id]);
     expect(await flag()).toBe(true);
@@ -86,8 +114,17 @@ describe('disputes keep invoices.disputed in step', () => {
 
 describe('settings columns', () => {
   it('demand_letter_days is bounded and ladder_config must be an object', async () => {
-    await expect(db.query(`update business_profile set demand_letter_days = 0 where org_id = $1`, [orgId])).rejects.toThrow();
-    await expect(db.query(`update business_profile set ladder_config = '[1]'::jsonb where org_id = $1`, [orgId])).rejects.toThrow();
-    await db.query(`update business_profile set ladder_config = '{"final":16}'::jsonb, demand_letter_days = 10 where org_id = $1`, [orgId]);
+    await expect(
+      db.query(`update business_profile set demand_letter_days = 0 where org_id = $1`, [orgId]),
+    ).rejects.toThrow();
+    await expect(
+      db.query(`update business_profile set ladder_config = '[1]'::jsonb where org_id = $1`, [
+        orgId,
+      ]),
+    ).rejects.toThrow();
+    await db.query(
+      `update business_profile set ladder_config = '{"final":16}'::jsonb, demand_letter_days = 10 where org_id = $1`,
+      [orgId],
+    );
   });
 });

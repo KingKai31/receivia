@@ -16,7 +16,9 @@
   - [x] 1 Business profile form  - [x] 2 Customers  - [x] 3 New invoice  - [x] 4 Print page /doc/invoice/:id
   - [x] 5 Credit/debit notes  - [x] 6 Import (CSV, Excel, Tally XML)  - [x] 7 Invoices list + detail timeline
   - [x] 8 Typed service layer + optimistic concurrency  - [x] 9 Tests
-- S3 Collections and documents: not started
+- [~] S3 Collections and documents (code tasks 1-7 done; Step 0 remote DB + prod migration + browser smoke BLOCKED, see Needs owner 0)
+  - [ ] 0 Remote DB check / prod migrate / smoke  - [x] 1 lib/legal  - [x] 2 Ladder  - [x] 3 Templates + send rules
+  - [x] 4 Collect > Today  - [x] 5 /doc/letter/:id  - [x] 6 /doc/case/:customerId  - [x] 7 Tests
 - S4 Buyer portal payments reconciliation: not started
 - S5 Forecast and prioritisation: not started
 - S6 Agent and automation: not started
@@ -37,6 +39,7 @@
 | WHATSAPP_TOKEN, WHATSAPP_PHONE_ID | WhatsApp | Supabase secrets | missing |
 | N8N_WEBHOOK_URL, N8N_SHARED_SECRET | n8n | Supabase secrets | missing |
 | APP_BASE_URL | links in messages | Supabase secrets / Render | missing |
+| TEST_DATABASE_URL, PROD_DATABASE_URL | hosted test / prod Postgres, used only by scripts/db-remote.mjs | .env.local (git-ignored via `.env.*`; file is currently named `.env.local.txt`, copied to `.env.local`) | present but IDENTICAL and password rejected, see Needs owner 0 |
 | DATABASE_URL (tests only, optional) | DB tests; defaults to local `postgresql://postgres:postgres@127.0.0.1:54322/postgres` | shell | default |
 | REQUIRE_DB (tests only) | `1` makes db tests fail instead of skip when DB is down | CI | set in CI |
 
@@ -48,7 +51,7 @@
 - n8n, Resend, WhatsApp, Anthropic: not set up
 
 ## Database
-Migrations: `0001_foundation.sql`, `0002_demo_org.sql`, `0003_invoicing.sql`. Every table has id uuid pk, org_id, created_at, updated_at (audit_log included; orgs.org_id = id generated). RLS enabled on all. Child tables use composite FKs `(parent_id, org_id)` so a row can never reference another org's parent. `org_id` is immutable (trigger).
+Migrations: `0001_foundation.sql`, `0002_demo_org.sql`, `0003_invoicing.sql`, `0004_collections.sql`. Every table has id uuid pk, org_id, created_at, updated_at (audit_log included; orgs.org_id = id generated). RLS enabled on all. Child tables use composite FKs `(parent_id, org_id)` so a row can never reference another org's parent. `org_id` is immutable (trigger).
 
 Standard RLS (member read; owner/accountant write): customers, invoices, invoice_lines, notes, payments, allocations, bank_txns, disputes, promises, reminders, messages, expenses, tds_entries, ims_status, agent_actions.
 
@@ -80,6 +83,8 @@ Functions/triggers: `app.member_role/is_member/can_write/is_owner` (security def
 
 S2 (0003): `invoices.number` and `notes.number` are nullable (drafts unnumbered; check requires a number unless draft/void). New `invoices.reverse_charge`, `delivery_address`, `disputed` (maintained from S3). `invoice_counters.series` (INV/CN/DN), unique (org, fy, series). Functions: `next_note_number(org, fy, type)` (CN/26-27/0001, DN/...); `issue_invoice(id, expected_updated_at)` and `issue_note(id, expected_updated_at)` (security definer, row-locked, assign number + set issued in one transaction, 40001 on stale updated_at); `save_invoice(org, id, expected, header jsonb, lines jsonb)` (security invoker, atomic create/update of a draft with lines, 40001 on stale updated_at, P0002 if not a draft). Imported invoices: source = 'import', status issued, no lines, original number.
 
+S3 (0004): reminders.stage adds `next_steps`; `invoices.accepted_on` (MSME acceptance date, null = invoice date assumed) and `approved_stages text[]` (key-tier owner approvals); `business_profile.ladder_config jsonb` (null = defaults) and `demand_letter_days` (1-60, default 7); `customers.snoozed_until`; trigger `app.sync_disputed` keeps `invoices.disputed` = has open dispute; `public.record_send(org, invoice, stage, channel, body)` (security invoker, idempotent per invoice/stage/channel, inserts reminder + message atomically, rejects a 2nd outbound message per customer per IST day with 23514). Audit rows come from the existing triggers.
+
 Demo org: id `00000000-0000-4000-8000-00000000de60` ("Demo Traders", state 27, regular), created in migration 0002.
 
 ## Edge functions and APIs
@@ -98,7 +103,9 @@ Demo org: id `00000000-0000-4000-8000-00000000de60` ("Demo Traders", state 27, r
 | /customers, /customers/new, /customers/:id, /customers/:id/edit | list, form, detail (total owed, payment record) | auth |
 | /import | CSV / Excel / Tally XML import for customers and invoices | auth (owner/accountant) |
 | /doc/invoice/:id, /doc/note/:id | print-ready A4 documents (outside the app layout) | auth |
-| /collect, /payments, /forecast | stubs | auth |
+| /collect | Collect > Today: due actions grouped by customer, WhatsApp/Email/SMS/Mark sent/Snooze/Promise | auth |
+| /doc/letter/:id (invoice id), /doc/case/:customerId | Payment Demand Letter (customer's overdue invoices), Samadhaan case pack | auth |
+| /payments, /forecast | stubs | auth |
 | /settings | org name, role, sign out, business profile form (owner edits) | auth |
 
 ## Data
@@ -120,6 +127,10 @@ Demo org: id `00000000-0000-4000-8000-00000000de60` ("Demo Traders", state 27, r
 | Migrations / seed / functions | supabase/migrations, supabase/seed, supabase/functions |
 | DB tests | tests/db/ (helpers.ts has per-table insert builders; add new tables to INSERTS and ALL_ORG_TABLES) |
 | Typed errors, guarded update, paging, fake client for tests | src/lib/service/ (errors.ts, testing.ts) |
+| Legal rules (itc180, MSME eligibility/due/43B(h)/Form I/interest, lens), config | src/lib/legal/ (config.ts holds RBI bank rate) |
+| Ladder, templates, send rules, Today builder, service, page, settings | src/features/collect/ (ladder.ts, templates.ts, today.ts, collectService.ts, CollectTodayPage.tsx, LadderSettings.tsx) |
+| Letter + case pack models/components, pages | src/features/documents/collectionDocs.tsx, CollectionDocPages.tsx |
+| Remote DB runner (reset-test, migrate-prod, status) | scripts/db-remote.mjs |
 | Section 34 warning | src/lib/legal/section34.ts |
 | Business profile / customers / invoices / notes services | src/features/{settings,customers,invoices,notes}/*Service.ts |
 | Invoice maths from form, display status | src/features/invoices/invoiceModel.ts |
@@ -129,6 +140,7 @@ Demo org: id `00000000-0000-4000-8000-00000000de60` ("Demo Traders", state 27, r
 | CI / deploy | .github/workflows/ci.yml, render.yaml |
 
 ## Tests
+- S3: `npm test` now 169 unit tests (legal 18+, ladder/templates 16, today 6, letter/case 6). `npm run test:db`: 15 pass on PGlite (incl. tests/db/collections.test.ts: record_send, daily limit, dispute flag); 135 isolation tests still skipped, NOT run on any real Postgres. Fixed a flaky S2 audit test (ordered by random uuid; now by created_at).
 - `npm test`: 125 unit/property tests (S1 libs + S2 service layer, document fields for all 3 invoice types, import validation incl. bad GSTIN rows, 40-invoice CSV commit, Tally XML, Section 34, forms) — all pass.
 - `npm run test:db`: tests/db/invoicing.test.ts (9, run on PGlite with the real migrations: consecutive numbering under 20 parallel issues, stale-update conflict, per-series note numbers, save_invoice, audit rows) pass. The 135 isolation tests skip without Docker; they were NOT re-run after migration 0003.
 - PGlite is single-connection, so the 20-parallel test proves gap-free/no-repeat numbering and the locking SQL, not true multi-connection contention; re-run on real Supabase.
@@ -156,9 +168,18 @@ Demo org: id `00000000-0000-4000-8000-00000000de60` ("Demo Traders", state 27, r
 - 2026-10-24 (S2): Tally: only Sundry Debtors ledgers and Sales vouchers read; other vouchers/ledgers and unknown tags are skipped and listed in the report. Import capped at 5000 rows per file.
 - 2026-10-24 (S2): SheetJS from npm (`xlsx` 0.18.5, last npm release) used for CSV/Excel; parse only, no untrusted write. fast-xml-parser for Tally; qrcode for UPI QR; @electric-sql/pglite (dev) for DB tests without Docker.
 - 2026-10-24 (S2): New-feature copy is inline English (not yet in i18n keys); extract in the design pass. Customer picker on invoice form lists up to 100 matches of a search box.
+- 2026-10-24 (S3): Ladder stage names reuse DB enum (pre_due=-3 friendly, due_today=0, overdue_firm=+7, final=+15 with call prompt, demand_letter=+30, next_steps=+45 added in 0004; overdue_gentle unused). next_steps is owner guidance, not a buyer message.
+- 2026-10-24 (S3): Ladder sends only the latest due stage after a pause (catch-up skips earlier stages), never goes back, key tier needs per-stage owner approval (invoices.approved_stages) beyond firm.
+- 2026-10-24 (S3): One message per customer per day: the most severe invoice is the primary, others wait for another day. Quiet hours enforced in the UI only; DB enforces the daily limit in record_send. Snooze is per customer.
+- 2026-10-24 (S3): {{pay_link}} shows "[pay link]" in the preview; a pay token (create_pay_token) is minted at send time and substituted. Lens line appears only at firm/final/demand_letter stages. hi/mr disclaimers are translated, not the English sentence.
+- 2026-10-24 (S3): Lens priority: 43B(h) for eligible MSME sellers, else ITC 180 days when buyer has GSTIN. 43B(h) skipped for individual and government buyers and presumptive=yes; soft wording for unknown. Government buyers are treated as not claiming deductions.
+- 2026-10-24 (S3): MSME due date counts from accepted_on, else the invoice date (shown as "assumed"). RBI bank rate in config is 5.75% as a placeholder (check rbi.org.in); interest rounds each month to paise.
+- 2026-10-24 (S3): Letter lists all of the customer's overdue unpaid invoices (route id is one invoice). CLAUDE.md requires the sentence "not a legal notice from a lawyer"; the no-"legal notice" test strips that mandated sentence first.
+- 2026-10-24 (S3): scripts/db-remote.mjs uses the sslmode in the connection string (no cert verification override); refuses to run if TEST == PROD.
 - 2026-10-24 (S2): Business state for unregistered businesses is picked manually (no GSTIN to derive it from); with a GSTIN it is always derived.
 
 ## Needs owner
+0. (S3, blocks Step 0) `.env.local` TEST_DATABASE_URL and PROD_DATABASE_URL are the SAME value and Postgres rejects the password ("password authentication failed for user postgres"). scripts/db-remote.mjs refuses to run when they are equal, because `reset-test` drops schemas and would wipe prod. Please create a separate Supabase test project, put its connection string in TEST_DATABASE_URL, and fix the password in both (Supabase > Project Settings > Database > reset password; use the pooler/direct string with sslmode=require). Then run `node scripts/db-remote.mjs reset-test`, `$env:DATABASE_URL=$env:TEST_DATABASE_URL; npm run test:db` (REQUIRE_DB=1), `node scripts/db-remote.mjs migrate-prod`. Also: `npm run test:db:remote` was not added until this works. Also verify VITE_SUPABASE_URL/ANON_KEY belong to prod before the browser smoke test (not run). Migration status: test NOT migrated, prod NOT migrated (0001-0004 pending).
 1. Docker Desktop (S2: `docker ps` returned no table within 20 s, so real Supabase run pending; skipped per instructions): it is installed but its engine did not start (it was applying an update / may be waiting on a prompt). Open Docker Desktop, accept any prompt, wait until it says running. Then run `npm run db:start`, `npm run db:reset`, `npm run test:db` and confirm the 135 isolation tests pass (and that tests/db/invoicing.test.ts still passes against real Postgres) after migration 0003; tell the next session if any fail.
 2. Create the Supabase project in region ap-south-1 (Mumbai). Then: `npx supabase login`, `npx supabase link --project-ref <ref>`, `npx supabase db push`.
 3. In Supabase Auth, edit the "Magic link" / "Confirm signup" email template to show the code: include `{{ .Token }}` (6 digits). Set the email OTP length to 6.
@@ -172,5 +193,7 @@ Demo org: id `00000000-0000-4000-8000-00000000de60` ("Demo Traders", state 27, r
 - 2026-10-23, S1 Foundation: scaffold, money/gst/gstin/dates libs, migrations 0001-0002, auth + demo-login, plain app shell with shared UI, render.yaml + CI, isolation tests. Commits 1467292..HEAD on feat/foundation.
 - 2026-10-24, S2 Invoicing and import: migration 0003, business profile, customers, invoice form/list/detail, A4 print pages, credit/debit notes, CSV/Excel/Tally import, service layer with optimistic concurrency, tests. Branch feat/invoicing (foundation merged into main first).
 
+- 2026-10-24, S3 Collections and documents: feat/invoicing merged into main; branch feat/collections. lib/legal, ladder, templates, Today page, letter, case pack, migration 0004, settings editor, tests. Step 0 (remote DB, prod migration, browser smoke) blocked, see Needs owner 0.
+
 ## Next session
-S3 Collections and documents: start from branch feat/invoicing (merge to main when happy). First, if Docker works, run `npm run db:start`, `db:reset`, `test:db` and fix failures. Then S3 tasks. Open items from S2: demo seed data (customers/invoices) was not in S2's list; UI never checked in a browser; payments import; code-split xlsx/qrcode; hi/mr copy.
+S3 leftovers first: resolve Needs owner 0, then run Step 0 (remote reset + 135 isolation + S2/S3 DB tests incl. 20 real parallel connections, prod migrate 0001-0004, add `test:db:remote` npm script, browser smoke at 360/1280px). Then S4 Buyer portal, payments, reconciliation. Open: demo seed data, payments import, code-split xlsx/qrcode, hi/mr copy review by a native speaker (all hi/mr text in lib/legal and templates is machine-written), inline English UI copy to i18n, accepted_on has no form field yet, credit/debit notes do not reduce balances.

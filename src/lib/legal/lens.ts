@@ -23,7 +23,11 @@ export function buyerLens(args: {
   today: ISODate;
 }): Lens {
   const { seller, buyer, invoice, today } = args;
-  const msme_due = msmeDueDate(invoice.accepted_on ?? invoice.issue_date, buyer.credit_days, buyer.has_written_agreement);
+  const msme_due = msmeDueDate(
+    invoice.accepted_on ?? invoice.issue_date,
+    buyer.credit_days,
+    buyer.has_written_agreement,
+  );
   const a = sec43bh({ seller, buyer, msmeDue: msme_due, today });
   const b = itc180(invoice, buyer, today);
   const form1 = msmeForm1({ buyer, msmeDue: msme_due, today });

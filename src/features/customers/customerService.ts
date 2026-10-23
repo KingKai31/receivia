@@ -34,6 +34,7 @@ export interface Customer {
   opt_in_whatsapp: boolean;
   opt_in_whatsapp_at: string | null;
   archived_at: string | null;
+  snoozed_until: string | null;
   updated_at: string;
 }
 

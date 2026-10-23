@@ -30,7 +30,12 @@ export function withDisclaimer(s: Sentences): Sentences {
   };
 }
 
-export function result<F>(applies: boolean, reason: string, facts: F, s: Sentences): LegalResult<F> {
+export function result<F>(
+  applies: boolean,
+  reason: string,
+  facts: F,
+  s: Sentences,
+): LegalResult<F> {
   const t = applies ? withDisclaimer(s) : NO_SENTENCES;
   return { applies, reason, facts, sentence_en: t.en, sentence_hi: t.hi, sentence_mr: t.mr };
 }

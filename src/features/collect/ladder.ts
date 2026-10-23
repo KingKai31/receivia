@@ -1,6 +1,13 @@
 import { addDays, daysBetween, type ISODate } from '@/lib/dates';
 
-export const STAGES = ['pre_due', 'due_today', 'overdue_firm', 'final', 'demand_letter', 'next_steps'] as const;
+export const STAGES = [
+  'pre_due',
+  'due_today',
+  'overdue_firm',
+  'final',
+  'demand_letter',
+  'next_steps',
+] as const;
 export type Stage = (typeof STAGES)[number];
 
 /** Days from the due date at which each stage becomes due. Editable per business in Settings. */
@@ -28,14 +35,17 @@ export const STAGE_LABEL: Record<Stage, string> = {
 export const KEY_TIER_LIMIT: Stage = 'overdue_firm';
 
 const idx = (s: Stage) => STAGES.indexOf(s);
+const at = (i: number): Stage => STAGES[i] as Stage;
 
 /** Returns an error message, or null when the config is usable (strictly increasing days). */
 export function validateLadder(c: LadderConfig): string | null {
   for (const s of STAGES) {
-    if (!Number.isInteger(c[s]) || c[s] < -30 || c[s] > 365) return `Days for "${STAGE_LABEL[s]}" must be a whole number between -30 and 365.`;
+    if (!Number.isInteger(c[s]) || c[s] < -30 || c[s] > 365)
+      return `Days for "${STAGE_LABEL[s]}" must be a whole number between -30 and 365.`;
   }
   for (let i = 1; i < STAGES.length; i++) {
-    if (c[STAGES[i]] <= c[STAGES[i - 1]]) return `"${STAGE_LABEL[STAGES[i]]}" must come after "${STAGE_LABEL[STAGES[i - 1]]}".`;
+    if (c[at(i)] <= c[at(i - 1)])
+      return `"${STAGE_LABEL[at(i)]}" must come after "${STAGE_LABEL[at(i - 1)]}".`;
   }
   return null;
 }
@@ -64,8 +74,21 @@ export interface LadderInput {
 export type LadderDecision =
   | { action: 'none'; reason: string }
   | { action: 'paused'; reason: string; until?: ISODate }
-  | { action: 'needs_approval'; stage: Stage; reason: string; daysOverdue: number; amountDue: number }
-  | { action: 'send'; stage: Stage; reason: string; daysOverdue: number; amountDue: number; callPrompt: boolean };
+  | {
+      action: 'needs_approval';
+      stage: Stage;
+      reason: string;
+      daysOverdue: number;
+      amountDue: number;
+    }
+  | {
+      action: 'send';
+      stage: Stage;
+      reason: string;
+      daysOverdue: number;
+      amountDue: number;
+      callPrompt: boolean;
+    };
 
 export function amountDue(i: LadderInvoice): number {
   return Math.max(i.total_paise - i.paid_paise, 0);
@@ -81,26 +104,40 @@ export function nextAction(input: LadderInput): LadderDecision {
   const { invoice, today } = input;
   const cfg = input.config ?? DEFAULT_LADDER;
   const due = amountDue(invoice);
-  if (invoice.status === 'draft' || invoice.status === 'void') return { action: 'none', reason: 'Invoice is not live.' };
+  if (invoice.status === 'draft' || invoice.status === 'void')
+    return { action: 'none', reason: 'Invoice is not live.' };
   if (due <= 0 || invoice.status === 'paid') return { action: 'none', reason: 'Nothing is owed.' };
-  if (input.hasOpenDispute) return { action: 'paused', reason: 'Open dispute: reminders are paused until it is resolved.' };
+  if (input.hasOpenDispute)
+    return { action: 'paused', reason: 'Open dispute: reminders are paused until it is resolved.' };
   if (input.promisedFor && input.promisedFor >= today) {
-    return { action: 'paused', reason: `Customer promised to pay on ${input.promisedFor}.`, until: addDays(input.promisedFor, 1) };
+    return {
+      action: 'paused',
+      reason: `Customer promised to pay on ${input.promisedFor}.`,
+      until: addDays(input.promisedFor, 1),
+    };
   }
   const days = daysBetween(invoice.due_date, today);
   const highestSent = Math.max(-1, ...input.sentStages.map(idx));
   let pick = -1;
   for (let i = STAGES.length - 1; i > highestSent; i--) {
-    if (days >= cfg[STAGES[i]]) {
+    if (days >= cfg[at(i)]) {
       pick = i;
       break;
     }
   }
   if (pick < 0) return { action: 'none', reason: 'No stage is due yet.' };
-  const stage = STAGES[pick];
+  const stage = at(pick);
   const base = { stage, daysOverdue: Math.max(days, 0), amountDue: due };
-  if (input.tier === 'key' && pick > idx(KEY_TIER_LIMIT) && !(input.approvedStages ?? []).includes(stage)) {
-    return { action: 'needs_approval', reason: `Key customer: "${STAGE_LABEL[stage]}" needs your approval.`, ...base };
+  if (
+    input.tier === 'key' &&
+    pick > idx(KEY_TIER_LIMIT) &&
+    !(input.approvedStages ?? []).includes(stage)
+  ) {
+    return {
+      action: 'needs_approval',
+      reason: `Key customer: "${STAGE_LABEL[stage]}" needs your approval.`,
+      ...base,
+    };
   }
   return { action: 'send', reason: STAGE_LABEL[stage], ...base, callPrompt: stage === 'final' };
 }
@@ -112,7 +149,9 @@ export function nextStepsGuide(msmeEligible: boolean): string[] {
     'Consider consulting a lawyer or your CA about options for recovery.',
   ];
   if (msmeEligible) {
-    steps.push('You may be able to file a reference on the MSME Samadhaan portal (samadhaan.msme.gov.in); open the case pack for what it asks for.');
+    steps.push(
+      'You may be able to file a reference on the MSME Samadhaan portal (samadhaan.msme.gov.in); open the case pack for what it asks for.',
+    );
   }
   return steps;
 }

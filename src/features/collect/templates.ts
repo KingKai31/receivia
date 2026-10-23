@@ -3,7 +3,14 @@ import type { Stage } from './ladder';
 export type Lang = 'en' | 'hi' | 'mr';
 
 export const SLOTS = [
-  'customer', 'invoice_no', 'amount_due', 'due_date', 'days_overdue', 'pay_link', 'lens_line', 'contact',
+  'customer',
+  'invoice_no',
+  'amount_due',
+  'due_date',
+  'days_overdue',
+  'pay_link',
+  'lens_line',
+  'contact',
 ] as const;
 export type Slot = (typeof SLOTS)[number];
 export type SlotValues = Record<Slot, string>;
@@ -44,7 +51,8 @@ export class TemplateError extends Error {}
 /** Fills slots. Unknown slots or a missing value throw; an empty lens_line removes its line. */
 export function renderTemplate(text: string, values: SlotValues): string {
   const out = text.replace(/\{\{(\w+)\}\}/g, (_m, name: string) => {
-    if (!(SLOTS as readonly string[]).includes(name)) throw new TemplateError(`Unknown slot ${name}`);
+    if (!(SLOTS as readonly string[]).includes(name))
+      throw new TemplateError(`Unknown slot ${name}`);
     const v = values[name as Slot];
     if (v === undefined) throw new TemplateError(`Missing slot ${name}`);
     return v;
@@ -82,8 +90,10 @@ export interface SendCheck {
 
 /** Max one message per customer per IST day; none during quiet hours (21:00-09:00 IST). */
 export function canSend(args: { now: Date; sentTodayToCustomer: number }): SendCheck {
-  if (inQuietHours(args.now)) return { ok: false, reason: 'Quiet hours: messages go out between 09:00 and 21:00 IST.' };
-  if (args.sentTodayToCustomer >= 1) return { ok: false, reason: 'This customer already has a message today.' };
+  if (inQuietHours(args.now))
+    return { ok: false, reason: 'Quiet hours: messages go out between 09:00 and 21:00 IST.' };
+  if (args.sentTodayToCustomer >= 1)
+    return { ok: false, reason: 'This customer already has a message today.' };
   return { ok: true };
 }
 

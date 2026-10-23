@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { Badge, Button, Card } from '@/components/ui';
 import { signOut } from '@/features/auth/authApi';
 import { useOrg } from '@/features/auth/useOrg';
+import { LadderSettings } from '@/features/collect/LadderSettings';
 import { BusinessProfileForm } from './BusinessProfileForm';
 
 export function SettingsPage() {
@@ -25,6 +26,7 @@ export function SettingsPage() {
         </Button>
       </Card>
       <BusinessProfileForm />
+      <LadderSettings />
     </>
   );
 }

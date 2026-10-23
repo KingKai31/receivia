@@ -22,7 +22,10 @@ if (!test || !prod) throw new Error('TEST_DATABASE_URL and PROD_DATABASE_URL mus
 if (test === prod) throw new Error('TEST and PROD urls are identical; refusing');
 
 const dir = 'supabase/migrations';
-const files = fs.readdirSync(dir).filter((f) => f.endsWith('.sql')).sort();
+const files = fs
+  .readdirSync(dir)
+  .filter((f) => f.endsWith('.sql'))
+  .sort();
 
 async function connect(url) {
   const c = new pg.Client({ connectionString: url });
@@ -32,12 +35,16 @@ async function connect(url) {
 
 async function ensureLog(c) {
   await c.query(`create schema if not exists receivia_meta`);
-  await c.query(`create table if not exists receivia_meta.migrations (name text primary key, applied_at timestamptz default now())`);
+  await c.query(
+    `create table if not exists receivia_meta.migrations (name text primary key, applied_at timestamptz default now())`,
+  );
 }
 
 async function apply(c) {
   await ensureLog(c);
-  const done = new Set((await c.query('select name from receivia_meta.migrations')).rows.map((r) => r.name));
+  const done = new Set(
+    (await c.query('select name from receivia_meta.migrations')).rows.map((r) => r.name),
+  );
   for (const f of files) {
     if (done.has(f)) continue;
     await c.query('begin');
@@ -62,9 +69,15 @@ if (cmd === 'reset-test') {
   await c.query('drop schema if exists public cascade');
   await c.query('create schema public');
   await c.query('grant usage on schema public to postgres, anon, authenticated, service_role');
-  await c.query('alter default privileges in schema public grant all on tables to postgres, anon, authenticated, service_role');
-  await c.query('alter default privileges in schema public grant all on functions to postgres, anon, authenticated, service_role');
-  await c.query('alter default privileges in schema public grant all on sequences to postgres, anon, authenticated, service_role');
+  await c.query(
+    'alter default privileges in schema public grant all on tables to postgres, anon, authenticated, service_role',
+  );
+  await c.query(
+    'alter default privileges in schema public grant all on functions to postgres, anon, authenticated, service_role',
+  );
+  await c.query(
+    'alter default privileges in schema public grant all on sequences to postgres, anon, authenticated, service_role',
+  );
   await apply(c);
   await c.end();
 } else if (cmd === 'migrate-prod') {
@@ -74,6 +87,10 @@ if (cmd === 'reset-test') {
 } else if (cmd === 'status') {
   const c = await connect(which === 'prod' ? prod : test);
   await ensureLog(c);
-  console.log((await c.query('select name from receivia_meta.migrations order by name')).rows.map((r) => r.name).join(', '));
+  console.log(
+    (await c.query('select name from receivia_meta.migrations order by name')).rows
+      .map((r) => r.name)
+      .join(', '),
+  );
   await c.end();
 }

@@ -9,6 +9,8 @@ import { CustomerDetailPage } from '@/features/customers/CustomerDetailPage';
 import { CustomerFormPage } from '@/features/customers/CustomerFormPage';
 import { CustomersPage } from '@/features/customers/CustomersPage';
 import { InvoiceDocPage, NoteDocPage } from '@/features/documents/DocPages';
+import { CaseDocPage, LetterDocPage } from '@/features/documents/CollectionDocPages';
+import { CollectTodayPage } from '@/features/collect/CollectTodayPage';
 import { ImportPage } from '@/features/import/ImportPage';
 import { InvoiceDetailPage } from '@/features/invoices/InvoiceDetailPage';
 import { InvoiceFormPage } from '@/features/invoices/InvoiceFormPage';
@@ -37,6 +39,8 @@ export function App() {
               <Route element={<RequireAuth />}>
                 <Route path="/doc/invoice/:id" element={<InvoiceDocPage />} />
                 <Route path="/doc/note/:id" element={<NoteDocPage />} />
+                <Route path="/doc/letter/:id" element={<LetterDocPage />} />
+                <Route path="/doc/case/:customerId" element={<CaseDocPage />} />
                 <Route element={<Layout />}>
                   <Route index element={<StubPage titleKey="pages.today" />} />
                   <Route path="/invoices" element={<InvoicesPage />} />
@@ -49,7 +53,7 @@ export function App() {
                   <Route path="/customers/:id" element={<CustomerDetailPage />} />
                   <Route path="/customers/:id/edit" element={<CustomerFormPage />} />
                   <Route path="/import" element={<ImportPage />} />
-                  <Route path="/collect" element={<StubPage titleKey="pages.collect" />} />
+                  <Route path="/collect" element={<CollectTodayPage />} />
                   <Route path="/payments" element={<StubPage titleKey="pages.payments" />} />
                   <Route path="/forecast" element={<StubPage titleKey="pages.forecast" />} />
                   <Route path="/settings" element={<SettingsPage />} />

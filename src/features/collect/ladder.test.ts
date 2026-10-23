@@ -1,18 +1,35 @@
 import { describe, expect, it } from 'vitest';
 import { addDays } from '@/lib/dates';
 import {
-  DEFAULT_LADDER, STAGES, nextAction, nextStepsGuide, validateLadder,
-  type LadderInput, type Stage,
+  DEFAULT_LADDER,
+  STAGES,
+  nextAction,
+  nextStepsGuide,
+  validateLadder,
+  type LadderInput,
+  type Stage,
 } from './ladder';
 import {
-  SLOTS, TEMPLATES, TemplateError, buildMessage, canSend, renderTemplate, whatsappUrl,
-  type MessageStage, type SlotValues,
+  SLOTS,
+  TEMPLATES,
+  TemplateError,
+  buildMessage,
+  canSend,
+  renderTemplate,
+  whatsappUrl,
+  type MessageStage,
+  type SlotValues,
 } from './templates';
 
 const DUE = '2026-06-01';
 const inv = { due_date: DUE, total_paise: 100000, paid_paise: 0, status: 'issued' as const };
 const base = (over: Partial<LadderInput> = {}): LadderInput => ({
-  invoice: inv, tier: 'standard', today: DUE, sentStages: [], hasOpenDispute: false, ...over,
+  invoice: inv,
+  tier: 'standard',
+  today: DUE,
+  sentStages: [],
+  hasOpenDispute: false,
+  ...over,
 });
 
 /** Walks one invoice through every stage by moving the demo date; returns the table rows. */
@@ -21,7 +38,9 @@ function walk(tier: 'key' | 'standard', approve: boolean) {
   const rows: { day: number; date: string; action: string; stage: string }[] = [];
   for (let day = -5; day <= 50; day++) {
     const today = addDays(DUE, day);
-    const d = nextAction(base({ today, tier, sentStages: sent, approvedStages: approve ? [...STAGES] : [] }));
+    const d = nextAction(
+      base({ today, tier, sentStages: sent, approvedStages: approve ? [...STAGES] : [] }),
+    );
     if (d.action === 'send') {
       sent.push(d.stage);
       rows.push({ day, date: today, action: 'send', stage: d.stage });
@@ -35,10 +54,14 @@ function walk(tier: 'key' | 'standard', approve: boolean) {
 describe('ladder', () => {
   it('walks one invoice through every stage on the configured days (demo-date table)', () => {
     const { rows } = walk('standard', false);
-    // eslint-disable-next-line no-console
     console.table(rows);
     expect(rows.map((r) => [r.day, r.stage])).toEqual([
-      [-3, 'pre_due'], [0, 'due_today'], [7, 'overdue_firm'], [15, 'final'], [30, 'demand_letter'], [45, 'next_steps'],
+      [-3, 'pre_due'],
+      [0, 'due_today'],
+      [7, 'overdue_firm'],
+      [15, 'final'],
+      [30, 'demand_letter'],
+      [45, 'next_steps'],
     ]);
   });
 
@@ -46,44 +69,75 @@ describe('ladder', () => {
     const { rows } = walk('standard', false);
     const stages = rows.filter((r) => r.action === 'send').map((r) => r.stage);
     expect(new Set(stages).size).toBe(stages.length);
-    expect(nextAction(base({ today: addDays(DUE, 10), sentStages: ['pre_due', 'due_today', 'overdue_firm'] })).action).toBe('none');
+    expect(
+      nextAction(
+        base({ today: addDays(DUE, 10), sentStages: ['pre_due', 'due_today', 'overdue_firm'] }),
+      ).action,
+    ).toBe('none');
   });
 
   it('catch-up sends only the latest due stage and never goes back', () => {
     const d = nextAction(base({ today: addDays(DUE, 20), sentStages: [] }));
     expect(d).toMatchObject({ action: 'send', stage: 'final', callPrompt: true });
-    expect(nextAction(base({ today: addDays(DUE, 20), sentStages: ['final'] })).action).toBe('none');
+    expect(nextAction(base({ today: addDays(DUE, 20), sentStages: ['final'] })).action).toBe(
+      'none',
+    );
   });
 
   it('an open dispute pauses every stage', () => {
     for (const day of [-3, 0, 7, 15, 30, 45]) {
-      expect(nextAction(base({ today: addDays(DUE, day), hasOpenDispute: true })).action).toBe('paused');
+      expect(nextAction(base({ today: addDays(DUE, day), hasOpenDispute: true })).action).toBe(
+        'paused',
+      );
     }
   });
 
   it('an active promise pauses until the promised date, then resumes', () => {
     const promisedFor = addDays(DUE, 9);
-    expect(nextAction(base({ today: addDays(DUE, 7), promisedFor, sentStages: ['pre_due', 'due_today'] })).action).toBe('paused');
-    expect(nextAction(base({ today: promisedFor, promisedFor, sentStages: ['pre_due', 'due_today'] })).action).toBe('paused');
-    expect(nextAction(base({ today: addDays(promisedFor, 1), promisedFor, sentStages: ['pre_due', 'due_today'] }))).toMatchObject({ action: 'send', stage: 'overdue_firm' });
+    expect(
+      nextAction(
+        base({ today: addDays(DUE, 7), promisedFor, sentStages: ['pre_due', 'due_today'] }),
+      ).action,
+    ).toBe('paused');
+    expect(
+      nextAction(base({ today: promisedFor, promisedFor, sentStages: ['pre_due', 'due_today'] }))
+        .action,
+    ).toBe('paused');
+    expect(
+      nextAction(
+        base({ today: addDays(promisedFor, 1), promisedFor, sentStages: ['pre_due', 'due_today'] }),
+      ),
+    ).toMatchObject({ action: 'send', stage: 'overdue_firm' });
   });
 
   it('part payment keeps the stage and updates the amount', () => {
     const a = nextAction(base({ today: addDays(DUE, 7), sentStages: ['pre_due', 'due_today'] }));
-    const b = nextAction(base({ today: addDays(DUE, 7), sentStages: ['pre_due', 'due_today'], invoice: { ...inv, paid_paise: 40000, status: 'partially_paid' } }));
+    const b = nextAction(
+      base({
+        today: addDays(DUE, 7),
+        sentStages: ['pre_due', 'due_today'],
+        invoice: { ...inv, paid_paise: 40000, status: 'partially_paid' },
+      }),
+    );
     expect(a).toMatchObject({ stage: 'overdue_firm', amountDue: 100000 });
     expect(b).toMatchObject({ stage: 'overdue_firm', amountDue: 60000 });
   });
 
   it('paid, draft and void invoices are left alone', () => {
-    expect(nextAction(base({ invoice: { ...inv, paid_paise: 100000, status: 'paid' } })).action).toBe('none');
+    expect(
+      nextAction(base({ invoice: { ...inv, paid_paise: 100000, status: 'paid' } })).action,
+    ).toBe('none');
     expect(nextAction(base({ invoice: { ...inv, status: 'draft' } })).action).toBe('none');
     expect(nextAction(base({ invoice: { ...inv, status: 'void' } })).action).toBe('none');
   });
 
   it('key-tier customers stop at firm until the owner approves', () => {
     const { rows } = walk('key', false);
-    expect(rows.filter((r) => r.action === 'send').map((r) => r.stage)).toEqual(['pre_due', 'due_today', 'overdue_firm']);
+    expect(rows.filter((r) => r.action === 'send').map((r) => r.stage)).toEqual([
+      'pre_due',
+      'due_today',
+      'overdue_firm',
+    ]);
     expect(rows.some((r) => r.action === 'needs_approval' && r.stage === 'final')).toBe(true);
     const ok = walk('key', true);
     expect(ok.sent).toEqual([...STAGES]);
@@ -91,7 +145,11 @@ describe('ladder', () => {
 
   it('uses edited stage days and validates them', () => {
     const cfg = { ...DEFAULT_LADDER, overdue_firm: 5 };
-    expect(nextAction(base({ today: addDays(DUE, 5), config: cfg, sentStages: ['pre_due', 'due_today'] }))).toMatchObject({ stage: 'overdue_firm' });
+    expect(
+      nextAction(
+        base({ today: addDays(DUE, 5), config: cfg, sentStages: ['pre_due', 'due_today'] }),
+      ),
+    ).toMatchObject({ stage: 'overdue_firm' });
     expect(validateLadder(DEFAULT_LADDER)).toBeNull();
     expect(validateLadder({ ...DEFAULT_LADDER, final: 3 })).toMatch(/must come after/);
     expect(validateLadder({ ...DEFAULT_LADDER, final: 1.5 })).toMatch(/whole number/);
@@ -106,8 +164,14 @@ describe('ladder', () => {
 
 describe('templates and send rules', () => {
   const values: SlotValues = {
-    customer: 'Acme', invoice_no: 'INV/26-27/0001', amount_due: '₹1,000.00', due_date: '2026-06-01',
-    days_overdue: '7', pay_link: 'https://x/pay/t', lens_line: '', contact: 'Call 98xxxxxx00',
+    customer: 'Acme',
+    invoice_no: 'INV/26-27/0001',
+    amount_due: '₹1,000.00',
+    due_date: '2026-06-01',
+    days_overdue: '7',
+    pay_link: 'https://x/pay/t',
+    lens_line: '',
+    contact: 'Call 98xxxxxx00',
   };
   const stages = Object.keys(TEMPLATES) as MessageStage[];
 
@@ -125,10 +189,14 @@ describe('templates and send rules', () => {
   });
   it('empty lens line leaves no blank line; filled lens line appears', () => {
     expect(buildMessage('overdue_firm', 'en', values)).not.toMatch(/\n\n/);
-    expect(buildMessage('final', 'en', { ...values, lens_line: 'LENS TEXT' })).toContain('LENS TEXT');
+    expect(buildMessage('final', 'en', { ...values, lens_line: 'LENS TEXT' })).toContain(
+      'LENS TEXT',
+    );
   });
   it('no template contains forbidden wording', () => {
-    for (const s of stages) for (const l of ['en', 'hi', 'mr'] as const) expect(TEMPLATES[s][l].toLowerCase()).not.toContain('legal notice');
+    for (const s of stages)
+      for (const l of ['en', 'hi', 'mr'] as const)
+        expect(TEMPLATES[s][l].toLowerCase()).not.toContain('legal notice');
   });
   it('unknown slot throws', () => {
     expect(() => renderTemplate('Hi {{nope}}', values)).toThrow(TemplateError);

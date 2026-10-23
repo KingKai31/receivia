@@ -1,7 +1,13 @@
 import { addDays, daysBetween, type ISODate } from '@/lib/dates';
 import { formatINR, paise } from '@/lib/money';
 import { LEGAL_CONFIG } from './config';
-import { NO_SENTENCES, result, type BuyerFacts, type InvoiceFacts, type LegalResult } from './common';
+import {
+  NO_SENTENCES,
+  result,
+  type BuyerFacts,
+  type InvoiceFacts,
+  type LegalResult,
+} from './common';
 
 export interface Itc180Facts {
   date_180: ISODate | null;
@@ -14,13 +20,25 @@ export interface Itc180Facts {
  * Section 16(2) CGST Act read with Rule 37: a buyer who has not paid a supplier within 180 days
  * of the invoice date generally has to reverse the input tax credit on the unpaid portion.
  */
-export function itc180(invoice: InvoiceFacts, buyer: BuyerFacts, today: ISODate): LegalResult<Itc180Facts> {
+export function itc180(
+  invoice: InvoiceFacts,
+  buyer: BuyerFacts,
+  today: ISODate,
+): LegalResult<Itc180Facts> {
   const none: Itc180Facts = { date_180: null, unpaid_gst_paise: 0, days_left: null };
-  if (!buyer.gstin) return result(false, 'Buyer has no GSTIN, so it cannot claim input tax credit.', none, NO_SENTENCES);
-  if (invoice.invoice_type !== 'tax_invoice') return result(false, 'Not a tax invoice.', none, NO_SENTENCES);
+  if (!buyer.gstin)
+    return result(
+      false,
+      'Buyer has no GSTIN, so it cannot claim input tax credit.',
+      none,
+      NO_SENTENCES,
+    );
+  if (invoice.invoice_type !== 'tax_invoice')
+    return result(false, 'Not a tax invoice.', none, NO_SENTENCES);
   if (invoice.reverse_charge) return result(false, 'Reverse charge supply.', none, NO_SENTENCES);
   const unpaid = invoice.total_paise - invoice.paid_paise;
-  if (unpaid <= 0 || invoice.total_paise <= 0) return result(false, 'Nothing unpaid.', none, NO_SENTENCES);
+  if (unpaid <= 0 || invoice.total_paise <= 0)
+    return result(false, 'Nothing unpaid.', none, NO_SENTENCES);
   const tax = invoice.cgst_paise + invoice.sgst_paise + invoice.igst_paise;
   const gst = paise(Math.round((tax * unpaid) / invoice.total_paise));
   const date = addDays(invoice.issue_date, LEGAL_CONFIG.itcDays);
@@ -36,5 +54,10 @@ export function itc180(invoice: InvoiceFacts, buyer: BuyerFacts, today: ISODate)
   const mr = future
     ? `सीजीएसटी कायद्याच्या कलम 16(2) आणि नियम 37 नुसार, खरेदीदाराने साधारणपणे बिलाच्या तारखेपासून 180 दिवसांत पैसे द्यावे लागतात, या बिलासाठी ही तारीख ${date} आहे; अन्यथा न भरलेल्या जीएसटीवरील (सुमारे ${amt}) इनपुट टॅक्स क्रेडिट परत करावे लागू शकते.`
     : `सीजीएसटी कायद्याच्या कलम 16(2) आणि नियम 37 नुसार, खरेदीदाराने साधारणपणे बिलाच्या तारखेपासून 180 दिवसांत पैसे द्यावे लागतात; या बिलासाठी ही तारीख ${date} होती, त्यामुळे न भरलेल्या जीएसटीवरील (सुमारे ${amt}) इनपुट टॅक्स क्रेडिट व्याजासह परत करावे लागू शकते.`;
-  return result(true, 'Buyer has GSTIN, tax invoice, forward charge, unpaid balance.', { date_180: date, unpaid_gst_paise: gst, days_left: left }, { en, hi, mr });
+  return result(
+    true,
+    'Buyer has GSTIN, tax invoice, forward charge, unpaid balance.',
+    { date_180: date, unpaid_gst_paise: gst, days_left: left },
+    { en, hi, mr },
+  );
 }

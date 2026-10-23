@@ -238,7 +238,7 @@ describe('save_invoice', () => {
     const d = await newDraft();
     await db.query('select public.issue_invoice($1, $2::timestamptz)', [d.id, d.updated_at]);
     const a = await db.query<{ action: string }>(
-      `select action from audit_log where table_name = 'invoices' and record_id = $1 order by id`,
+      `select action from audit_log where table_name = 'invoices' and record_id = $1 order by created_at`,
       [d.id],
     );
     expect(a.rows.map((x) => x.action)).toEqual(['INSERT', 'UPDATE']);
