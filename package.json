@@ -18,10 +18,12 @@
     "db:reset": "supabase db reset"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.11",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.64.1",
     "@types/node": "^26.6.5",
     "@types/pg": "^8.23.1",
+    "@types/qrcode": "^1.5.6",
     "@types/react": "^18.3.31",
     "@types/react-dom": "^18.3.7",
     "@vitejs/plugin-react": "^6.1.2",
@@ -45,12 +47,15 @@
     "@hookform/resolvers": "^5.9.2",
     "@supabase/supabase-js": "^2.118.0",
     "@tanstack/react-query": "^5.104.5",
+    "fast-xml-parser": "^5.11.2",
     "i18next": "^26.5.6",
+    "qrcode": "^1.5.4",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-hook-form": "^7.90.0",
     "react-i18next": "^17.1.4",
     "react-router-dom": "^7.18.4",
+    "xlsx": "^0.18.5",
     "zod": "^4.6.7"
   }
 }
