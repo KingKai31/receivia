@@ -2,7 +2,7 @@
 
 ## Status
 - [ ] S1 Foundation
-  - [ ] 1 Scaffold
+  - [x] 1 Scaffold
   - [ ] 2 lib/money
   - [ ] 3 lib/gst
   - [ ] 4 lib/gstin
