@@ -7,7 +7,7 @@
   - [x] 3 lib/gst
   - [x] 4 lib/gstin
   - [x] 5 lib/dates
-  - [ ] 6 Migration 0001
+  - [x] 6 Migration 0001
   - [ ] 7 Auth + demo function
   - [ ] 8 App shell + ui
   - [ ] 9 render.yaml + CI
