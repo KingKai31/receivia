@@ -1,17 +1,17 @@
 # STATE
 
 ## Status
-- [ ] S1 Foundation
+- [x] S1 Foundation (all tasks done; isolation tests still to be re-run on real local Supabase, see Needs owner)
   - [x] 1 Scaffold
   - [x] 2 lib/money
   - [x] 3 lib/gst
   - [x] 4 lib/gstin
   - [x] 5 lib/dates
-  - [x] 6 Migration 0001
-  - [ ] 7 Auth + demo function
-  - [ ] 8 App shell + ui
-  - [ ] 9 render.yaml + CI
-  - [ ] 10 Isolation tests
+  - [x] 6 Migration 0001 (+0002 demo org)
+  - [x] 7 Auth + demo function
+  - [x] 8 App shell + ui
+  - [x] 9 render.yaml + CI
+  - [x] 10 Isolation tests (135 pass on PGlite emulation; pending run on real Supabase/Docker)
 - S2 Invoicing and import: not started
 - S3 Collections and documents: not started
 - S4 Buyer portal payments reconciliation: not started
@@ -26,47 +26,123 @@
 |---|---|---|---|
 | VITE_SUPABASE_URL | Supabase API URL | local .env / Render | missing |
 | VITE_SUPABASE_ANON_KEY | public anon key | local .env / Render | missing |
-| SUPABASE_SERVICE_ROLE_KEY | edge functions / tests | local .env / Supabase secrets | missing |
-| DEMO_EMAIL, DEMO_PASSWORD | shared demo user | local .env / Supabase secrets | missing |
+| SUPABASE_SERVICE_ROLE_KEY | edge functions / tests | local .env / Supabase secrets (auto in edge runtime) | missing |
+| DEMO_EMAIL, DEMO_PASSWORD | shared demo user (used by demo-login) | local .env / Supabase secrets | missing |
 | ANTHROPIC_API_KEY | agent (edge only) | Supabase secrets | missing |
 | RAZORPAY_KEY_ID / _KEY_SECRET / _WEBHOOK_SECRET | payments test mode | Supabase secrets | missing |
 | RESEND_API_KEY | email | Supabase secrets | missing |
 | WHATSAPP_TOKEN, WHATSAPP_PHONE_ID | WhatsApp | Supabase secrets | missing |
 | N8N_WEBHOOK_URL, N8N_SHARED_SECRET | n8n | Supabase secrets | missing |
 | APP_BASE_URL | links in messages | Supabase secrets / Render | missing |
+| DATABASE_URL (tests only, optional) | DB tests; defaults to local `postgresql://postgres:postgres@127.0.0.1:54322/postgres` | shell | default |
+| REQUIRE_DB (tests only) | `1` makes db tests fail instead of skip when DB is down | CI | set in CI |
 
 ## Services
-- Supabase: ref none, region ap-south-1 required — not created
-- Render: none — not created
+- Supabase: ref none, region ap-south-1 required — not created. Local: CLI via npm (`supabase` devDependency), project_id `receivia`.
+- Render: none — not created (render.yaml ready: static site `receivia`).
+- GitHub: no remote yet; CI in .github/workflows/ci.yml.
 - Razorpay: test mode — no account linked
 - n8n, Resend, WhatsApp, Anthropic: not set up
 
 ## Database
-(filled by task 6)
+Migrations: `0001_foundation.sql`, `0002_demo_org.sql`. Every table has id uuid pk, org_id, created_at, updated_at (audit_log included; orgs.org_id = id generated). RLS enabled on all. Child tables use composite FKs `(parent_id, org_id)` so a row can never reference another org's parent. `org_id` is immutable (trigger).
+
+Standard RLS (member read; owner/accountant write): customers, invoices, invoice_lines, notes, payments, allocations, bank_txns, disputes, promises, reminders, messages, expenses, tds_entries, ims_status, agent_actions.
+
+| Table | Purpose / key columns | RLS |
+|---|---|---|
+| gst_states | code (2-digit incl. 97, 99), name; no org_id | authenticated read only |
+| orgs | name, created_by | member read; owner update; no client insert/delete |
+| memberships | org_id, user_id, role owner/accountant/ca | member read; owner write |
+| business_profile | one per org: gstin, state_code, registration_type, annual_turnover_paise, udyam_number, enterprise_size, activity, bank_*, upi_id, invoice_prefix (1-4 chars A-Z0-9, default INV) | member read; owner write |
+| customers | gstin (checksum-validated), state_code, credit_days, has_written_agreement, tier, language, entity_type, presumptive_tax, contacts jsonb, opt_in_whatsapp | standard |
+| invoices | number (≤16, unique per org), fy, status, dates, GST split + total_paise (=sum check), paid_paise (trigger-maintained), source_ref (import idempotency) | standard |
+| invoice_lines | per-line qty, rate, discount, gst_rate (0/0.25/3/5/18/40), tax split | standard |
+| notes | credit/debit notes against an invoice | standard |
+| invoice_counters | (org, fy) → last_seq, only via next_invoice_number | member read; no client writes |
+| payments | amount, method, status, idempotency_key + razorpay_payment_id unique per org | standard |
+| allocations | payment→invoice amounts; trigger syncs invoices.paid_paise/status, blocks over-allocation | standard |
+| bank_txns | statement lines, dedupe_hash unique per org, matched_payment_id | standard |
+| disputes, promises | per invoice | standard |
+| reminders | stage, channel, status, scheduled_for, sent_at; unique (org, invoice, stage, channel) | standard |
+| messages | channel, direction, status, body, provider_message_id | standard |
+| expenses | recurring rules (recurrence, next_due) | standard |
+| tds_entries | section, rate, amount, certificate_status | standard |
+| ims_status | GST IMS action per invoice | standard |
+| agent_actions | proposed/approved/executed with reasoning, policy_checks | standard |
+| pay_tokens | token_hash (sha256 hex), expires_at, used_at, revoked_at | owner/accountant read; writes only via create_pay_token |
+| audit_log | org_id (no FK, outlives org), actor_id, action, table_name, record_id, old/new data (token_hash stripped) | member read; no client insert/update/delete; trigger blocks UPDATE/DELETE/TRUNCATE for everyone |
+
+Functions/triggers: `app.member_role/is_member/can_write/is_owner` (security definer, search_path empty); `app.gstin_valid`; `app.before_update` (updated_at + org_id lock, on all org tables); `app.audit_row` (after I/U/D on all org tables except audit_log); `app.audit_block`; `app.sync_allocation`; `app.handle_new_user` on auth.users (creates org "My business", owner membership, business_profile; skipped when user_metadata.demo = true); `public.next_invoice_number(org, fy)` (row-locked, gap-free, ≤16 chars, needs write role); `public.create_pay_token(invoice, ttl)` (returns plaintext once, stores sha256).
+
+Demo org: id `00000000-0000-4000-8000-00000000de60` ("Demo Traders", state 27, regular), created in migration 0002.
 
 ## Edge functions and APIs
-(filled by task 7)
+| Name | Route | Auth | Purpose |
+|---|---|---|---|
+| demo-login | POST /functions/v1/demo-login | none (verify_jwt=false) | Ensures demo org/user/accountant membership, signs in with DEMO_EMAIL/DEMO_PASSWORD, returns {access_token, refresh_token}. Not yet deployed or run against real Supabase. |
 
 ## Frontend routes
-(filled by task 8)
+| Path | Purpose | Access |
+|---|---|---|
+| /sign-in | email OTP + Open live demo | public |
+| /pay/:token | buyer pay page (stub, S4) | public |
+| /trust | trust page (stub, S7) | public |
+| / | Today (stub) | auth |
+| /invoices, /customers, /collect, /payments, /forecast | stubs | auth |
+| /settings | org name, role, sign out | auth |
 
 ## Data
-- Demo org fixed id, demo login via edge function `demo-login`. Demo date: not set.
+- supabase/seed/seed.sql is a no-op placeholder; demo org comes from migration 0002. Demo data (customers, invoices) arrives in S2.
+- Demo login: edge function `demo-login`; demo user role is accountant. Demo date: not set (`setDemoDate()` in src/lib/dates).
 
 ## Where to find things
-(filled as built)
+| Module | Path |
+|---|---|
+| Money (Paise, parseRupees, formatINR, formatINRShort, amountInWordsIndian) | src/lib/money/ |
+| GST calc, state table, rates config, invoice type/heading | src/lib/gst/ (calc.ts, states.ts, config.ts) |
+| GSTIN validate/generate | src/lib/gstin/index.ts |
+| Dates (IST today, FY, daysBetween, formatInvoiceNumber) | src/lib/dates/index.ts |
+| Permissions mirror of RLS | src/lib/permissions.ts |
+| Supabase client / env | src/lib/supabase.ts, src/lib/env.ts |
+| Auth (OTP, demo, provider, useOrg) | src/features/auth/ |
+| Routes + providers | src/app/App.tsx; layout/nav src/app/Layout.tsx; i18n src/app/i18n.ts, src/locales/*.json |
+| Shared UI | src/components/ui/ (tokens: src/styles/tokens.css) |
+| Migrations / seed / functions | supabase/migrations, supabase/seed, supabase/functions |
+| DB tests | tests/db/ (helpers.ts has per-table insert builders; add new tables to INSERTS and ALL_ORG_TABLES) |
+| CI / deploy | .github/workflows/ci.yml, render.yaml |
 
 ## Tests
-(filled as built)
+- `npm test`: 67 unit/property tests (money, gst, gstin, dates, auth, permissions, i18n) — all pass.
+- `npm run test:db`: 135 isolation tests. Passed against PGlite (in-process Postgres 17 with stubbed auth schema, roles and pgcrypto) on 2026-10-23. NOT yet run on real local Supabase (Docker daemon would not start).
+- `npm run lint`, `npm run typecheck`, `npm run build`: pass.
+- e2e (Playwright): config only, no specs yet. Authenticated layout (sidebar / 360px bottom nav) not yet checked visually because no Supabase session was available.
 
 ## Decisions
-- 2026-10-23: Supabase CLI as npm devDependency (no global install needed).
+- 2026-10-23: Supabase CLI as npm devDependency (no global install).
+- 2026-10-23: Invoice prefix is 1-4 chars A-Z0-9 so the number stays ≤16 chars even with a 5-digit sequence.
+- 2026-10-23: Demo user is an accountant, not owner, so the public demo cannot change org, members or business profile.
+- 2026-10-23: audit_log.org_id has no FK so the trail survives org deletion; org deletion is service-role only.
+- 2026-10-23: Composite FKs (id, org_id) on all child tables to make cross-org references impossible at the DB level.
+- 2026-10-23: Accountant can read but not write orgs, memberships, business_profile (interpretation of "read/write all except").
+- 2026-10-23: Composition and unregistered suppliers collect no tax in calcInvoice; place of supply defaults to buyer GSTIN state, then buyer state, then supplier state.
+- 2026-10-23: Amount in words with paise: "Rupees X and Y Paise Only".
+- 2026-10-23: Tax rounding is half-up on integer paise; CGST/SGST each round separately from half the rate (so they can differ from IGST by 1 paisa).
+- 2026-10-23: @hookform/resolvers pinned to v5 (v6 failed to resolve peer deps with zod 4).
+- 2026-10-23: DB tests skip when the DB is unreachable unless REQUIRE_DB=1 (CI sets it).
 
 ## Needs owner
-(filled as discovered)
+1. Docker Desktop: it is installed but its engine did not start in this session (it was applying an update / may be waiting on a prompt). Open Docker Desktop, accept any prompt, wait until it says running. Then run `npm run db:start`, `npm run db:reset`, `npm run test:db` and confirm 135 pass; tell the next session if any fail.
+2. Create the Supabase project in region ap-south-1 (Mumbai). Then: `npx supabase login`, `npx supabase link --project-ref <ref>`, `npx supabase db push`.
+3. In Supabase Auth, edit the "Magic link" / "Confirm signup" email template to show the code: include `{{ .Token }}` (6 digits). Set the email OTP length to 6.
+4. Put `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in a local `.env` (copy .env.example) and in Render.
+5. Set Supabase function secrets: `npx supabase secrets set DEMO_EMAIL=... DEMO_PASSWORD=...` (any address/password you choose for the shared demo user), then `npx supabase functions deploy demo-login`.
+6. Create a GitHub repo and push `main` and `feat/foundation`; CI runs on push/PR. Merge feat/foundation into main when happy.
+7. Render: New Blueprint from the repo (render.yaml), set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`.
+8. For later sessions (not needed to deploy S1): Anthropic key, Razorpay test keys, Resend key, WhatsApp Cloud API token and phone id, n8n instance and shared secret.
 
 ## Session log
-(none yet)
+- 2026-10-23, S1 Foundation: scaffold, money/gst/gstin/dates libs, migrations 0001-0002, auth + demo-login, plain app shell with shared UI, render.yaml + CI, isolation tests. Commits 1467292..HEAD on feat/foundation.
 
 ## Next session
-Continue S1 from first unticked task.
+S2 Invoicing and import: start from branch feat/foundation (or main once merged). First confirm Needs owner item 1 (run `npm run test:db` on real Supabase) and fix anything it finds, then begin S2 tasks.
