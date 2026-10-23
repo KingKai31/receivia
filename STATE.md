@@ -3,10 +3,10 @@
 ## Status
 - [ ] S1 Foundation
   - [x] 1 Scaffold
-  - [ ] 2 lib/money
-  - [ ] 3 lib/gst
-  - [ ] 4 lib/gstin
-  - [ ] 5 lib/dates
+  - [x] 2 lib/money
+  - [x] 3 lib/gst
+  - [x] 4 lib/gstin
+  - [x] 5 lib/dates
   - [ ] 6 Migration 0001
   - [ ] 7 Auth + demo function
   - [ ] 8 App shell + ui
