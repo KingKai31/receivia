@@ -12,7 +12,10 @@
   - [x] 8 App shell + ui
   - [x] 9 render.yaml + CI
   - [x] 10 Isolation tests (135 pass on PGlite emulation; pending run on real Supabase/Docker)
-- S2 Invoicing and import: not started
+- [x] S2 Invoicing and import (all 9 tasks done; real Supabase run pending, see Needs owner 1)
+  - [x] 1 Business profile form  - [x] 2 Customers  - [x] 3 New invoice  - [x] 4 Print page /doc/invoice/:id
+  - [x] 5 Credit/debit notes  - [x] 6 Import (CSV, Excel, Tally XML)  - [x] 7 Invoices list + detail timeline
+  - [x] 8 Typed service layer + optimistic concurrency  - [x] 9 Tests
 - S3 Collections and documents: not started
 - S4 Buyer portal payments reconciliation: not started
 - S5 Forecast and prioritisation: not started
@@ -45,7 +48,7 @@
 - n8n, Resend, WhatsApp, Anthropic: not set up
 
 ## Database
-Migrations: `0001_foundation.sql`, `0002_demo_org.sql`. Every table has id uuid pk, org_id, created_at, updated_at (audit_log included; orgs.org_id = id generated). RLS enabled on all. Child tables use composite FKs `(parent_id, org_id)` so a row can never reference another org's parent. `org_id` is immutable (trigger).
+Migrations: `0001_foundation.sql`, `0002_demo_org.sql`, `0003_invoicing.sql`. Every table has id uuid pk, org_id, created_at, updated_at (audit_log included; orgs.org_id = id generated). RLS enabled on all. Child tables use composite FKs `(parent_id, org_id)` so a row can never reference another org's parent. `org_id` is immutable (trigger).
 
 Standard RLS (member read; owner/accountant write): customers, invoices, invoice_lines, notes, payments, allocations, bank_txns, disputes, promises, reminders, messages, expenses, tds_entries, ims_status, agent_actions.
 
@@ -75,6 +78,8 @@ Standard RLS (member read; owner/accountant write): customers, invoices, invoice
 
 Functions/triggers: `app.member_role/is_member/can_write/is_owner` (security definer, search_path empty); `app.gstin_valid`; `app.before_update` (updated_at + org_id lock, on all org tables); `app.audit_row` (after I/U/D on all org tables except audit_log); `app.audit_block`; `app.sync_allocation`; `app.handle_new_user` on auth.users (creates org "My business", owner membership, business_profile; skipped when user_metadata.demo = true); `public.next_invoice_number(org, fy)` (row-locked, gap-free, ≤16 chars, needs write role); `public.create_pay_token(invoice, ttl)` (returns plaintext once, stores sha256).
 
+S2 (0003): `invoices.number` and `notes.number` are nullable (drafts unnumbered; check requires a number unless draft/void). New `invoices.reverse_charge`, `delivery_address`, `disputed` (maintained from S3). `invoice_counters.series` (INV/CN/DN), unique (org, fy, series). Functions: `next_note_number(org, fy, type)` (CN/26-27/0001, DN/...); `issue_invoice(id, expected_updated_at)` and `issue_note(id, expected_updated_at)` (security definer, row-locked, assign number + set issued in one transaction, 40001 on stale updated_at); `save_invoice(org, id, expected, header jsonb, lines jsonb)` (security invoker, atomic create/update of a draft with lines, 40001 on stale updated_at, P0002 if not a draft). Imported invoices: source = 'import', status issued, no lines, original number.
+
 Demo org: id `00000000-0000-4000-8000-00000000de60` ("Demo Traders", state 27, regular), created in migration 0002.
 
 ## Edge functions and APIs
@@ -89,8 +94,12 @@ Demo org: id `00000000-0000-4000-8000-00000000de60` ("Demo Traders", state 27, r
 | /pay/:token | buyer pay page (stub, S4) | public |
 | /trust | trust page (stub, S7) | public |
 | / | Today (stub) | auth |
-| /invoices, /customers, /collect, /payments, /forecast | stubs | auth |
-| /settings | org name, role, sign out | auth |
+| /invoices, /invoices/new, /invoices/:id, /invoices/:id/edit, /invoices/:id/notes/new | list+filters, form, detail+timeline, draft edit, credit/debit note | auth |
+| /customers, /customers/new, /customers/:id, /customers/:id/edit | list, form, detail (total owed, payment record) | auth |
+| /import | CSV / Excel / Tally XML import for customers and invoices | auth (owner/accountant) |
+| /doc/invoice/:id, /doc/note/:id | print-ready A4 documents (outside the app layout) | auth |
+| /collect, /payments, /forecast | stubs | auth |
+| /settings | org name, role, sign out, business profile form (owner edits) | auth |
 
 ## Data
 - supabase/seed/seed.sql is a no-op placeholder; demo org comes from migration 0002. Demo data (customers, invoices) arrives in S2.
@@ -110,13 +119,21 @@ Demo org: id `00000000-0000-4000-8000-00000000de60` ("Demo Traders", state 27, r
 | Shared UI | src/components/ui/ (tokens: src/styles/tokens.css) |
 | Migrations / seed / functions | supabase/migrations, supabase/seed, supabase/functions |
 | DB tests | tests/db/ (helpers.ts has per-table insert builders; add new tables to INSERTS and ALL_ORG_TABLES) |
+| Typed errors, guarded update, paging, fake client for tests | src/lib/service/ (errors.ts, testing.ts) |
+| Section 34 warning | src/lib/legal/section34.ts |
+| Business profile / customers / invoices / notes services | src/features/{settings,customers,invoices,notes}/*Service.ts |
+| Invoice maths from form, display status | src/features/invoices/invoiceModel.ts |
+| Document model + A4 components, UPI link, MSME rule | src/features/documents/invoiceDocument.tsx, doc.css |
+| Import (parse, map, validate, commit, Tally) | src/features/import/ (importCore, tally, importService) |
+| PGlite harness (real migrations in-process) | tests/db/pglite.ts, tests/db/invoicing.test.ts |
 | CI / deploy | .github/workflows/ci.yml, render.yaml |
 
 ## Tests
-- `npm test`: 67 unit/property tests (money, gst, gstin, dates, auth, permissions, i18n) — all pass.
-- `npm run test:db`: 135 isolation tests. Passed against PGlite (in-process Postgres 17 with stubbed auth schema, roles and pgcrypto) on 2026-10-23. NOT yet run on real local Supabase (Docker daemon would not start).
-- `npm run lint`, `npm run typecheck`, `npm run build`: pass.
-- e2e (Playwright): config only, no specs yet. Authenticated layout (sidebar / 360px bottom nav) not yet checked visually because no Supabase session was available.
+- `npm test`: 125 unit/property tests (S1 libs + S2 service layer, document fields for all 3 invoice types, import validation incl. bad GSTIN rows, 40-invoice CSV commit, Tally XML, Section 34, forms) — all pass.
+- `npm run test:db`: tests/db/invoicing.test.ts (9, run on PGlite with the real migrations: consecutive numbering under 20 parallel issues, stale-update conflict, per-series note numbers, save_invoice, audit rows) pass. The 135 isolation tests skip without Docker; they were NOT re-run after migration 0003.
+- PGlite is single-connection, so the 20-parallel test proves gap-free/no-repeat numbering and the locking SQL, not true multi-connection contention; re-run on real Supabase.
+- `npm run lint`, `npm run typecheck`, `npm run build`: pass (bundle ~1.1 MB; xlsx not yet code-split).
+- e2e (Playwright): config only, no specs. New screens not exercised in a browser (no Supabase session available).
 
 ## Decisions
 - 2026-10-23: Supabase CLI as npm devDependency (no global install).
@@ -130,9 +147,19 @@ Demo org: id `00000000-0000-4000-8000-00000000de60` ("Demo Traders", state 27, r
 - 2026-10-23: Tax rounding is half-up on integer paise; CGST/SGST each round separately from half the rate (so they can differ from IGST by 1 paisa).
 - 2026-10-23: @hookform/resolvers pinned to v5 (v6 failed to resolve peer deps with zod 4).
 - 2026-10-23: DB tests skip when the DB is unreachable unless REQUIRE_DB=1 (CI sets it).
+- 2026-10-24 (S2): Drafts are unnumbered; the number is assigned only inside `issue_invoice` (same transaction as status change) so a failed issue never burns a number.
+- 2026-10-24 (S2): Draft save is one RPC (`save_invoice`) rather than client-side insert + lines, for atomicity.
+- 2026-10-24 (S2): Display status precedence: void, draft, paid, disputed, overdue, part paid, due soon (≤7 days), issued. Overdue beats part paid so unpaid past-due balance is never hidden.
+- 2026-10-24 (S2): Credit/debit notes carry taxable + GST rate only (no lines, no round-off); credit note cannot exceed invoice total. They do not yet reduce invoice balance (S4 reconciliation).
+- 2026-10-24 (S2): Section 34 deadline shown as 30 Nov after the invoice's FY end (outer bound; annual-return date unknown), hedged wording.
+- 2026-10-24 (S2): Imported invoices have no lines, status issued, keep original number (≤16 chars), unknown customers are auto-created, duplicates by number are skipped (idempotent re-import), total may differ from taxable+taxes by ≤ ₹1 (stored as round-off). Payments are not imported.
+- 2026-10-24 (S2): Tally: only Sundry Debtors ledgers and Sales vouchers read; other vouchers/ledgers and unknown tags are skipped and listed in the report. Import capped at 5000 rows per file.
+- 2026-10-24 (S2): SheetJS from npm (`xlsx` 0.18.5, last npm release) used for CSV/Excel; parse only, no untrusted write. fast-xml-parser for Tally; qrcode for UPI QR; @electric-sql/pglite (dev) for DB tests without Docker.
+- 2026-10-24 (S2): New-feature copy is inline English (not yet in i18n keys); extract in the design pass. Customer picker on invoice form lists up to 100 matches of a search box.
+- 2026-10-24 (S2): Business state for unregistered businesses is picked manually (no GSTIN to derive it from); with a GSTIN it is always derived.
 
 ## Needs owner
-1. Docker Desktop: it is installed but its engine did not start in this session (it was applying an update / may be waiting on a prompt). Open Docker Desktop, accept any prompt, wait until it says running. Then run `npm run db:start`, `npm run db:reset`, `npm run test:db` and confirm 135 pass; tell the next session if any fail.
+1. Docker Desktop (S2: `docker ps` returned no table within 20 s, so real Supabase run pending; skipped per instructions): it is installed but its engine did not start (it was applying an update / may be waiting on a prompt). Open Docker Desktop, accept any prompt, wait until it says running. Then run `npm run db:start`, `npm run db:reset`, `npm run test:db` and confirm the 135 isolation tests pass (and that tests/db/invoicing.test.ts still passes against real Postgres) after migration 0003; tell the next session if any fail.
 2. Create the Supabase project in region ap-south-1 (Mumbai). Then: `npx supabase login`, `npx supabase link --project-ref <ref>`, `npx supabase db push`.
 3. In Supabase Auth, edit the "Magic link" / "Confirm signup" email template to show the code: include `{{ .Token }}` (6 digits). Set the email OTP length to 6.
 4. Put `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in a local `.env` (copy .env.example) and in Render.
@@ -143,6 +170,7 @@ Demo org: id `00000000-0000-4000-8000-00000000de60` ("Demo Traders", state 27, r
 
 ## Session log
 - 2026-10-23, S1 Foundation: scaffold, money/gst/gstin/dates libs, migrations 0001-0002, auth + demo-login, plain app shell with shared UI, render.yaml + CI, isolation tests. Commits 1467292..HEAD on feat/foundation.
+- 2026-10-24, S2 Invoicing and import: migration 0003, business profile, customers, invoice form/list/detail, A4 print pages, credit/debit notes, CSV/Excel/Tally import, service layer with optimistic concurrency, tests. Branch feat/invoicing (foundation merged into main first).
 
 ## Next session
-S2 Invoicing and import: start from branch feat/foundation (or main once merged). First confirm Needs owner item 1 (run `npm run test:db` on real Supabase) and fix anything it finds, then begin S2 tasks.
+S3 Collections and documents: start from branch feat/invoicing (merge to main when happy). First, if Docker works, run `npm run db:start`, `db:reset`, `test:db` and fix failures. Then S3 tasks. Open items from S2: demo seed data (customers/invoices) was not in S2's list; UI never checked in a browser; payments import; code-split xlsx/qrcode; hi/mr copy.

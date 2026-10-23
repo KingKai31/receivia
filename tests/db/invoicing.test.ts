@@ -125,3 +125,122 @@ describe('invoice numbering', () => {
     expect(await mk('credit')).toBe('CN/26-27/0002');
   });
 });
+
+describe('save_invoice', () => {
+  const header = (over: Record<string, unknown> = {}) =>
+    JSON.stringify({
+      customer_id: customerId,
+      fy: '26-27',
+      invoice_type: 'tax_invoice',
+      issue_date: '2026-10-01',
+      due_date: '2026-10-31',
+      supplier_state_code: '27',
+      place_of_supply: '27',
+      taxable_paise: 100000,
+      cgst_paise: 9000,
+      sgst_paise: 9000,
+      igst_paise: 0,
+      round_off_paise: 0,
+      total_paise: 118000,
+      notes: null,
+      reverse_charge: true,
+      delivery_address: 'Dock 4',
+      ...over,
+    });
+  const lines = (n: number) =>
+    JSON.stringify(
+      Array.from({ length: n }, (_, i) => ({
+        description: `L${i}`,
+        hsn_sac: '8481',
+        qty: 1,
+        unit: 'Nos',
+        rate_paise: 100000 / n,
+        discount_paise: 0,
+        gst_rate: 18,
+        taxable_paise: 100000 / n,
+        cgst_paise: 9000 / n,
+        sgst_paise: 9000 / n,
+        igst_paise: 0,
+        total_paise: 118000 / n,
+      })),
+    );
+
+  it('creates an unnumbered draft with its lines in one call', async () => {
+    const r = await db.query<{
+      id: string;
+      number: string | null;
+      status: string;
+      reverse_charge: boolean;
+    }>('select * from public.save_invoice($1, null, null, $2::jsonb, $3::jsonb)', [
+      orgId,
+      header(),
+      lines(2),
+    ]);
+    expect(r.rows[0]).toMatchObject({ number: null, status: 'draft', reverse_charge: true });
+    const l = await db.query(
+      'select position from invoice_lines where invoice_id = $1 order by position',
+      [r.rows[0]!.id],
+    );
+    expect(l.rows.map((x) => (x as { position: number }).position)).toEqual([1, 2]);
+  });
+
+  it('updates a draft replacing lines, and rejects a stale updated_at as a conflict', async () => {
+    const c = await db.query<{ id: string; updated_at: string }>(
+      'select id, updated_at::text from public.save_invoice($1, null, null, $2::jsonb, $3::jsonb)',
+      [orgId, header(), lines(2)],
+    );
+    const { id, updated_at } = c.rows[0]!;
+    const u = await db.query<{ updated_at: string }>(
+      'select updated_at::text from public.save_invoice($1, $2, $3::timestamptz, $4::jsonb, $5::jsonb)',
+      [orgId, id, updated_at, header({ notes: 'edited' }), lines(1)],
+    );
+    expect(
+      (await db.query('select 1 from invoice_lines where invoice_id = $1', [id])).rows,
+    ).toHaveLength(1);
+    await expect(
+      db.query('select public.save_invoice($1, $2, $3::timestamptz, $4::jsonb, $5::jsonb)', [
+        orgId,
+        id,
+        updated_at,
+        header(),
+        lines(1),
+      ]),
+    ).rejects.toMatchObject({ message: expect.stringContaining('conflict') });
+    expect(u.rows[0]!.updated_at).not.toBe(updated_at);
+  });
+
+  it('refuses amounts that do not add up and issued invoices', async () => {
+    await expect(
+      db.query('select public.save_invoice($1, null, null, $2::jsonb, $3::jsonb)', [
+        orgId,
+        header({ total_paise: 1 }),
+        lines(1),
+      ]),
+    ).rejects.toThrow();
+    const d = await newDraft();
+    await db.query('select public.issue_invoice($1, $2::timestamptz)', [d.id, d.updated_at]);
+    const cur = await db.query<{ updated_at: string }>(
+      'select updated_at::text from invoices where id = $1',
+      [d.id],
+    );
+    await expect(
+      db.query('select public.save_invoice($1, $2, $3::timestamptz, $4::jsonb, $5::jsonb)', [
+        orgId,
+        d.id,
+        cur.rows[0]!.updated_at,
+        header(),
+        lines(1),
+      ]),
+    ).rejects.toMatchObject({ message: expect.stringContaining('not found') });
+  });
+
+  it('audit trail records create and issue', async () => {
+    const d = await newDraft();
+    await db.query('select public.issue_invoice($1, $2::timestamptz)', [d.id, d.updated_at]);
+    const a = await db.query<{ action: string }>(
+      `select action from audit_log where table_name = 'invoices' and record_id = $1 order by id`,
+      [d.id],
+    );
+    expect(a.rows.map((x) => x.action)).toEqual(['INSERT', 'UPDATE']);
+  });
+});

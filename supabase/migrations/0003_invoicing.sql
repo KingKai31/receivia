@@ -128,3 +128,66 @@ grant execute on function public.issue_invoice(uuid, timestamptz) to authenticat
 grant execute on function public.issue_note(uuid, timestamptz) to authenticated;
 
 create index invoices_org_number_idx on public.invoices (org_id, number);
+
+-- Atomic create/update of a draft invoice with its lines. Security invoker: RLS applies.
+-- p_id null creates; otherwise the draft is updated only if updated_at still equals p_expected.
+create function public.save_invoice(
+  p_org uuid, p_id uuid, p_expected timestamptz, p_header jsonb, p_lines jsonb
+) returns public.invoices
+language plpgsql security invoker set search_path = '' as $$
+declare
+  v public.invoices;
+begin
+  if p_id is null then
+    insert into public.invoices (
+      org_id, customer_id, fy, invoice_type, status, issue_date, due_date, supplier_state_code,
+      place_of_supply, taxable_paise, cgst_paise, sgst_paise, igst_paise, round_off_paise, total_paise,
+      notes, reverse_charge, delivery_address
+    ) values (
+      p_org, (p_header ->> 'customer_id')::uuid, p_header ->> 'fy', p_header ->> 'invoice_type', 'draft',
+      (p_header ->> 'issue_date')::date, (p_header ->> 'due_date')::date,
+      p_header ->> 'supplier_state_code', p_header ->> 'place_of_supply',
+      (p_header ->> 'taxable_paise')::bigint, (p_header ->> 'cgst_paise')::bigint,
+      (p_header ->> 'sgst_paise')::bigint, (p_header ->> 'igst_paise')::bigint,
+      (p_header ->> 'round_off_paise')::bigint, (p_header ->> 'total_paise')::bigint,
+      p_header ->> 'notes', coalesce((p_header ->> 'reverse_charge')::boolean, false),
+      p_header ->> 'delivery_address'
+    ) returning * into v;
+  else
+    update public.invoices set
+      customer_id = (p_header ->> 'customer_id')::uuid, fy = p_header ->> 'fy',
+      invoice_type = p_header ->> 'invoice_type',
+      issue_date = (p_header ->> 'issue_date')::date, due_date = (p_header ->> 'due_date')::date,
+      supplier_state_code = p_header ->> 'supplier_state_code', place_of_supply = p_header ->> 'place_of_supply',
+      taxable_paise = (p_header ->> 'taxable_paise')::bigint, cgst_paise = (p_header ->> 'cgst_paise')::bigint,
+      sgst_paise = (p_header ->> 'sgst_paise')::bigint, igst_paise = (p_header ->> 'igst_paise')::bigint,
+      round_off_paise = (p_header ->> 'round_off_paise')::bigint, total_paise = (p_header ->> 'total_paise')::bigint,
+      notes = p_header ->> 'notes', reverse_charge = coalesce((p_header ->> 'reverse_charge')::boolean, false),
+      delivery_address = p_header ->> 'delivery_address'
+    where id = p_id and org_id = p_org and status = 'draft' and updated_at = p_expected
+    returning * into v;
+    if not found then
+      if exists (select 1 from public.invoices where id = p_id and org_id = p_org and status = 'draft') then
+        raise exception 'conflict' using errcode = '40001';
+      end if;
+      raise exception 'draft invoice not found' using errcode = 'P0002';
+    end if;
+    delete from public.invoice_lines where invoice_id = p_id and org_id = p_org;
+  end if;
+
+  insert into public.invoice_lines (
+    org_id, invoice_id, position, description, hsn_sac, qty, unit, rate_paise, discount_paise, gst_rate,
+    taxable_paise, cgst_paise, sgst_paise, igst_paise, total_paise
+  )
+  select p_org, v.id, e.ord::int, e.l ->> 'description', e.l ->> 'hsn_sac', (e.l ->> 'qty')::numeric,
+         e.l ->> 'unit', (e.l ->> 'rate_paise')::bigint, coalesce((e.l ->> 'discount_paise')::bigint, 0),
+         (e.l ->> 'gst_rate')::numeric, (e.l ->> 'taxable_paise')::bigint, (e.l ->> 'cgst_paise')::bigint,
+         (e.l ->> 'sgst_paise')::bigint, (e.l ->> 'igst_paise')::bigint, (e.l ->> 'total_paise')::bigint
+  from jsonb_array_elements(p_lines) with ordinality as e(l, ord);
+
+  select * into v from public.invoices where id = v.id;
+  return v;
+end $$;
+
+revoke execute on function public.save_invoice(uuid, uuid, timestamptz, jsonb, jsonb) from public, anon;
+grant execute on function public.save_invoice(uuid, uuid, timestamptz, jsonb, jsonb) to authenticated;

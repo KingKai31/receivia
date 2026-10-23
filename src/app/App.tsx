@@ -5,6 +5,15 @@ import { AuthProvider } from '@/features/auth/AuthProvider';
 import { RequireAuth } from '@/features/auth/RequireAuth';
 import { SignInPage } from '@/features/auth/SignInPage';
 import { PayPage } from '@/features/pay/PayPage';
+import { CustomerDetailPage } from '@/features/customers/CustomerDetailPage';
+import { CustomerFormPage } from '@/features/customers/CustomerFormPage';
+import { CustomersPage } from '@/features/customers/CustomersPage';
+import { InvoiceDocPage, NoteDocPage } from '@/features/documents/DocPages';
+import { ImportPage } from '@/features/import/ImportPage';
+import { InvoiceDetailPage } from '@/features/invoices/InvoiceDetailPage';
+import { InvoiceFormPage } from '@/features/invoices/InvoiceFormPage';
+import { InvoicesPage } from '@/features/invoices/InvoicesPage';
+import { NoteFormPage } from '@/features/notes/NoteFormPage';
 import { SettingsPage } from '@/features/settings/SettingsPage';
 import { StubPage } from '@/features/shared/StubPage';
 import { TrustPage } from '@/features/trust/TrustPage';
@@ -26,10 +35,20 @@ export function App() {
               <Route path="/pay/:token" element={<PayPage />} />
               <Route path="/trust" element={<TrustPage />} />
               <Route element={<RequireAuth />}>
+                <Route path="/doc/invoice/:id" element={<InvoiceDocPage />} />
+                <Route path="/doc/note/:id" element={<NoteDocPage />} />
                 <Route element={<Layout />}>
                   <Route index element={<StubPage titleKey="pages.today" />} />
-                  <Route path="/invoices" element={<StubPage titleKey="pages.invoices" />} />
-                  <Route path="/customers" element={<StubPage titleKey="pages.customers" />} />
+                  <Route path="/invoices" element={<InvoicesPage />} />
+                  <Route path="/invoices/new" element={<InvoiceFormPage />} />
+                  <Route path="/invoices/:id" element={<InvoiceDetailPage />} />
+                  <Route path="/invoices/:id/edit" element={<InvoiceFormPage />} />
+                  <Route path="/invoices/:id/notes/new" element={<NoteFormPage />} />
+                  <Route path="/customers" element={<CustomersPage />} />
+                  <Route path="/customers/new" element={<CustomerFormPage />} />
+                  <Route path="/customers/:id" element={<CustomerDetailPage />} />
+                  <Route path="/customers/:id/edit" element={<CustomerFormPage />} />
+                  <Route path="/import" element={<ImportPage />} />
                   <Route path="/collect" element={<StubPage titleKey="pages.collect" />} />
                   <Route path="/payments" element={<StubPage titleKey="pages.payments" />} />
                   <Route path="/forecast" element={<StubPage titleKey="pages.forecast" />} />

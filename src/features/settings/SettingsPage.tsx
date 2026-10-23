@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { Badge, Button, Card } from '@/components/ui';
 import { signOut } from '@/features/auth/authApi';
 import { useOrg } from '@/features/auth/useOrg';
+import { BusinessProfileForm } from './BusinessProfileForm';
 
 export function SettingsPage() {
   const { t } = useTranslation();
@@ -23,6 +24,7 @@ export function SettingsPage() {
           {t('auth.signOut')}
         </Button>
       </Card>
+      <BusinessProfileForm />
     </>
   );
 }
