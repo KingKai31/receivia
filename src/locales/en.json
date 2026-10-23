@@ -1,0 +1,49 @@
+{
+  "brand": "Receivia",
+  "nav": {
+    "today": "Today",
+    "invoices": "Invoices",
+    "customers": "Customers",
+    "collect": "Collect",
+    "payments": "Payments",
+    "forecast": "Forecast",
+    "settings": "Settings",
+    "main": "Main navigation"
+  },
+  "auth": {
+    "title": "Sign in",
+    "email": "Email address",
+    "sendCode": "Send code",
+    "code": "6-digit code",
+    "verify": "Verify and sign in",
+    "codeSent": "We sent a code to {{email}}.",
+    "useOtherEmail": "Use a different email",
+    "demo": "Open live demo",
+    "signOut": "Sign out",
+    "errors": {
+      "INVALID_EMAIL": "Enter a valid email address.",
+      "OTP_SEND_FAILED": "Could not send the code. Try again in a minute.",
+      "OTP_INVALID": "That code is not correct or has expired.",
+      "DEMO_UNAVAILABLE": "The demo is not available right now."
+    }
+  },
+  "pages": {
+    "emptyTitle": "Nothing here yet",
+    "today": "Today",
+    "invoices": "Invoices",
+    "customers": "Customers",
+    "collect": "Collect",
+    "payments": "Payments",
+    "forecast": "Forecast",
+    "settings": "Settings",
+    "trust": "Trust",
+    "pay": "Pay invoice",
+    "comingSoon": "This screen is built in a later session."
+  },
+  "common": {
+    "loading": "Loading",
+    "close": "Close",
+    "role": "Your role",
+    "noOrg": "No business found for this account."
+  }
+}
