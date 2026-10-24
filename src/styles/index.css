@@ -194,7 +194,8 @@ input[type='number'] {
 }
 @keyframes intro {
   from {
-    opacity: 0;
+    /* not 0: Chrome ignores fully transparent elements for first/largest paint */
+    opacity: 0.02;
     transform: translateY(24px) scale(0.96);
     filter: blur(10px);
   }
@@ -218,7 +219,7 @@ input[type='number'] {
 
 /* Motion: states only apply when JS is running, so content is visible without it. */
 .js .rv {
-  opacity: 0;
+  opacity: 0.02;
   transform: translateY(46px) scale(0.985);
   filter: blur(10px);
   clip-path: inset(12% 0 0 0 round 24px);
