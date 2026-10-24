@@ -49,7 +49,7 @@ export function arrivalAtoms(
   const atoms: Atom[] = [];
   let rest = 1;
   if (inv.promisedFor) {
-    const p = Math.max(0, daysBetween(today, inv.promisedFor));
+    const p = Math.max(0, daysBetween(today, inv.promisedFor)) + (inv.extraDelayDays ?? 0);
     const kept = cfg.promiseKeptProb;
     for (const add of [0, 1, 2]) atoms.push({ offset: p + add, weight: (kept / 3) * alive });
     rest = 1 - kept;

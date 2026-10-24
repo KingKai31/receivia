@@ -29,6 +29,10 @@ export function Layout() {
     <div className="min-h-screen md:flex">
       <a
         href="#main"
+        onClick={(e) => {
+          e.preventDefault();
+          document.getElementById('main')?.focus();
+        }}
         className="sr-only focus:not-sr-only focus:fixed focus:left-2 focus:top-2 focus:z-50 focus:bg-white focus:p-3"
       >
         {t('Skip to content')}

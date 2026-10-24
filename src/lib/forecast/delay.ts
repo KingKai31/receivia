@@ -19,6 +19,7 @@ export function settledOn(inv: HistInvoice, asOf?: ISODate): ISODate | null {
 
 /** Balance left on an invoice as of a date (payments only). */
 export function balanceAsOf(inv: HistInvoice, asOf: ISODate): number {
+  if (inv.closedOn && inv.closedOn <= asOf) return 0;
   const paid = inv.events.filter((e) => e.date <= asOf).reduce((s, e) => s + e.amountPaise, 0);
   return Math.max(inv.totalPaise - paid, 0);
 }
