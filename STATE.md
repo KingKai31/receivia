@@ -31,7 +31,7 @@
   - [x] 1 hi/mr everywhere  - [x] 2 Accessibility + axe  - [x] 3 PWA  - [x] 4 Privacy (DPDP)  - [x] 5 /trust  - [x] 6 Error boundaries, states, error log
   - [x] 7 Live demo-story e2e  - [x] 8 Reviewer subagent  - [x] 9 Lighthouse  - [x] 10 Scale  - [x] 11 Demo re-seeded
 - [x] S9 Design pass (approved reference docs/design/receivia-final.html applied app-wide; live Lighthouse result in Tests)
-- S8 Ship: not started
+- [x] S8 Ship (demo story seeded and calibrated, live walk passes, README + docs written; owner items: Render env for the demo-reset cron, video and team names)
 
 ## Environment
 | Var | Purpose | Where set | Status |
@@ -153,7 +153,7 @@ All deployed with `node scripts/sb.mjs functions deploy <name> --project-ref '$R
 - Daily job: Render workflow (automation/render: tasks daily, runOrg, plan, send, brief, log; 3 retries, backoff x2) started by cron receivia-agent-daily; fallback pg_cron (`node scripts/setup-pgcron.mjs`); on demand `node scripts/agent-run.mjs [--org id] [--step ...]` or Run agent now on /collect.
 
 ## Data
-- supabase/seed/seed.sql is a no-op placeholder; demo org comes from migration 0002. Demo customers + 8 open invoices: `node scripts/seed-demo.mjs` (idempotent, data in supabase/seed/demo-data.json, already run). `node scripts/reset-demo.mjs` clears payments/bank/TDS/claims/etc. and re-seeds (audit_log stays). supabase/seed/bank-statement.csv matches those invoices: exact, part, multi-invoice, 194C short, overpayment, unknown, GST TDS 2% (government), 194Q 0.1%, plus a debit.
+- supabase/seed/seed.sql is a no-op placeholder; demo org comes from migration 0002. The demo story (Shree Ganesh Corrugators, Pune; 12 customers, 46 invoices over 6 months, 8 expenses, one open dispute, one promise, one pending claim) is pure data in supabase/seed/demo-story.mjs, written by `node scripts/seed-demo.mjs` (idempotent; DEMO_DATE=YYYY-MM-DD, default today IST; all dates are offsets from it; sets business_profile.demo_date; the opening balance is calibrated with the real forecast engine, supabase/seed/forecast.bundle.js built by `node scripts/build-agent.mjs`, so week 3 is short by about Rs 1,30,000 on any day). `node scripts/reset-demo.mjs` deletes the demo org's invoices, customers, expenses, payments, bank lines etc. and re-seeds (audit_log stays; demo org only; never run db-remote reset-test). supabase/seed/bank-statement.csv matches the open invoices (exact, part, GST TDS 2% for City Hospital, 194Q 0.1% for Bharat Auto, unknown deposit, debit). Nightly reset: Render cron `receivia-demo-reset` (02:00 IST, render.yaml) needs TEST_DATABASE_URL (Needs owner 12).
 - Demo login: edge function `demo-login`; demo user role is accountant. Demo date: not set (`setDemoDate()` in src/lib/dates).
 
 ## Where to find things
@@ -176,7 +176,7 @@ All deployed with `node scripts/sb.mjs functions deploy <name> --project-ref '$R
 | Letter + case pack models/components, pages | src/features/documents/collectionDocs.tsx, CollectionDocPages.tsx |
 | Forecast maths (pure): delay model, arrival distribution, Monte Carlo, backtest, what-ifs, chase priority, gap solver, tiles; all numbers in config.ts | src/lib/forecast/ |
 | Forecast loading, charts (plain SVG), pages, expenses, cash settings | src/features/forecast/ (forecastService.ts, charts.tsx, ForecastPage.tsx, ExpensesPage.tsx, ForecastSettings.tsx), src/features/today/TodayPage.tsx, src/features/collect/rank.ts |
-| Demo history generator + seeds | scripts/gen-demo-history.mjs -> supabase/seed/demo-history.json; scripts/seed-demo.mjs; scripts/reset-demo.mjs |
+| Demo story data + seed + reset | supabase/seed/demo-story.mjs; scripts/seed-demo.mjs; scripts/reset-demo.mjs; test src/lib/forecast/demo.test.ts (6 demo dates); Lighthouse on the live site: scripts/lighthouse-live.mjs |
 | Remote DB runner (ping, reset-test, migrate-prod, status) | scripts/db-remote.mjs (reset-test is DESTRUCTIVE: never run it now that the demo seed exists) |
 | Supabase CLI wrapper, demo seed/reset, deployed-pay smoke | scripts/sb.mjs, scripts/seed-demo.mjs, scripts/reset-demo.mjs, scripts/smoke-pay.mjs |
 | Bank CSV, matching, TDS rules, TDS ledger/26AS | src/lib/match/ (bankCsv.ts, match.ts, tds.ts, tdsLedger.ts) |
@@ -209,6 +209,7 @@ All deployed with `node scripts/sb.mjs functions deploy <name> --project-ref '$R
 - `npm run lint`, `npm run typecheck`, `npm run build`: pass (bundle ~1.1 MB; xlsx not yet code-split).
 - e2e (Playwright): config only, no specs. New screens not exercised in a browser (no Supabase session available).
 
+- S8 Lighthouse mobile on the live site, 2026-10-25, demo session (scripts/lighthouse-live.mjs): / perf 92, a11y 100, best practices 100; /forecast 88/100/100; /pay/:token 73/100/100 (LCP 4.2 s; qrcode now lazy-loaded). Supabase/TanStack are not split out of the entry chunk (AuthProvider and the sign-in page use them statically; too coupled to move safely). Live demo story (tests/e2e/demo-story.spec.ts) passes 6/6 on https://receivia.onrender.com and reseeds afterwards. `npm test` 375, `npm run test:db` 49 (local PGlite). Secret scan: no keys in tracked files or history; .env.production holds only the public URL and the anon key (role anon); repo is public.
 - S9 Lighthouse mobile, live, 2026-10-25 (local Edge, simulated slow 4G): /sign-in 87 perf / 100 a11y, /trust 86 / 100, /privacy 84 / 100. Perf target 90 NOT met (FCP about 3.5 s, JS-bound; a pre-design build measured 83 on the same machine, so the design is not the cause). Tried: lazy hi/mr locales, cheaper blobs. Next: split supabase/react-query out of the entry chunk. /, /forecast and /pay/:token need a session or token and were not measured.
 
 ## Decisions
@@ -226,6 +227,7 @@ All deployed with `node scripts/sb.mjs functions deploy <name> --project-ref '$R
 - 2026-10-23: Composite FKs (id, org_id) on all child tables to make cross-org references impossible at the DB level.
 - 2026-10-23: Accountant can read but not write orgs, memberships, business_profile (interpretation of "read/write all except").
 - 2026-10-23: Composition and unregistered suppliers collect no tax in calcInvoice; place of supply defaults to buyer GSTIN state, then buyer state, then supplier state.
+- 2026-10-25 (S8): Demo dates are offsets from the seed day (default today IST) rather than a fixed calendar date, because the app's forecast and overdue days use the real date; a fixed date would drift. The week-3 story is kept by calibrating the opening balance at seed time and is tested on six different seed dates. Planner and match unit tests keep their own frozen fixtures (src/features/agent/fixtures, src/lib/match/fixtures).
 - 2026-10-23: Amount in words with paise: "Rupees X and Y Paise Only".
 - 2026-10-23: Tax rounding is half-up on integer paise; CGST/SGST each round separately from half the rate (so they can differ from IGST by 1 paisa).
 - 2026-10-23: @hookform/resolvers pinned to v5 (v6 failed to resolve peer deps with zod 4).
@@ -282,6 +284,7 @@ All deployed with `node scripts/sb.mjs functions deploy <name> --project-ref '$R
 - 2026-10-25 (S9 design): tokens in src/styles/tokens.css are the single source (light + dark, Settings toggle stored as receivia.theme). Shared UI in src/components/ui (display.tsx holds GlassCard, HeroCard, Pill, Avatar, StatTile, HorizontalTiles, ListRow, Timeline, Gauge, MoneyTable, Alert, Skeleton, Title, CountUp). Motion in src/lib/motion (Lenis 1.1.13 loaded lazily, off on reduced motion and /doc). Hero keeps the vivid reference gradient; AA comes from text-shadow plus a local scrim behind small lines. Muted, blue-deep, peach-deep and link colours are darker than the reference for AA. Pay page: amount counts down to ₹0 only when the invoice is paid; after a claim or promise it shows a tick and keeps the amount (a claim does not change the balance). Agent pipeline steps are time-driven while the single server call runs; counters are live from polled agent_actions. Playwright runs with reducedMotion so e2e reads settled numbers. /doc/* print pages unchanged except font. hi/mr strings added with scripts/add-keys.mjs.
 
 ## Needs owner
+12. Render: on the cron job `receivia-demo-reset` set TEST_DATABASE_URL (the Supabase session-pooler URL from .env.local); until then reseed by hand with `node scripts/reset-demo.mjs`. Also: record the video and paste its link into README.md (VIDEO_LINK_PLACEHOLDER) and docs/deck.md; add team names (TEAM_NAMES_PLACEHOLDER); add a real owner quote to docs/demo-script.md; verify the competitor table in docs/deck.md before presenting; copy docs/submission.md into the HackCache form.
 8. Native-speaker review of Hindi and Marathi (all machine-written, hedged legal lines included): the Payment Demand Letter disclaimer ("This letter is from ... not a legal notice from a lawyer"), Section 34 / 43B(h) / ITC 180-day / MSME Form I sentences, privacy notice, trust page, consent wording, reminder templates, pay page, owner brief, amount-in-words tables (Marathi 100 is शंभर, 200 दोनशे ...; Hindi सौ/हज़ार/लाख/करोड़). Terms to check: चालान vs बिल for invoice, "भुगतान माँग पत्र" / "पेमेंट डिमांड लेटर", सुरक्षा बफर, पूर्वानुमान vs अंदाज, short month names (अक्टू॰, ऑक्टो).
 9. Grievance contact for Receivia itself on /privacy (the text says it will be published). Retention wording is generic ("several years"); confirm with a CA.
 10. Confirm the RBI bank rate in src/lib/legal/config.ts (5.75 placeholder; the reviewer thinks it may have changed): it drives the MSMED interest (3x).
@@ -296,6 +299,7 @@ All deployed with `node scripts/sb.mjs functions deploy <name> --project-ref '$R
 7. Decide after the hackathon: split into separate test and prod Supabase projects (the DB test suites currently create and delete their own orgs/users in the live project) and consider Mumbai.
 
 ## Session log
+- 2026-10-25, S8 Ship: feat/ship merged to main. New demo story and calibrated seed, nightly reset cron (render.yaml), Open live demo is the primary sign-in button, demo-login renames the org, live walk passes, README, docs/demo-script.md, docs/deck.md, docs/submission.md, CI fixes (npm test glob quoting, prettier ignores generated files).
 - 2026-10-24, S7 Quality and trust: branch feat/quality merged to main and pushed. hi/mr for all screens (English sentence is the key; pattern keys translate messages built in code), language picker in own script (also on the pay page), PWA with offline Today/Forecast (IndexedDB copy cleared on sign-out), axe + keyboard + 360px e2e, privacy (consents, export, erase, notice), /trust, error boundaries + app_errors log + lazy routes, migrations 0009-0011 applied to the live project, agent-run/approve-actions/draft-message redeployed, scale test, live demo-story e2e, reviewer fixes.
 - 2026-10-23, S1 Foundation: scaffold, money/gst/gstin/dates libs, migrations 0001-0002, auth + demo-login, plain app shell with shared UI, render.yaml + CI, isolation tests. Commits 1467292..HEAD on feat/foundation.
 - 2026-10-24, S2 Invoicing and import: migration 0003, business profile, customers, invoice form/list/detail, A4 print pages, credit/debit notes, CSV/Excel/Tally import, service layer with optimistic concurrency, tests. Branch feat/invoicing (foundation merged into main first).
@@ -309,5 +313,6 @@ All deployed with `node scripts/sb.mjs functions deploy <name> --project-ref '$R
 - 2026-10-24, S6 Agent, automation, live deploy: feat/forecast merged into main; branch feat/agent merged back and main pushed. Migration 0008, planner, draft validator, 3 edge functions, Resend sender, brief + approve link, Render workflow + cron + pg_cron, Settings/Collect/Today UI, live Playwright smoke.
 
 ## Next session
+After the hackathon: Needs owner 12 and the list above; Razorpay keys (1); split test and prod Supabase projects (7). Older notes follow.
 S9 Design pass (visual design is the owner's call; placeholder icons, plain shell, 9-item bottom nav at 360px), then S8 Ship. Open from S7: Needs owner 8-11, 5a, 5b, 6, Razorpay keys (1). Re-measure Lighthouse on /trust after the deploy. Older notes follow.
 S7 Quality and trust. Open items from S6: Needs owner 5a, 5b, 6; the Render env group did not reach the first build (fallback .env.production in place); agent panel and settings are plain and English-only; hi/mr brief text is machine-written. Earlier open items: Razorpay keys (Needs owner 1), email OTP sign-in untested, hi/mr copy review, inline English copy to move to i18n in the design pass, `accepted_on` has no form field, the mobile bottom nav now has 9 items (design pass), forecast rates (TReDS 12%, discount 2%, deferral fee 1.5% a month, bad-debt table) are assumptions to confirm. Never run `db-remote.mjs reset-test`.

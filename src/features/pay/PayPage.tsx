@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import QRCode from 'qrcode';
 import { useParams } from 'react-router-dom';
 import { Badge, Button, Card, CountDown, CountUp, Input, Select, Skeleton } from '@/components/ui';
 import { upiUri } from '@/features/documents/invoiceDocument';
@@ -138,7 +137,8 @@ function PayBody({ token, v, onChanged }: { token: string; v: PayView; onChanged
   const qr = useQuery({
     queryKey: ['pay-qr', uri],
     enabled: Boolean(uri) && !paid,
-    queryFn: () => QRCode.toDataURL(uri!, { margin: 1, width: 240 }),
+    queryFn: async () =>
+      (await import('qrcode')).default.toDataURL(uri!, { margin: 1, width: 240 }),
   });
   const paused = v.open_dispute || v.pending_claim || done;
   const online = v.razorpay.configured && v.razorpay_link_url ? v.razorpay_link_url : null;

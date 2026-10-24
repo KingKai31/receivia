@@ -56,7 +56,7 @@ test('approve a Hindi reminder', async () => {
     await expect(row().first()).toBeVisible(BIG);
   }
   // This customer prefers Hindi, so the message shown on the page is in Hindi.
-  await expect(page.getByText(/नमस्ते/).first()).toBeVisible();
+  await expect(page.getByLabel('Message (hi)').first()).toHaveValue(/प्रिय/);
   await row().first().getByRole('button', { name: 'Approve and send' }).click();
   // Once approved the action leaves the proposed list (in test mode the email goes to the owner).
   await expect(row()).toHaveCount(0, BIG);

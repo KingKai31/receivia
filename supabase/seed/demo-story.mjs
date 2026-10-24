@@ -294,6 +294,7 @@ export function forecastInput(lib, today, openingBalancePaise = 0) {
   }));
   const hist = [];
   const open = [];
+  const b = beats(invoices);
   for (const i of invoices) {
     if (i.paid_off !== null) {
       hist.push({
@@ -311,6 +312,9 @@ export function forecastInput(lib, today, openingBalancePaise = 0) {
         customerId: i.customer,
         dueDate: i.due,
         balancePaise: i.total_paise,
+        // The open dispute and the active promise change the forecast exactly as the app applies them.
+        disputed: i === b.aurangDispute,
+        promisedFor: i === b.puneOverdue ? addDays(today, 3) : null,
       });
     }
   }

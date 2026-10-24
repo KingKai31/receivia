@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "test": "vitest run --exclude tests/db/**",
+    "test": "vitest run --exclude \"tests/db/**\"",
     "test:db": "vitest run --config vitest.db.config.ts",
     "test:db:remote": "node scripts/test-db-remote.mjs",
     "e2e": "playwright test",
