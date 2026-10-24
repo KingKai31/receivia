@@ -197,6 +197,29 @@ export const INSERTS: Record<string, Builder> = {
      values ($1, $2, encode(extensions.digest($3, 'sha256'), 'hex'), now() + interval '1 day')`,
     [o, r.invoice, `tok-${t}`],
   ],
+  delivery_proofs: (o, r, t) => [
+    `insert into delivery_proofs (org_id, invoice_id, path, mime, size_bytes, delivered_on)
+     values ($1, $2, $3, 'application/pdf', 1000, '2026-10-02')`,
+    [o, r.invoice, `${o}/${t}.pdf`],
+  ],
+  instalment_plans: (o, r) => [
+    `insert into instalment_plans (org_id, invoice_id, total_paise) values ($1, $2, 118000)`,
+    [o, r.invoice],
+  ],
+  instalments: (o) => [
+    `insert into instalments (org_id, plan_id, seq, due_on, amount_paise)
+     select $1, id, 1, '2026-11-10', 59000 from instalment_plans where org_id = $1 limit 1`,
+    [o],
+  ],
+  statement_tokens: (o, r, t) => [
+    `insert into statement_tokens (org_id, customer_id, token_hash, expires_at)
+     values ($1, $2, encode(extensions.digest($3, 'sha256'), 'hex'), now() + interval '1 day')`,
+    [o, r.customer, `stm-${t}`],
+  ],
+  statement_responses: (o, r) => [
+    `insert into statement_responses (org_id, customer_id, kind, balance_paise) values ($1, $2, 'confirmed', 118000)`,
+    [o, r.customer],
+  ],
   business_profile: (o) => [`insert into business_profile (org_id) values ($1)`, [o]],
   memberships: (o) => [
     `insert into memberships (org_id, user_id, role) values ($1, $2, 'ca')`,
@@ -228,6 +251,10 @@ export const STANDARD_TABLES = [
   'ims_status',
   'agent_actions',
   'customer_consents',
+  'delivery_proofs',
+  'instalment_plans',
+  'instalments',
+  'statement_responses',
 ] as const;
 
 export const ALL_ORG_TABLES = [
@@ -239,6 +266,7 @@ export const ALL_ORG_TABLES = [
   'agent_runs',
   'app_errors',
   'pay_tokens',
+  'statement_tokens',
   'audit_log',
 ] as const;
 
@@ -278,6 +306,11 @@ export async function seedOrg(admin: pg.Client, org: string): Promise<Refs> {
     'customer_consents',
     'app_errors',
     'pay_tokens',
+    'delivery_proofs',
+    'instalment_plans',
+    'instalments',
+    'statement_tokens',
+    'statement_responses',
   ]) {
     await one(t, refs, fx);
   }
