@@ -5,6 +5,7 @@ import { Link, useParams } from 'react-router-dom';
 import { Card, Loading, ResponsiveTable } from '@/components/ui';
 import { formatINR, paise } from '@/lib/money';
 import { errorMessage } from '@/lib/service/errors';
+import { ReplyBox } from '@/features/ai/ReplyBox';
 import { ConsentCard } from '@/features/privacy/ConsentCard';
 import { customerSummary, getCustomer, type CustomerPayment } from './customerService';
 
@@ -45,6 +46,7 @@ export function CustomerDetailPage() {
           <dd>{c.opt_in_whatsapp ? t('Agreed') : t('Not agreed')}</dd>
         </dl>
       </Card>
+      <ReplyBox customerId={c.id} />
       <ConsentCard customerId={c.id} />
       <Card>
         <h2>{t('Total owed')}</h2>

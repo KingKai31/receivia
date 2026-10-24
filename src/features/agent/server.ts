@@ -12,7 +12,7 @@ import { rankGroups } from '@/features/collect/rank';
 import { firstShortfall } from '@/lib/forecast';
 import { todayIST, type ISODate } from '@/lib/dates';
 import { buildBrief, signApproval, verifyApproval } from './brief';
-import { draftMessage, templateDraft } from './draft';
+import { draftMessage, templateDraft, toneFor, type CustomerHistory } from './draft';
 import {
   existingKey,
   inQuiet,
@@ -109,16 +109,34 @@ async function chaseFor(db: Db, orgId: string, today: ISODate) {
   try {
     const ctx = await loadForecastContext(orgId, today, db);
     const c = compute(ctx);
-    return { chase: c.chase, shortfallWeek: firstShortfall(c.forecast)?.week ?? null };
+    const history = new Map<string, CustomerHistory>();
+    for (const [id, d] of ctx.models.byCustomer) {
+      if (d.n === 0 || d.samples.length === 0) continue;
+      history.set(id, {
+        n: d.n,
+        onTimePct: (d.samples.filter((x) => x <= 0).length / d.samples.length) * 100,
+        avgDelayDays: d.samples.reduce((a, b) => a + b, 0) / d.samples.length,
+      });
+    }
+    return { chase: c.chase, shortfallWeek: firstShortfall(c.forecast)?.week ?? null, history };
   } catch {
-    return { chase: [], shortfallWeek: null as number | null };
+    return {
+      chase: [],
+      shortfallWeek: null as number | null,
+      history: new Map<string, CustomerHistory>(),
+    };
   }
 }
 
 async function ranked(db: Db, orgId: string, today: ISODate) {
   const data = await loadToday(orgId, today, db);
   const f = await chaseFor(db, orgId, today);
-  return { ...data, groups: rankGroups(data.groups, f.chase), shortfallWeek: f.shortfallWeek };
+  return {
+    ...data,
+    groups: rankGroups(data.groups, f.chase),
+    shortfallWeek: f.shortfallWeek,
+    history: f.history,
+  };
 }
 
 // ---- Plan ------------------------------------------------------------------------------------
@@ -165,7 +183,7 @@ export async function runPlan(db: Db, orgId: string, env: AgentEnv): Promise<Pla
       .eq('id', s.id);
   }
 
-  const { groups } = await ranked(db, orgId, today);
+  const { groups, history } = await ranked(db, orgId, today);
   const ex = must(
     await db
       .from('agent_actions')
@@ -244,6 +262,8 @@ export async function runPlan(db: Db, orgId: string, env: AgentEnv): Promise<Pla
               lensAllowed: a.lensAllowed,
               business: p.legal_name,
               customerText,
+              history: history.get(g.customer.id) ?? null,
+              openDispute: customerText !== null,
             },
             { anthropicKey: env.anthropicKey, fetchImpl: env.fetchImpl },
           )
@@ -251,11 +271,19 @@ export async function runPlan(db: Db, orgId: string, env: AgentEnv): Promise<Pla
             ...templateDraft(a.stage as MessageStage, g.customer.language),
             source: 'template' as const,
             note: 'draft cap reached: template',
+            why: toneFor({
+              stage: a.stage as MessageStage,
+              language: g.customer.language,
+              tier: g.customer.tier,
+              lensAllowed: false,
+              business: p.legal_name,
+              history: history.get(g.customer.id) ?? null,
+            }).why,
           };
       subject = dr.subject;
       body = dr.body;
       source = dr.source;
-      note = dr.note;
+      note = `${dr.note}. ${dr.why}`;
       if (dr.source === 'ai') res.aiDrafts++;
       else res.templateDrafts++;
     }
@@ -772,3 +800,5 @@ export async function runAll(
     .eq('id', run.id);
   return { status, steps };
 }
+
+export { askBooks, classifyReply, loadBooks, loadOpenInvoices } from '@/features/ai/server';

@@ -183,7 +183,64 @@ const TONE: Record<MessageStage, string> = {
   demand_letter: 'formal',
 };
 
+export interface CustomerHistory {
+  /** Paid invoices in the history. */
+  n: number;
+  /** Share of them paid on or before the due date, 0-100. */
+  onTimePct: number;
+  /** Average days late (negative = early). */
+  avgDelayDays: number;
+}
+
+export type Reliability = 'new' | 'reliable' | 'mixed' | 'slow';
+
+export function reliabilityOf(h: CustomerHistory | null | undefined): Reliability {
+  if (!h || h.n < 3) return 'new';
+  if (h.onTimePct >= 80) return 'reliable';
+  if (h.avgDelayDays >= 20 || h.onTimePct <= 30) return 'slow';
+  return 'mixed';
+}
+
+const LANG_NAME: Record<Lang, string> = { en: 'English', hi: 'Hindi', mr: 'Marathi' };
+
+/** The tone for this customer and a one-line reason the owner can read ("why this tone"). */
+export function toneFor(f: DraftFacts): { tone: string; why: string } {
+  const rel = reliabilityOf(f.history);
+  const parts = [TONE[f.stage]];
+  const why: string[] = [];
+  if (rel === 'reliable') {
+    parts.push('assume it slipped their mind; keep it light and appreciative');
+    why.push(
+      `softer because they paid ${Math.round(f.history!.onTimePct)}% of ${f.history!.n} invoices on time`,
+    );
+  } else if (rel === 'slow') {
+    parts.push(
+      f.stage === 'overdue_firm' || f.stage === 'final'
+        ? 'clear and specific, ask for a firm pay date'
+        : 'clear and specific about the due date',
+    );
+    why.push(
+      `clearer because they usually pay about ${Math.max(0, Math.round(f.history!.avgDelayDays))} days late`,
+    );
+  } else if (rel === 'mixed') why.push('standard tone: payment history is mixed');
+  else why.push('standard tone: not enough payment history yet');
+  if (f.tier === 'key') {
+    parts.push('respectful, relationship first');
+    why.push('key customer');
+  }
+  if (f.openDispute) {
+    parts.push('acknowledge their earlier concern before asking');
+    why.push('they raised a concern earlier');
+  }
+  why.push(`${LANG_NAME[f.language]} because that is their language`);
+  return { tone: parts.join('; '), why: `Why this tone: ${why.join('; ')}.` };
+}
+
+  history?: CustomerHistory | null;
+  openDispute?: boolean;
 export interface DraftFacts {
+  history?: CustomerHistory | null;
+  openDispute?: boolean;
   stage: MessageStage;
   language: Lang;
   tier: 'key' | 'standard';
@@ -205,7 +262,8 @@ export function fenceCustomerText(text: string | null | undefined): string {
 export function buildUserPrompt(f: DraftFacts): string {
   const facts = {
     stage: f.stage,
-    tone: TONE[f.stage],
+    tone: toneFor(f).tone,
+    payment_history: reliabilityOf(f.history),
     language: f.language,
     customer_tier: f.tier,
     lens_line_allowed: f.lensAllowed,
@@ -217,6 +275,8 @@ export function buildUserPrompt(f: DraftFacts): string {
 export interface DraftResult extends Draft {
   source: 'ai' | 'template';
   note: string;
+  /** One line on why the tone fits this customer. */
+  why: string;
 }
 
 export interface DraftEnv {
@@ -232,6 +292,7 @@ export async function draftMessage(facts: DraftFacts, env: DraftEnv): Promise<Dr
     ...templateDraft(facts.stage, facts.language),
     source: 'template',
     note,
+    why: toneFor(facts).why,
   });
   if (!AI_STAGES.includes(facts.stage)) return fallback('fixed wording for this stage');
   if (!env.anthropicKey) return fallback('no model key: template');
@@ -257,7 +318,7 @@ export async function draftMessage(facts: DraftFacts, env: DraftEnv): Promise<Dr
       .join('');
     const check = validateDraft(parseModelJson(text), facts.stage);
     if (!check.ok) return fallback(`draft rejected (${check.reason}): template`);
-    return { ...check.draft, source: 'ai', note: 'model wording, validated' };
+    return { ...check.draft, source: 'ai', note: 'model wording, validated', why: toneFor(facts).why };
   } catch {
     return fallback('model unreachable: template');
   }
