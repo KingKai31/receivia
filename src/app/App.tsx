@@ -10,6 +10,9 @@ import { CustomerFormPage } from '@/features/customers/CustomerFormPage';
 import { CustomersPage } from '@/features/customers/CustomersPage';
 import { InvoiceDocPage, NoteDocPage } from '@/features/documents/DocPages';
 import { CaseDocPage, LetterDocPage } from '@/features/documents/CollectionDocPages';
+import { ExpensesPage } from '@/features/forecast/ExpensesPage';
+import { ForecastPage } from '@/features/forecast/ForecastPage';
+import { TodayPage } from '@/features/today/TodayPage';
 import { InboxPage } from '@/features/inbox/InboxPage';
 import { PaymentsPage } from '@/features/payments/PaymentsPage';
 import { TdsPage } from '@/features/payments/TdsPage';
@@ -45,7 +48,7 @@ export function App() {
                 <Route path="/doc/letter/:id" element={<LetterDocPage />} />
                 <Route path="/doc/case/:customerId" element={<CaseDocPage />} />
                 <Route element={<Layout />}>
-                  <Route index element={<StubPage titleKey="pages.today" />} />
+                  <Route index element={<TodayPage />} />
                   <Route path="/invoices" element={<InvoicesPage />} />
                   <Route path="/invoices/new" element={<InvoiceFormPage />} />
                   <Route path="/invoices/:id" element={<InvoiceDetailPage />} />
@@ -60,7 +63,8 @@ export function App() {
                   <Route path="/inbox" element={<InboxPage />} />
                   <Route path="/payments" element={<PaymentsPage />} />
                   <Route path="/payments/tds" element={<TdsPage />} />
-                  <Route path="/forecast" element={<StubPage titleKey="pages.forecast" />} />
+                  <Route path="/forecast" element={<ForecastPage />} />
+                  <Route path="/expenses" element={<ExpensesPage />} />
                   <Route path="/settings" element={<SettingsPage />} />
                 </Route>
               </Route>

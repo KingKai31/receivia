@@ -17,16 +17,20 @@ import {
 } from './collectService';
 import { STAGE_LABEL } from './ladder';
 import { PAY_LINK_PLACEHOLDER, prettyDate, type TodayGroup } from './today';
+import { rankGroups, reasonByInvoice } from './rank';
 import { canSend, mailtoUrl, smsUrl, whatsappUrl } from './templates';
+import { useForecast } from '@/features/forecast/useForecast';
 
 function GroupCard({
   group,
   orgId,
   onChanged,
+  reasons,
 }: {
   group: TodayGroup;
   orgId: string;
   onChanged: () => void;
+  reasons: Map<string, string>;
 }) {
   const toast = useToast();
   const c = group.customer;
@@ -87,6 +91,7 @@ function GroupCard({
               ? ''
               : ' (waits for a later day: one message per customer per day)'}
             {it.needsApproval ? ' · needs your approval' : ''}
+            {reasons.get(it.invoice.id) ? <div>Priority: {reasons.get(it.invoice.id)}</div> : null}
           </li>
         ))}
       </ul>
@@ -238,6 +243,9 @@ export function CollectTodayPage() {
   const orgId = org.data?.orgId;
   const qc = useQueryClient();
   const today = todayIST();
+  const fc = useForecast();
+  const chase = fc.computed?.chase ?? [];
+  const reasons = reasonByInvoice(chase);
   const q = useQuery({
     queryKey: ['collect-today', orgId, today],
     enabled: Boolean(orgId),
@@ -254,11 +262,12 @@ export function CollectTodayPage() {
       {q.error ? <p role="alert">{errorMessage(q.error)}</p> : null}
       {q.data?.truncated ? <p role="status">Showing the first 1000 live invoices only.</p> : null}
       {q.data && q.data.groups.length === 0 ? <p>Nothing to send today.</p> : null}
-      {q.data?.groups.map((g) => (
+      {(q.data ? rankGroups(q.data.groups, chase) : []).map((g) => (
         <GroupCard
           key={`${g.customer.id}-${g.primary.invoice.id}-${g.primary.stage}`}
           group={g}
           orgId={orgId!}
+          reasons={reasons}
           onChanged={() => void qc.invalidateQueries({ queryKey: ['collect-today'] })}
         />
       ))}
