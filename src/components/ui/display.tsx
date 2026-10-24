@@ -163,7 +163,7 @@ export function StatTile({ label, value, format, icon = 'card', index = 0, note 
 /** Scroll-snap carousel of tiles. */
 export function HorizontalTiles({ children, label }: { children: ReactNode; label: string }) {
   return (
-    <div className="h-tiles seq" role="group" aria-label={label}>
+    <div className="h-tiles seq" role="group" aria-label={label} tabIndex={0}>
       {children}
     </div>
   );

@@ -170,9 +170,9 @@ export function ExpensesPage() {
           )}
         </p>
       ) : null}
-      <ul className="tnum">
+      <ul className="tnum seq m-0 flex list-none flex-col gap-3 p-0">
         {q.data?.rows.map((r) => (
-          <li key={r.id}>
+          <li key={r.id} className="ui-row-card">
             <strong>{r.name}</strong>{' '}
             {t('· {{formatINR}} ·', { formatINR: formatINR(paise(r.amount_paise)) })}{' '}
             {r.is_recurring

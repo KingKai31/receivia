@@ -3,7 +3,17 @@ import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { Badge, Button, Card, Loading, Select, useToast } from '@/components/ui';
+import {
+  Badge,
+  Button,
+  Card,
+  ListRow,
+  Loading,
+  RowList,
+  Select,
+  Title,
+  useToast,
+} from '@/components/ui';
 import { useOrg } from '@/features/auth/useOrg';
 import {
   guessMapping,
@@ -218,7 +228,7 @@ export function PaymentsPage() {
         <Link to="/payments/tds">{t('TDS certificates')}</Link>
       </p>
       {orgId ? <ImportCard orgId={orgId} done={refresh} /> : null}
-      <h2>{t('Deposits to match')}</h2>
+      <Title>{t('Deposits to match')}</Title>
       <p>{t('Nothing is marked paid until you confirm.')}</p>
       {sugg.isLoading ? <Loading /> : null}
       {sugg.error ? <p role="alert">{errorMessage(sugg.error)}</p> : null}
@@ -231,21 +241,21 @@ export function PaymentsPage() {
           {t('Show more')}
         </Button>
       ) : null}
-      <h2>{t('Recent payments')}</h2>
+      <Title>{t('Recent payments')}</Title>
       {pays.data?.length === 0 ? <p>{t('No payments yet.')}</p> : null}
-      <ul>
-        {pays.data?.map((p) => (
-          <li key={p.id}>
-            {t('{{received_on}} · {{formatINR}} ·', {
-              received_on: p.received_on,
-              formatINR: formatINR(paise(p.amount_paise)),
-            })}{' '}
-            {p.customers?.name ?? '—'} {t('·')}{' '}
-            {t('{{method}} ({{source}})', { method: tr(p.method), source: tr(p.source) })}
-            {p.reference ? t(' · {{reference}}', { reference: p.reference }) : ''}
-          </li>
-        ))}
-      </ul>
+      <RowList>
+        <div className="seq">
+          {pays.data?.map((p, i) => (
+            <ListRow
+              key={p.id}
+              index={i}
+              name={p.customers?.name ?? '—'}
+              meta={`${p.received_on} · ${t('{{method}} ({{source}})', { method: tr(p.method), source: tr(p.source) })}${p.reference ? t(' · {{reference}}', { reference: p.reference }) : ''}`}
+              amount={formatINR(paise(p.amount_paise))}
+            />
+          ))}
+        </div>
+      </RowList>
     </>
   );
 }

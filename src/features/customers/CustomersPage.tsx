@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Badge, Input, Loading, Pager, ResponsiveTable } from '@/components/ui';
+import { Badge, ButtonLink, Input, Loading, Pager, ResponsiveTable } from '@/components/ui';
 import { useOrg } from '@/features/auth/useOrg';
 import { can } from '@/lib/permissions';
 import { PAGE_SIZE, errorMessage } from '@/lib/service/errors';
@@ -23,7 +23,7 @@ export function CustomersPage() {
   return (
     <>
       <h1>{t('Customers')}</h1>
-      <div className="flex flex-wrap items-end gap-3">
+      <div className="ui-card rv flex flex-wrap items-end gap-3">
         <Input
           label={t('Search by name, GSTIN or phone')}
           type="search"
@@ -34,7 +34,9 @@ export function CustomersPage() {
           }}
         />
         {can.writeData(org.data?.role ?? null) ? (
-          <Link to="/customers/new">{t('Add customer')}</Link>
+          <ButtonLink to="/customers/new" variant="dark">
+            {t('Add customer')}
+          </ButtonLink>
         ) : null}
       </div>
       {q.error ? <p role="alert">{errorMessage(q.error)}</p> : null}

@@ -45,6 +45,35 @@ async function payPath() {
 }
 
 for (let p of paths.length ? paths : ['/']) {
+  if (p === 'AGENT') {
+    // The agent call is stubbed so the screenshot has no side effects (no email, no writes).
+    await page.route('**/functions/v1/agent-run', async (r) => {
+      await new Promise((res) => setTimeout(res, 9000));
+      await r.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+    });
+    await page.goto(base + '/collect');
+    await page.getByRole('button', { name: /run agent now/i }).click();
+    await page.waitForTimeout(3800);
+    await page.screenshot({ path: `${out}/collect-agent-running-${w}-${scheme}.png` });
+    console.log('collect-agent-running');
+    continue;
+  }
+  if (p === 'INVOICE') {
+    p = await page.evaluate(
+      async ({ U, K }) => {
+        const key = Object.keys(localStorage).find((k) => /^sb-.*-auth-token$/.test(k));
+        const jwt = JSON.parse(localStorage[key]).access_token;
+        const inv = await fetch(
+          `${U}/rest/v1/invoices?select=id&status=in.(issued,partially_paid)&order=due_date.asc&limit=1`,
+          {
+            headers: { apikey: K, authorization: `Bearer ${jwt}` },
+          },
+        ).then((r) => r.json());
+        return '/invoices/' + inv[0].id;
+      },
+      { U: process.env.VITE_SUPABASE_URL, K: process.env.VITE_SUPABASE_ANON_KEY },
+    );
+  }
   if (p === 'PAYLINK') p = await payPath();
   await page.goto(base + p);
   await page.waitForTimeout(2500);
