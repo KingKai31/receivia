@@ -777,3 +777,21 @@ select.ui-input {
 .hero .ui-button {
   text-shadow: none;
 }
+
+.why-btn {
+  margin-left: 6px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid var(--color-border, currentColor);
+  background: transparent;
+  color: inherit;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  vertical-align: middle;
+}
+.why-btn:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}

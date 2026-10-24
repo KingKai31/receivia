@@ -26,6 +26,17 @@ import {
 } from '@/lib/forecast';
 import { formatINR, formatINRShort, paise, parseRupees } from '@/lib/money';
 import { errorMessage } from '@/lib/service/errors';
+import { Why } from '@/components/ui';
+import {
+  explainChaseScore,
+  explainCreditLimit,
+  explainForecastQuantile,
+  explainPayability,
+  explainShortfall,
+  explainSolverCost,
+} from '@/lib/explain';
+import { modelFor } from '@/lib/forecast';
+import { daysBetween } from '@/lib/dates';
 import { ActualVsForecastChart, BandChart } from './charts';
 import { toInput } from './forecastService';
 import { useForecast } from './useForecast';
@@ -225,6 +236,7 @@ export function ForecastPage() {
           ? t(' as of {{openingBalanceOn}}', { openingBalanceOn: ctx.openingBalanceOn })
           : ''}
         {t('.')}
+        {sf ? <Why explain={() => explainShortfall(forecast)} /> : null}
       </p>
       {ctx.truncated ? (
         <p role="status">{t('Some lists were capped, so the numbers may be incomplete.')}</p>
@@ -270,17 +282,32 @@ export function ForecastPage() {
             {
               key: 'p10',
               header: 'Closing P10',
-              render: (w) => formatINRShort(paise(w.closing.p10)),
+              render: (w) => (
+                <>
+                  {formatINRShort(paise(w.closing.p10))}
+                  <Why explain={() => explainForecastQuantile(forecast, w, 'closing', 'p10')} />
+                </>
+              ),
             },
             {
               key: 'p50',
               header: 'Closing P50',
-              render: (w) => formatINRShort(paise(w.closing.p50)),
+              render: (w) => (
+                <>
+                  {formatINRShort(paise(w.closing.p50))}
+                  <Why explain={() => explainForecastQuantile(forecast, w, 'closing', 'p50')} />
+                </>
+              ),
             },
             {
               key: 'p90',
               header: 'Closing P90',
-              render: (w) => formatINRShort(paise(w.closing.p90)),
+              render: (w) => (
+                <>
+                  {formatINRShort(paise(w.closing.p90))}
+                  <Why explain={() => explainForecastQuantile(forecast, w, 'closing', 'p90')} />
+                </>
+              ),
             },
             {
               key: 'prob',
@@ -313,6 +340,7 @@ export function ForecastPage() {
                   money2: money(plan.coveredPaise),
                 })}{' '}
                 {t('{{money}}.', { money: money(plan.gapPaise) })}
+                <Why explain={() => explainSolverCost(plan)} />
               </p>
             ) : null}
           </>
@@ -331,6 +359,14 @@ export function ForecastPage() {
             <li key={c.invoiceId}>
               <strong>{c.customerName}</strong>
               {t(': {{reason}}.', { reason: tr(c.reason) })}
+              <Why
+                explain={() =>
+                  explainChaseScore(c, modelFor(ctx.models, c.customerId).grade, [
+                    { label: `Customer ${c.customerName}`, href: `/customers/${c.customerId}` },
+                    { label: 'Invoice', href: `/invoices/${c.invoiceId}` },
+                  ])
+                }
+              />
             </li>
           ))}
         </ol>
@@ -365,6 +401,32 @@ export function ForecastPage() {
             <li key={m.customerId}>
               <strong>{names.get(m.customerId)}</strong>{' '}
               {t('(grade {{grade}}): {{reason}}', { grade: m.grade, reason: tr(m.reason) })}
+              <Why
+                label="Why this score"
+                explain={() =>
+                  explainPayability(m, [{ label: 'Customer', href: `/customers/${m.customerId}` }])
+                }
+              />
+              <Why
+                label="Why this credit limit"
+                explain={() => {
+                  const c = ctx.customers.find((x) => x.id === m.customerId);
+                  const billed = ctx.history
+                    .filter(
+                      (h) =>
+                        h.customerId === m.customerId && daysBetween(h.issueDate, ctx.today) <= 180,
+                    )
+                    .reduce((a, h) => a + h.totalPaise, 0);
+                  return explainCreditLimit(
+                    {
+                      monthlyBilledPaise: Math.round(billed / 6),
+                      creditDays: c?.creditDays ?? 30,
+                      p80Late: m.p80,
+                    },
+                    [{ label: 'Customer', href: `/customers/${m.customerId}` }],
+                  );
+                }}
+              />
             </li>
           ))}
         </ul>
