@@ -12,8 +12,8 @@ export const FORECAST_CONFIG = {
   /** Fewer paid invoices than this and the customer is flagged low confidence. */
   lowConfidenceBelow: 4,
   /** Grade by the shrunk P80 days late: A up to this many, B up to the next, otherwise C. */
-  gradeA_p80: 7,
-  gradeB_p80: 21,
+  gradeA_p80: 14,
+  gradeB_p80: 30,
   /** Used when there is no payment history at all (days late). */
   priorDelays: [0, 5, 10, 15, 25],
   /** Chance a promise to pay is kept (arrives on the promised date, within 2 days). */

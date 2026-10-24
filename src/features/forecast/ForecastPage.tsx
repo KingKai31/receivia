@@ -18,6 +18,14 @@ import { toInput } from './forecastService';
 import { useForecast } from './useForecast';
 import './forecast.css';
 
+function rupeesOrZero(v: string): number {
+  try {
+    return Number(parseRupees(v || '0'));
+  } catch {
+    return 0;
+  }
+}
+
 const money = (n: number) => formatINR(paise(Math.round(n)));
 
 function WhatIfCard({ f }: { f: NonNullable<ReturnType<typeof useForecast>['ctx']> }) {
@@ -43,12 +51,7 @@ function WhatIfCard({ f }: { f: NonNullable<ReturnType<typeof useForecast>['ctx'
     else if (!Number.isFinite(d)) problem = 'Enter the number of days.';
     else what = { kind, customerId: cust, days: d };
   } else if (kind === 'newOrder') {
-    let amt = 0;
-    try {
-      amt = Number(parseRupees(amount || '0'));
-    } catch {
-      amt = 0;
-    }
+    const amt = rupeesOrZero(amount);
     if (!cust) problem = 'Add a customer first.';
     else if (amt <= 0) problem = 'Enter the order amount in rupees.';
     else if (!date) problem = 'Pick the order date.';
@@ -59,10 +62,11 @@ function WhatIfCard({ f }: { f: NonNullable<ReturnType<typeof useForecast>['ctx'
 
   const input = useMemo(() => toInput(f), [f]);
   const base = useMemo(() => lowestPoint(simulate(input)), [input]);
+  const whatKey = what ? JSON.stringify(what) : '';
   const result = useMemo(
-    () => (what ? runWhatIf(input, what) : null),
-    [input, what ? JSON.stringify(what) : ''],
-  ); // eslint-disable-line react-hooks/exhaustive-deps
+    () => (whatKey ? runWhatIf(input, JSON.parse(whatKey) as WhatIf) : null),
+    [input, whatKey],
+  );
   const names = {
     customer: f.customers.find((c) => c.id === cust)?.name,
     bill: bills.find(([id]) => id === bill)?.[1],

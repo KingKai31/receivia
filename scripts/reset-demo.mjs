@@ -27,6 +27,19 @@ try {
   ]) {
     await c.query(`delete from public.${t} where org_id = $1`, [DEMO_ORG]);
   }
+  // Generated history: invoices (HIS series), expenses and the customers only the history uses.
+  await c.query(`delete from public.invoices where org_id = $1 and number like 'HIS/%'`, [
+    DEMO_ORG,
+  ]);
+  await c.query('delete from public.expenses where org_id = $1', [DEMO_ORG]);
+  const base = JSON.parse(fs.readFileSync('supabase/seed/demo-data.json', 'utf8')).customers.map(
+    (x) => x.name,
+  );
+  await c.query(
+    `delete from public.customers where org_id = $1 and name <> all($2::text[]) and not exists
+       (select 1 from public.invoices i where i.customer_id = customers.id and i.org_id = customers.org_id)`,
+    [DEMO_ORG, base],
+  );
   await c.query('delete from public.rate_limits');
   await c.query('commit');
 } catch (e) {

@@ -124,7 +124,8 @@ describe('delay model', () => {
   });
   it('grades A, B, C with a reason in words', () => {
     expect(gradeOf(3)).toBe('A');
-    expect(gradeOf(15)).toBe('B');
+    expect(gradeOf(14)).toBe('A');
+    expect(gradeOf(20)).toBe('B');
     expect(gradeOf(40)).toBe('C');
     const m = modelsOf([...lateHistory('a', 60, 2), ...lateHistory('b', 12, 45)]);
     expect(modelFor(m, 'a').grade).toBe('A');

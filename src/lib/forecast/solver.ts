@@ -56,7 +56,8 @@ export function selectActions(candidates: Candidate[], gap: number): Candidate[]
     covered += c.cover;
   }
   for (const c of [...chosen].sort((a, b) => ratio(b) - ratio(a) || b.cost - a.cost)) {
-    if (covered - c.cover >= gap) {
+    // Free steps stay: dropping them saves nothing.
+    if (c.cost > 0 && covered - c.cover >= gap) {
       chosen.splice(chosen.indexOf(c), 1);
       covered -= c.cover;
     }
