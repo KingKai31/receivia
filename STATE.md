@@ -22,7 +22,9 @@
 - [x] S4 Buyer portal, payments, reconciliation (all tasks done; Razorpay keys missing, payment path verified with a signed mock webhook, see Needs owner 1)
   - [x] 0 Deploy + signed-in smoke  - [x] 1 create-pay-link / get-pay-view  - [x] 2 /pay/:token  - [x] 3 Razorpay link + webhook (mock-tested)
   - [x] 4 Inbox + credit notes reduce balance  - [x] 5 lib/match  - [x] 6 TDS map  - [x] 7 TDS certificates page  - [x] 8 seed bank statement  - [x] 9 Tests
-- S5 Forecast and prioritisation: not started
+- [x] S5 Forecast and prioritisation (all 10 tasks done)
+  - [x] 1 Delay model + grades  - [x] 2 Expenses  - [x] 3 Monte Carlo (2000 runs, seeded)  - [x] 4 Backtest  - [x] 5 What-ifs
+  - [x] 6 Chase priority + Collect order  - [x] 7 Gap solver  - [x] 8 /forecast + Today tiles  - [x] 9 Demo seed  - [x] 10 Tests + smoke
 - S6 Agent and automation: not started
 - S7 Quality and trust: not started
 - S9 Design pass: not started
@@ -55,7 +57,7 @@
 - n8n, Resend, WhatsApp, Anthropic: not set up
 
 ## Database
-Migrations: `0001_foundation.sql`, `0002_demo_org.sql`, `0003_invoicing.sql`, `0004_collections.sql`, `0005_payments.sql`, `0006_inbox.sql` (all applied to the one Supabase project). Every table has id uuid pk, org_id, created_at, updated_at (audit_log included; orgs.org_id = id generated). RLS enabled on all. Child tables use composite FKs `(parent_id, org_id)` so a row can never reference another org's parent. `org_id` is immutable (trigger).
+Migrations: `0001_foundation.sql`, `0002_demo_org.sql`, `0003_invoicing.sql`, `0004_collections.sql`, `0005_payments.sql`, `0006_inbox.sql`, `0007_forecast.sql` (all applied to the one Supabase project). Every table has id uuid pk, org_id, created_at, updated_at (audit_log included; orgs.org_id = id generated). RLS enabled on all. Child tables use composite FKs `(parent_id, org_id)` so a row can never reference another org's parent. `org_id` is immutable (trigger).
 
 Standard RLS (member read; owner/accountant write): customers, invoices, invoice_lines, notes, payments, allocations, bank_txns, disputes, promises, reminders, messages, expenses, tds_entries, ims_status, agent_actions.
 
@@ -91,6 +93,8 @@ S3 (0004): reminders.stage adds `next_steps`; `invoices.accepted_on` (MSME accep
 
 S4 (0005, 0006): `invoices.credited_paise` (issued credit notes), `tds_paise` (tds_entries linked to the invoice), `balance_paise` (generated, stored: greatest(total - paid - credited - tds, 0); use it everywhere), `razorpay_link_id/url`. `app.refresh_invoice` derives paid/credited/tds/status in one place; triggers on allocations, notes and tds_entries call it (credit note issue/void and TDS confirm now move the balance and status). New `payment_claims` (buyer "I have paid": pending/accepted/rejected, owner_reply, standard RLS), `disputes.owner_reply`, `promises.note`, `tds_entries` sections add GST_TDS/GST_TCS plus `claimed_in_26as`, `claimed_at`, `taxable_paise`, `rate_limits` (RLS on, no policies: service role only). Functions (all service-role only unless noted): `rate_limit_hit(key, max, seconds)`, `pay_view(token)` (public fields of that token's invoice + lens facts + owner replies), `pay_action(token, kind, payload)` (paid|dispute|promise, validated, bound to the token's invoice), `record_gateway_payment(invoice, amount, gateway_payment_id, date)` (idempotent on payment id, allocates min(amount, balance)). Authenticated (security invoker, RLS applies): `confirm_bank_match(org, txn, customer, allocations, tds)` (payment + allocations + optional TDS entry + bank line matched, idempotent per txn), `record_manual_payment`, `resolve_claim(org, claim, accept, reply, amount)`, `resolve_dispute(org, dispute, credit_note|paid|rejected, reply)`.
 
+S5 (0007): `business_profile.opening_balance_paise`, `opening_balance_on`, `safety_buffer_paise` (>= 0; edited in Settings by the owner); `expenses.kind` (salary/rent/tax/supplier/utility/other) and `expenses.can_defer` (not called "deferrable" because that is an SQL keyword); view `invoice_settlements` (security_invoker: one row per confirmed payment applied to an invoice, with due date and total) feeds the delay model and the backtest.
+
 Demo org: id `00000000-0000-4000-8000-00000000de60` ("Demo Traders", state 27, regular), created in migration 0002.
 
 ## Edge functions and APIs
@@ -109,7 +113,7 @@ All deployed with `node scripts/sb.mjs functions deploy <name> --project-ref '$R
 |---|---|---|
 | /sign-in | email OTP + Open live demo | public |
 | /trust | trust page (stub, S7) | public |
-| / | Today (stub) | auth |
+| / | Today: cash card (safe for N weeks, or the shortfall plan), 7 tiles, ageing bar | auth |
 | /invoices, /invoices/new, /invoices/:id, /invoices/:id/edit, /invoices/:id/notes/new | list+filters, form, detail+timeline, draft edit, credit/debit note | auth |
 | /customers, /customers/new, /customers/:id, /customers/:id/edit | list, form, detail (total owed, payment record) | auth |
 | /import | CSV / Excel / Tally XML import for customers and invoices | auth (owner/accountant) |
@@ -119,7 +123,8 @@ All deployed with `node scripts/sb.mjs functions deploy <name> --project-ref '$R
 | /inbox | open disputes, "already paid" claims, promises; accept (credit note / mark paid) or reject with reply | auth |
 | /payments, /payments/tds | bank CSV import + suggested matches with reasons + confirm; TDS certificates per customer per quarter + 26AS/AIS CSV | auth |
 | /pay/:token | public buyer page, phone first, customer language (en/hi/mr), UPI QR, Razorpay link, claim/dispute/promise, lens lines | public |
-| /forecast | stub | auth |
+| /forecast | band chart, weekly table, gap plan, what-ifs, chase ranking, backtest, customer grades | auth |
+| /expenses | recurring rules, one-offs, deferrable supplier bills (add, edit, switch off, delete) | auth (owner/accountant write) |
 | /settings | org name, role, sign out, business profile form (owner edits) | auth |
 
 ## Data
@@ -144,6 +149,9 @@ All deployed with `node scripts/sb.mjs functions deploy <name> --project-ref '$R
 | Legal rules (itc180, MSME eligibility/due/43B(h)/Form I/interest, lens), config | src/lib/legal/ (config.ts holds RBI bank rate) |
 | Ladder, templates, send rules, Today builder, service, page, settings | src/features/collect/ (ladder.ts, templates.ts, today.ts, collectService.ts, CollectTodayPage.tsx, LadderSettings.tsx) |
 | Letter + case pack models/components, pages | src/features/documents/collectionDocs.tsx, CollectionDocPages.tsx |
+| Forecast maths (pure): delay model, arrival distribution, Monte Carlo, backtest, what-ifs, chase priority, gap solver, tiles; all numbers in config.ts | src/lib/forecast/ |
+| Forecast loading, charts (plain SVG), pages, expenses, cash settings | src/features/forecast/ (forecastService.ts, charts.tsx, ForecastPage.tsx, ExpensesPage.tsx, ForecastSettings.tsx), src/features/today/TodayPage.tsx, src/features/collect/rank.ts |
+| Demo history generator + seeds | scripts/gen-demo-history.mjs -> supabase/seed/demo-history.json; scripts/seed-demo.mjs; scripts/reset-demo.mjs |
 | Remote DB runner (ping, reset-test, migrate-prod, status) | scripts/db-remote.mjs (reset-test is DESTRUCTIVE: never run it now that the demo seed exists) |
 | Supabase CLI wrapper, demo seed/reset, deployed-pay smoke | scripts/sb.mjs, scripts/seed-demo.mjs, scripts/reset-demo.mjs, scripts/smoke-pay.mjs |
 | Bank CSV, matching, TDS rules, TDS ledger/26AS | src/lib/match/ (bankCsv.ts, match.ts, tds.ts, tdsLedger.ts) |
@@ -159,6 +167,8 @@ All deployed with `node scripts/sb.mjs functions deploy <name> --project-ref '$R
 | CI / deploy | .github/workflows/ci.yml, render.yaml |
 
 ## Tests
+- S5 (2026-10-24): `npm test` 255 pass: src/lib/forecast 46 (delay shrinkage w=n/(n+5), low-confidence flag, grades, stage/promise/dispute adjustments, bad-debt mass, expense dates incl. 31st clamp, 13-week sim invariants per run [closing = next opening, closing = opening + in - out, totals reconcile with invoices and expenses], repeatability, what-ifs leave inputs untouched, chase ordering + reason text, solver vs brute force on 300 random small inputs, tiles/ageing, demo story: week-3 shortfall covered by the solver, identical results on rebuild) + Collect ranking 4. `npm run test:db` 36 pass locally (PGlite) incl. tests/db/forecast.test.ts. Remote suite re-run at the end of S5 (see Session log).
+- Signed-in smoke, demo login, dev server on a fresh port (the browser pane must be visible or the page crawls): `/` and `/forecast` at 360px and 1280px: no horizontal overflow, no console errors, SVG charts scale to the viewport, `/forecast` text hash identical on every reload and at both widths, `/expenses` lists the seeded rules.
 - S4 (2026-10-24): `npm test` 205 unit tests pass (incl. match 34: seed bank statement table for every line with kind, confidence, reason; Razorpay HMAC/event parsing 5; TDS ledger/26AS 5; ladder pause on claims). `npm run test:db:remote` (real Postgres, ~230 s): 174 pass = 135 isolation (now incl. payment_claims) + 20-connection numbering + S2 invoicing 9 + S3 collections 6 + S4 payments 17 (token cannot read another invoice, claim/dispute/promise actions, rate limit, gateway payment idempotency, credit notes reduce balance, bank match + TDS settle, inbox resolution). `node scripts/smoke-pay.mjs` (deployed functions, 21 checks incl. signed mock webhook + replay + 429) all pass. After the runs the project holds 0 test users and only the demo org (seeded with 8 invoices).
 - Signed-in smoke (demo login, 360px and 1280px, no horizontal overflow, no console errors beyond Vite's "Outdated Optimize Dep" cold-start noise): /, /invoices, /customers, /customers/new + create, /invoices/new + issue (INV/26-27/0001 created through the UI, then deleted), /import, /collect, /settings, /doc/invoice/:id, /doc/letter/:id, /doc/case/:id, /inbox, /payments (imported the seed CSV, confirmed an exact and a 194Q line, invoices went paid), /payments/tds, /pay/:token (promise from the page landed in the Inbox and removed the invoice from Collect). Test records deleted; demo data reset with scripts/reset-demo.mjs.
 - Remote (Tokyo, session pooler): `npm run test:db:remote` = 135 isolation tests (~157s) + tests/db/remote-numbering.test.ts (20 real connections via transaction pooler 6543, session pooler caps at 15 clients) all pass. PGlite tests (invoicing, collections) run in-process only. Final state: reset once more, 0 users, only the demo org, migrations 0001-0004 recorded in receivia_meta.migrations.
@@ -210,6 +220,16 @@ All deployed with `node scripts/sb.mjs functions deploy <name> --project-ref '$R
 - 2026-10-24 (S4): Pay page strings exist in en/hi/mr inline (payText.ts); hi/mr are machine-written, review needed. Pay page uses the customer's language.
 - 2026-10-24 (S4): DB test harness runs the S2/S3/S4 service suites on PGlite locally and on the real project with REMOTE_DB=1 (own user/org per run, deleted after; only audit_log rows remain). The session pooler caps clients at 15, so the 20-connection numbering test uses the transaction pooler (port 6543).
 - 2026-10-24 (S4): Supabase functions are deployed with `--use-api` (the default Docker bundler hangs on this machine). `.claude/` is git-ignored.
+- 2026-10-24 (S5): Delay shrinkage: stat = w x own + (1 - w) x overall with w = n/(n+5) for mean, median and P80; sampling uses the same weight (own samples with weight w, overall pool with 1 - w). A customer with no history uses the overall pool; no history at all uses a prior of [0, 5, 10, 15, 25] days late. Grade on the shrunk P80: A <= 14 days late, B <= 30, else C (a P80 of 7 was unreachable because of shrinkage toward slow payers); low confidence below 4 paid invoices.
+- 2026-10-24 (S5): An open invoice arrives at due date + sampled delay, conditioned on not having arrived already (delay >= days overdue; if nothing in history is that late, 3-30 days from today). Adjustments: reminder stage scales the remaining wait (firm 0.9, final 0.8, demand letter 0.65, next steps 0.6); an active promise has a 65% chance of landing on the promised date (+0-2 days); disputed invoices are excluded unless toggled, then +30 days; bad-debt mass 0 to 60 days overdue 0%, 61-90 5%, 91-180 15%, over 180 30% (never collected). All in src/lib/forecast/config.ts.
+- 2026-10-24 (S5): Forecast starts today: week 1 = today to today+6, bank balance = opening balance (the "as of" date is shown, not rolled forward). Outflows are known dates (no noise). 2000 runs, fixed seed 20261024, so identical inputs always give identical results. Percentiles are linear-interpolated across runs per week; probability below buffer = share of runs with closing under the buffer; first shortfall week = first week whose median closing is under the buffer.
+- 2026-10-24 (S5): Backtest hides the last 8 weeks: invoices open on that date (balance then), delay history up to that date, 500 runs; actual = payments applied in each week to those same invoices (later invoices and credit/TDS closures are ignored); forecast shown = mean weekly collections with a P10-P90 whisker; WAPE = sum |actual - forecast| / sum actual.
+- 2026-10-24 (S5): "New order of X on a date" = a new sales invoice of X issued that date with the customer's credit days, then the customer's usual delay. "Pays 30 days later" adds 30 days to every sampled arrival for that customer (promises too). "Bill moved by N days" shifts that expense's occurrences.
+- 2026-10-24 (S5): Chase score = balance x P(paid by end of the first shortfall week | chased now: remaining wait x 0.5) x (1 + min(days overdue, 120)/120) x grade weight (A 1, B 0.85, C 0.65); with no shortfall the target is week 4; disputed invoices score 0. The Collect page orders customers by their best invoice score and shows the reason under each invoice.
+- 2026-10-24 (S5): Gap solver (first shortfall week, measured at the median): candidates only for invoices with under 50% chance of arriving by the end of that week. Chase: free, cover = balance x (P chased - P base). Early-payment discount (2%, 60% take-up): cover = balance x (1 - P base) x 0.6, cost = 2% of cover. TReDS (company/government buyers only, 12% a year for the median expected days, 1-120): cover = balance x (1 - P base) - fee. Defer a deferrable bill due in that week to the next week: cover = amount, cost = 1.5% a month for the days deferred. One action per invoice or bill. Greedy by cost per rupee covered (free first), then drop any paid step that is no longer needed; free steps are kept. Greedy is not always optimal: the test checks it never beats brute force and stays within one action's cost of it. Rates are assumptions to verify with your bank.
+- 2026-10-24 (S5): Safety buffer and opening balance live on business_profile (owner edits in Settings); expenses use the existing table (recurrence anchored on next_due, day kept, 31st clamped to month end).
+- 2026-10-24 (S5): Demo seed: 12 customers (6 from S4 + 6 new) with 9 invoices each issued every 20 days over 6 months (`HIS/26-27/NNNN`, paid in the past or still open per each customer's habit), 9 expense rules (salaries Rs 2,40,000 on the 1st, rent 5th, GST 20th, electricity 12th, quarterly insurance, 4 one-off bills of which steel Rs 15,00,000 and packaging are deferrable), opening balance Rs 1,50,000, buffer Rs 3,00,000. On 24 Oct 2026 this gives a week-3 shortfall of about Rs 3.1 lakh that one free chase covers. Dates are offsets from the seed day; the exact week-3 story is verified for that seed day. `reset-demo.mjs` removes the HIS invoices, expenses and history-only customers before re-seeding.
+- 2026-10-24 (S5): vite.config.ts pre-bundles all dependencies (`optimizeDeps.include`): without it the dev server re-optimised mid-session and reloaded the page in a loop. `.claude/launch.json` uses port 5181 (5173 and 5174 were held by stale processes).
 - 2026-10-24 (S2): Business state for unregistered businesses is picked manually (no GSTIN to derive it from); with a GSTIN it is always derived.
 
 ## Needs owner
@@ -227,5 +247,7 @@ All deployed with `node scripts/sb.mjs functions deploy <name> --project-ref '$R
 
 - 2026-10-24, S4 Buyer portal, payments, reconciliation: feat/collections merged into main; branch feat/payments. Migrations 0005-0006, 4 edge functions deployed (+ demo-login), pay page, Inbox, bank import + matching + TDS, TDS certificates page, demo seed, remote DB harness. Razorpay keys missing (mock-signed webhook verified).
 
+- 2026-10-24, S5 Forecast and prioritisation: feat/payments merged into main and pushed to origin; branch feat/forecast. src/lib/forecast, migration 0007, /forecast, Today dashboard, /expenses, cash settings, Collect order by chase priority, demo history seed.
+
 ## Next session
-S5 Forecast and prioritisation. Before it: nothing blocks. Open items: Razorpay keys (Needs owner 1), authenticated email OTP sign-in untested, hi/mr copy (pay page, templates, legal lines) needs a native-speaker review, inline English UI copy to move to i18n in the design pass, `accepted_on` has no form field yet, mobile bottom nav has 8 items (design pass), customer Today page still a stub (S5/S6), real-data caution: never run `db-remote.mjs reset-test` (drops everything).
+S6 Agent and automation. Open items: Razorpay keys (Needs owner 1), email OTP sign-in untested, hi/mr copy review, inline English copy to move to i18n in the design pass, `accepted_on` has no form field, the mobile bottom nav now has 9 items (design pass), forecast rates (TReDS 12%, discount 2%, deferral fee 1.5% a month, bad-debt table) are assumptions to confirm. Never run `db-remote.mjs reset-test`.
