@@ -770,3 +770,10 @@ select.ui-input {
 .page-enter > p {
   margin: 0 4px 12px;
 }
+.pipe-step {
+  overflow-wrap: normal;
+  font-size: 11px;
+}
+.hero .ui-button {
+  text-shadow: none;
+}

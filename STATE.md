@@ -30,7 +30,7 @@
 - [x] S7 Quality and trust (all 11 tasks done)
   - [x] 1 hi/mr everywhere  - [x] 2 Accessibility + axe  - [x] 3 PWA  - [x] 4 Privacy (DPDP)  - [x] 5 /trust  - [x] 6 Error boundaries, states, error log
   - [x] 7 Live demo-story e2e  - [x] 8 Reviewer subagent  - [x] 9 Lighthouse  - [x] 10 Scale  - [x] 11 Demo re-seeded
-- S9 Design pass: not started
+- [x] S9 Design pass (approved reference docs/design/receivia-final.html applied app-wide; live Lighthouse result in Tests)
 - S8 Ship: not started
 
 ## Environment
@@ -276,6 +276,8 @@ All deployed with `node scripts/sb.mjs functions deploy <name> --project-ref '$R
 - 2026-10-24 (S6): Resend from onboarding@resend.dev only delivers to the Resend account owner, hence test mode and business_profile.owner_email; the demo org owner_email is set to the owner's address.
 - 2026-10-24 (S6): The demo date drives planner, sender and brief only; the rest of the UI still uses the real date.
 - 2026-10-24 (S2): Business state for unregistered businesses is picked manually (no GSTIN to derive it from); with a GSTIN it is always derived.
+
+- 2026-10-25 (S9 design): tokens in src/styles/tokens.css are the single source (light + dark, Settings toggle stored as receivia.theme). Shared UI in src/components/ui (display.tsx holds GlassCard, HeroCard, Pill, Avatar, StatTile, HorizontalTiles, ListRow, Timeline, Gauge, MoneyTable, Alert, Skeleton, Title, CountUp). Motion in src/lib/motion (Lenis 1.1.13 loaded lazily, off on reduced motion and /doc). Hero keeps the vivid reference gradient; AA comes from text-shadow plus a local scrim behind small lines. Muted, blue-deep, peach-deep and link colours are darker than the reference for AA. Pay page: amount counts down to ₹0 only when the invoice is paid; after a claim or promise it shows a tick and keeps the amount (a claim does not change the balance). Agent pipeline steps are time-driven while the single server call runs; counters are live from polled agent_actions. Playwright runs with reducedMotion so e2e reads settled numbers. /doc/* print pages unchanged except font. hi/mr strings added with scripts/add-keys.mjs.
 
 ## Needs owner
 8. Native-speaker review of Hindi and Marathi (all machine-written, hedged legal lines included): the Payment Demand Letter disclaimer ("This letter is from ... not a legal notice from a lawyer"), Section 34 / 43B(h) / ITC 180-day / MSME Form I sentences, privacy notice, trust page, consent wording, reminder templates, pay page, owner brief, amount-in-words tables (Marathi 100 is शंभर, 200 दोनशे ...; Hindi सौ/हज़ार/लाख/करोड़). Terms to check: चालान vs बिल for invoice, "भुगतान माँग पत्र" / "पेमेंट डिमांड लेटर", सुरक्षा बफर, पूर्वानुमान vs अंदाज, short month names (अक्टू॰, ऑक्टो).
