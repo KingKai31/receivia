@@ -55,6 +55,7 @@ export interface InvoiceFacts {
   invoice_type: 'tax_invoice' | 'bill_of_supply' | 'invoice';
   issue_date: ISODate;
   accepted_on?: ISODate | null;
+  acceptance_source?: 'buyer_confirmed' | 'proof_uploaded' | 'assumed_delivery_date' | null;
   total_paise: number;
   paid_paise: number;
   credited_paise?: number;

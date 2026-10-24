@@ -8,6 +8,7 @@ import {
   msmedInterest,
   GENERAL_INFO_LINE,
 } from '@/lib/legal';
+import { acceptanceOf, type AcceptanceSource } from '@/lib/legal';
 import type { BuyerFacts, SellerFacts } from '@/lib/legal';
 import { formatINR, paise, type Paise } from '@/lib/money';
 import { prettyDate } from '@/features/collect/today';
@@ -31,6 +32,7 @@ export interface DocInvoice {
   invoice_type: 'tax_invoice' | 'bill_of_supply' | 'invoice';
   issue_date: ISODate;
   accepted_on: ISODate | null;
+  acceptance_source?: AcceptanceSource | null;
   due_date: ISODate;
   total_paise: number;
   paid_paise: number;
@@ -378,6 +380,7 @@ export interface CaseModel {
   invoices: (DocInvoice & {
     accepted: string;
     acceptedAssumed: boolean;
+    acceptedFromDelivery: boolean;
     msmeDue: string;
     balance: Paise;
     interest: Paise;
@@ -407,7 +410,8 @@ export function buildCaseModel(i: CaseInput): CaseModel {
     return {
       ...inv,
       accepted: prettyDate(accepted),
-      acceptedAssumed: !inv.accepted_on,
+      acceptedAssumed: acceptanceOf(inv).assumed,
+      acceptedFromDelivery: !!inv.accepted_on,
       msmeDue: prettyDate(due),
       balance,
       interest,
@@ -539,7 +543,11 @@ export function CaseDocument({ model: m }: { model: CaseModel }) {
               <td>{prettyDate(r.issue_date)}</td>
               <td>
                 {r.accepted}
-                {r.acceptedAssumed ? t(' (assumed: invoice date)') : ''}
+                {r.acceptedAssumed
+                  ? r.acceptedFromDelivery
+                    ? t(' (assumed: delivery date)')
+                    : t(' (assumed: invoice date)')
+                  : ''}
               </td>
               <td>{r.msmeDue}</td>
               <td>{formatINR(paise(r.total_paise))}</td>
