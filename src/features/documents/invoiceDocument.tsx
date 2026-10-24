@@ -1,10 +1,12 @@
+import { tr } from '@/app/i18n';
+import { useTranslation } from 'react-i18next';
 import {
   COMPOSITION_HEADING,
   E_INVOICE_NOTE,
   E_INVOICE_THRESHOLD_PAISE,
   GST_STATES,
 } from '@/lib/gst';
-import { amountInWordsIndian, formatINR, paise, type Paise } from '@/lib/money';
+import { amountInWordsFor, amountInWordsIndian, formatINR, paise, type Paise } from '@/lib/money';
 import type { Customer } from '@/features/customers/customerService';
 import type { Invoice, InvoiceLine } from '@/features/invoices/invoiceService';
 import type { Note } from '@/features/notes/noteService';
@@ -95,6 +97,7 @@ export interface InvoiceDocModel {
     total: string;
   };
   amountInWords: string;
+  totalPaise: number;
   balanceDue: string;
   bank: { name: string; holder: string; account: string; ifsc: string; upi: string } | null;
   upi: string | null;
@@ -194,6 +197,7 @@ export function buildInvoiceDocument({
       total: money(i.total_paise),
     },
     amountInWords: amountInWordsIndian(paise(i.total_paise)),
+    totalPaise: i.total_paise,
     balanceDue: formatINR(balance),
     bank: hasBank
       ? {
@@ -221,17 +225,18 @@ export function InvoiceDocument({
   model: InvoiceDocModel;
   qrDataUrl?: string;
 }) {
+  const { t, i18n } = useTranslation();
   return (
-    <article className="doc-page" aria-label={m.heading}>
+    <article className="doc-page" aria-label={tr(m.heading)}>
       <header className="doc-head">
-        <h1 className="doc-title">{m.heading}</h1>
-        {m.subheading ? <p className="doc-sub">{m.subheading}</p> : null}
-        {m.imported ? <p className="doc-sub">Imported record</p> : null}
+        <h1 className="doc-title">{tr(m.heading)}</h1>
+        {m.subheading ? <p className="doc-sub">{tr(m.subheading)}</p> : null}
+        {m.imported ? <p className="doc-sub">{t('Imported record')}</p> : null}
       </header>
 
       <section className="doc-grid">
         <div>
-          <h2>Supplier</h2>
+          <h2>{t('Supplier')}</h2>
           <p>
             <strong>{m.supplier.name}</strong>
             <br />
@@ -239,82 +244,86 @@ export function InvoiceDocument({
             <br />
             {m.supplier.gstin ? (
               <>
-                GSTIN: {m.supplier.gstin}
+                {t('GSTIN: {{gstin}}', { gstin: m.supplier.gstin })}
                 <br />
               </>
             ) : null}
-            State: {m.supplier.state}
+            {t('State: {{state}}', { state: tr(m.supplier.state) })}
             {m.supplier.phone ? (
               <>
                 <br />
-                Phone: {m.supplier.phone}
+                {t('Phone: {{phone}}', { phone: m.supplier.phone })}
               </>
             ) : null}
             {m.supplier.email ? (
               <>
                 <br />
-                Email: {m.supplier.email}
+                {t('Email: {{email}}', { email: m.supplier.email })}
               </>
             ) : null}
           </p>
         </div>
         <div>
-          <h2>Invoice details</h2>
+          <h2>{t('Invoice details')}</h2>
           <p>
-            Number: <strong>{m.number}</strong>
+            {t('Number:')} <strong>{m.number}</strong>
             <br />
-            Date: {m.issueDate}
+            {t('Date: {{issueDate}}', { issueDate: m.issueDate })}
             <br />
-            Due date: {m.dueDate}
+            {t('Due date: {{dueDate}}', { dueDate: m.dueDate })}
             <br />
-            Reverse charge: {m.reverseCharge}
+            {t('Reverse charge: {{reverseCharge}}', { reverseCharge: m.reverseCharge })}
           </p>
         </div>
         <div>
-          <h2>Bill to</h2>
+          <h2>{t('Bill to')}</h2>
           <p>
             <strong>{m.buyer.name}</strong>
             <br />
             {m.buyer.address}
             <br />
-            GSTIN: {m.buyer.gstin}
+            {t('GSTIN: {{gstin}}', { gstin: tr(m.buyer.gstin) })}
             <br />
-            State: {m.buyer.state}
+            {t('State: {{state}}', { state: tr(m.buyer.state) })}
           </p>
         </div>
         <div>
-          <h2>Place of supply</h2>
-          <p>{m.placeOfSupply}</p>
-          {m.deliveryAddress ? <p>Delivery address: {m.deliveryAddress}</p> : null}
+          <h2>{t('Place of supply')}</h2>
+          <p>{tr(m.placeOfSupply)}</p>
+          {m.deliveryAddress ? (
+            <p>
+              {t('Delivery address:')} {m.deliveryAddress}
+            </p>
+          ) : null}
         </div>
       </section>
 
       <table className="doc-table">
         <thead>
           <tr>
-            <th>#</th>
-            <th>Description</th>
-            <th>HSN/SAC</th>
-            <th>Qty</th>
-            <th>Rate</th>
-            <th>Discount</th>
-            <th>Taxable value</th>
-            {m.showTax ? <th>GST rate</th> : null}
+            <th>{t('#')}</th>
+            <th>{t('Description')}</th>
+            <th>{t('HSN/SAC')}</th>
+            <th>{t('Qty')}</th>
+            <th>{t('Rate')}</th>
+            <th>{t('Discount')}</th>
+            <th>{t('Taxable value')}</th>
+            {m.showTax ? <th>{t('GST rate')}</th> : null}
             {m.showTax && m.intraState ? (
               <>
-                <th>CGST</th>
-                <th>SGST</th>
+                <th>{t('CGST')}</th>
+                <th>{t('SGST')}</th>
               </>
             ) : null}
-            {m.showTax && !m.intraState ? <th>IGST</th> : null}
-            <th>Amount</th>
+            {m.showTax && !m.intraState ? <th>{t('IGST')}</th> : null}
+            <th>{t('Amount')}</th>
           </tr>
         </thead>
         <tbody>
           {m.lines.map((l) => (
             <tr key={l.position}>
               <td>{l.position}</td>
-              <td>{l.description}</td>
+              <td>{tr(l.description)}</td>
               <td>{l.hsn_sac}</td>
               <td>
                 {l.qty} {l.unit}
@@ -338,26 +347,26 @@ export function InvoiceDocument({
 
       <section className="doc-totals">
         <dl>
-          <dt>Taxable value</dt>
+          <dt>{t('Taxable value')}</dt>
           <dd>{m.totals.taxable}</dd>
           {m.showTax && m.intraState ? (
             <>
-              <dt>CGST</dt>
+              <dt>{t('CGST')}</dt>
               <dd>{m.totals.cgst}</dd>
-              <dt>SGST</dt>
+              <dt>{t('SGST')}</dt>
               <dd>{m.totals.sgst}</dd>
             </>
           ) : null}
           {m.showTax && !m.intraState ? (
             <>
-              <dt>IGST</dt>
+              <dt>{t('IGST')}</dt>
               <dd>{m.totals.igst}</dd>
             </>
           ) : null}
-          <dt>Round off</dt>
+          <dt>{t('Round off')}</dt>
           <dd>{m.totals.roundOff}</dd>
           <dt>
-            <strong>Total</strong>
+            <strong>{t('Total')}</strong>
           </dt>
           <dd>
             <strong>{m.totals.total}</strong>
@@ -365,61 +374,77 @@ export function InvoiceDocument({
         </dl>
       </section>
       <p>
-        <strong>Amount in words:</strong> {m.amountInWords}
+        <strong>{t('Amount in words:')}</strong>{' '}
+        {amountInWordsFor(paise(m.totalPaise), i18n.language)}
       </p>
-      {m.notes ? <p>Notes: {m.notes}</p> : null}
+      {m.notes ? (
+        <p>
+          {t('Notes:')} {m.notes}
+        </p>
+      ) : null}
 
       <section className="doc-grid">
         {m.bank ? (
           <div>
-            <h2>Pay to</h2>
+            <h2>{t('Pay to')}</h2>
             <p>
               {m.bank.holder ? (
                 <>
-                  Account holder: {m.bank.holder}
+                  {t('Account holder: {{holder}}', { holder: m.bank.holder })}
                   <br />
                 </>
               ) : null}
               {m.bank.name ? (
                 <>
-                  Bank: {m.bank.name}
+                  {t('Bank: {{name}}', { name: m.bank.name })}
                   <br />
                 </>
               ) : null}
               {m.bank.account ? (
                 <>
-                  Account number: {m.bank.account}
+                  {t('Account number: {{account}}', { account: m.bank.account })}
                   <br />
                 </>
               ) : null}
               {m.bank.ifsc ? (
                 <>
-                  IFSC: {m.bank.ifsc}
+                  {t('IFSC: {{ifsc}}', { ifsc: m.bank.ifsc })}
                   <br />
                 </>
               ) : null}
-              {m.bank.upi ? <>UPI: {m.bank.upi}</> : null}
+              {m.bank.upi ? (
+                <>
+                  {t('UPI:')} {m.bank.upi}
+                </>
+              ) : null}
             </p>
           </div>
         ) : null}
         {qrDataUrl ? (
           <div>
-            <h2>Scan to pay {m.balanceDue}</h2>
-            <img src={qrDataUrl} alt="UPI payment QR code" width={120} height={120} />
+            <h2>
+              {t('Scan to pay')} {m.balanceDue}
+            </h2>
+            <img src={qrDataUrl} alt={t('UPI payment QR code')} width={120} height={120} />
           </div>
         ) : null}
       </section>
 
       {m.msmeNotice ? (
         <p className="doc-fine">
-          Udyam registration number: {m.msmeNotice.udyam}. {m.msmeNotice.text}
+          {t('Udyam registration number: {{udyam}}. {{text}}', {
+            udyam: m.msmeNotice.udyam,
+            text: tr(m.msmeNotice.text),
+          })}
         </p>
       ) : null}
-      {m.eInvoiceNote ? <p className="doc-fine">{m.eInvoiceNote}</p> : null}
+      {m.eInvoiceNote ? <p className="doc-fine">{tr(m.eInvoiceNote)}</p> : null}
 
       <footer className="doc-sign">
-        <p>For {m.supplier.name}</p>
-        <p className="doc-sign-line">Authorised signatory</p>
+        <p>
+          {t('For')} {m.supplier.name}
+        </p>
+        <p className="doc-sign-line">{t('Authorised signatory')}</p>
       </footer>
     </article>
   );
@@ -438,6 +463,7 @@ export interface NoteDocModel {
   intraState: boolean;
   totals: { taxable: string; cgst: string; sgst: string; igst: string; total: string };
   amountInWords: string;
+  totalPaise: number;
   section34: string | null;
 }
 
@@ -469,72 +495,81 @@ export function buildNoteDocument(args: {
       total: money(n.total_paise),
     },
     amountInWords: amountInWordsIndian(paise(n.total_paise)),
+    totalPaise: n.total_paise,
     section34: n.note_type === 'credit' ? section34Warning(i.issue_date, args.today).text : null,
   };
 }
 
 export function NoteDocument({ model: m }: { model: NoteDocModel }) {
+  const { t, i18n } = useTranslation();
   return (
-    <article className="doc-page" aria-label={m.heading}>
+    <article className="doc-page" aria-label={tr(m.heading)}>
       <header className="doc-head">
-        <h1 className="doc-title">{m.heading}</h1>
+        <h1 className="doc-title">{tr(m.heading)}</h1>
       </header>
       <section className="doc-grid">
         <div>
-          <h2>Supplier</h2>
+          <h2>{t('Supplier')}</h2>
           <p>
             <strong>{m.supplier.name}</strong>
             <br />
             {m.supplier.address}
             <br />
-            {m.supplier.gstin ? <>GSTIN: {m.supplier.gstin}</> : null}
+            {m.supplier.gstin ? (
+              <>
+                {t('GSTIN:')} {m.supplier.gstin}
+              </>
+            ) : null}
           </p>
         </div>
         <div>
-          <h2>Note details</h2>
+          <h2>{t('Note details')}</h2>
           <p>
-            Number: <strong>{m.number}</strong>
+            {t('Number:')} <strong>{m.number}</strong>
             <br />
-            Date: {m.issueDate}
+            {t('Date: {{issueDate}}', { issueDate: m.issueDate })}
             <br />
-            Against invoice: {m.invoiceNumber} dated {m.invoiceDate}
+            {t('Against invoice: {{invoiceNumber}} dated {{invoiceDate}}', {
+              invoiceNumber: m.invoiceNumber,
+              invoiceDate: m.invoiceDate,
+            })}
           </p>
         </div>
         <div>
-          <h2>Customer</h2>
+          <h2>{t('Customer')}</h2>
           <p>
             <strong>{m.buyer.name}</strong>
             <br />
             {m.buyer.address}
             <br />
-            GSTIN: {m.buyer.gstin}
+            {t('GSTIN: {{gstin}}', { gstin: tr(m.buyer.gstin) })}
           </p>
         </div>
         <div>
-          <h2>Reason</h2>
+          <h2>{t('Reason')}</h2>
           <p>{m.reason}</p>
         </div>
       </section>
       <section className="doc-totals">
         <dl>
-          <dt>Taxable value</dt>
+          <dt>{t('Taxable value')}</dt>
           <dd>{m.totals.taxable}</dd>
           {m.showTax && m.intraState ? (
             <>
-              <dt>CGST</dt>
+              <dt>{t('CGST')}</dt>
               <dd>{m.totals.cgst}</dd>
-              <dt>SGST</dt>
+              <dt>{t('SGST')}</dt>
               <dd>{m.totals.sgst}</dd>
             </>
           ) : null}
           {m.showTax && !m.intraState ? (
             <>
-              <dt>IGST</dt>
+              <dt>{t('IGST')}</dt>
               <dd>{m.totals.igst}</dd>
             </>
           ) : null}
           <dt>
-            <strong>Total</strong>
+            <strong>{t('Total')}</strong>
           </dt>
           <dd>
             <strong>{m.totals.total}</strong>
@@ -542,12 +577,15 @@ export function NoteDocument({ model: m }: { model: NoteDocModel }) {
         </dl>
       </section>
       <p>
-        <strong>Amount in words:</strong> {m.amountInWords}
+        <strong>{t('Amount in words:')}</strong>{' '}
+        {amountInWordsFor(paise(m.totalPaise), i18n.language)}
       </p>
-      {m.section34 ? <p className="doc-fine">{m.section34}</p> : null}
+      {m.section34 ? <p className="doc-fine">{tr(m.section34)}</p> : null}
       <footer className="doc-sign">
-        <p>For {m.supplier.name}</p>
-        <p className="doc-sign-line">Authorised signatory</p>
+        <p>
+          {t('For')} {m.supplier.name}
+        </p>
+        <p className="doc-sign-line">{t('Authorised signatory')}</p>
       </footer>
     </article>
   );

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 
 interface ToastItem {
@@ -13,6 +14,7 @@ const ToastContext = createContext<ToastApi | null>(null);
 let nextId = 1;
 
 export function ToastProvider({ children }: { children: ReactNode }) {
+  const { t } = useTranslation();
   const [items, setItems] = useState<ToastItem[]>([]);
 
   const show = useCallback((message: string) => {
@@ -29,7 +31,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       <div className="ui-toasts" role="status" aria-live="polite">
         {items.map((i) => (
           <div key={i.id} className="ui-toast">
-            {i.message}
+            {t(i.message)}
           </div>
         ))}
       </div>

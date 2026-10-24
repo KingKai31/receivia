@@ -103,7 +103,7 @@ export function calcLine(line: LineInput, intraState: boolean, collectsTax = tru
   if (!(line.qty >= 0) || !Number.isFinite(line.qty)) {
     throw new GstError('INVALID_LINE', 'Quantity must be zero or more');
   }
-  const gross = roundToPaise(line.qty * line.rate);
+  const gross = mulDivRound(Math.round(line.qty * 1000), line.rate, 1000);
   const discount = line.discount ?? paise(0);
   if (discount < 0 || discount > gross) {
     throw new GstError('INVALID_LINE', 'Discount must be between 0 and the line amount');

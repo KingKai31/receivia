@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export interface EmptyStateProps {
   title: string;
@@ -7,10 +8,11 @@ export interface EmptyStateProps {
 }
 
 export function EmptyState({ title, description, action }: EmptyStateProps) {
+  const { t } = useTranslation();
   return (
     <div className="ui-empty">
-      <h2>{title}</h2>
-      {description ? <p>{description}</p> : null}
+      <h2>{t(title)}</h2>
+      {description ? <p>{t(description)}</p> : null}
       {action}
     </div>
   );

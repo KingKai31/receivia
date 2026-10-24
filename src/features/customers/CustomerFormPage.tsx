@@ -1,9 +1,11 @@
+import { tr } from '@/app/i18n';
+import { useTranslation } from 'react-i18next';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Button, Input, Select, useToast } from '@/components/ui';
+import { Button, Input, Loading, Select, useToast } from '@/components/ui';
 import { useOrg } from '@/features/auth/useOrg';
 import { GST_STATES } from '@/lib/gst';
 import { validateGstin } from '@/lib/gstin';
@@ -47,6 +49,7 @@ const PRESUMPTIVE = [
 ];
 
 export function CustomerFormPage() {
+  const { t } = useTranslation();
   const { id } = useParams();
   const org = useOrg();
   const orgId = org.data?.orgId;
@@ -78,7 +81,7 @@ export function CustomerFormPage() {
     mutationFn: (v: CustomerForm) =>
       id ? updateCustomer(existing.data!, v) : createCustomer(orgId!, v),
     onSuccess: (c) => {
-      toast.show('Customer saved.');
+      toast.show(t('Customer saved.'));
       void qc.invalidateQueries({ queryKey: ['customers'] });
       void qc.invalidateQueries({ queryKey: ['customer', c.id] });
       nav(`/customers/${c.id}`);
@@ -90,55 +93,68 @@ export function CustomerFormPage() {
   const g = gstin.trim() ? validateGstin(gstin) : null;
   const derived = g && g.valid ? GST_STATES[g.stateCode] : null;
 
-  if (id && existing.isLoading) return <p>Loading…</p>;
+  if (id && existing.isLoading) return <Loading />;
   if (id && existing.error) return <p role="alert">{errorMessage(existing.error)}</p>;
 
   return (
     <>
-      <h1>{id ? 'Edit customer' : 'New customer'}</h1>
+      <h1>{id ? t('Edit customer') : t('New customer')}</h1>
       <form onSubmit={handleSubmit((v) => save.mutateAsync(v))} noValidate>
         <fieldset disabled={!writable || isSubmitting} className="m-0 grid gap-3 border-0 p-0">
-          <Input label="Name" error={errors.name?.message} {...register('name')} />
+          <Input label={t('Name')} error={errors.name?.message} {...register('name')} />
           <Input
-            label="GSTIN"
+            label={t('GSTIN')}
             maxLength={15}
             error={
               errors.gstin?.message ??
-              (g && !g.valid ? `GSTIN is not valid (${g.reason.toLowerCase()})` : undefined)
+              (g && !g.valid
+                ? t('GSTIN is not valid ({{v}})', { v: g.reason.toLowerCase() })
+                : undefined)
             }
-            hint={derived ? `State: ${derived}` : 'Leave empty for an unregistered buyer.'}
+            hint={
+              derived
+                ? t('State: {{derived}}', { derived: tr(derived) })
+                : t('Leave empty for an unregistered buyer.')
+            }
             {...register('gstin')}
           />
           {derived ? null : (
-            <Select label="State" options={STATE_OPTIONS} {...register('state_code')} />
+            <Select label={t('State')} options={STATE_OPTIONS} {...register('state_code')} />
           )}
           <Input
-            label="Credit days"
+            label={t('Credit days')}
             inputMode="numeric"
             error={errors.credit_days?.message}
             {...register('credit_days')}
           />
-          <Select label="Tier" options={TIER} {...register('tier')} />
-          <Select label="Language" options={LANG} {...register('language')} />
-          <Select label="Entity type" options={ENTITY} {...register('entity_type')} />
+          <Select label={t('Tier')} options={TIER} {...register('tier')} />
+          <Select label={t('Language')} options={LANG} {...register('language')} />
+          <Select label={t('Entity type')} options={ENTITY} {...register('entity_type')} />
           <Select
-            label="Presumptive tax (Section 44AD/44ADA)"
+            label={t('Presumptive tax (Section 44AD/44ADA)')}
             options={PRESUMPTIVE}
             {...register('presumptive_tax')}
           />
           <label>
-            <input type="checkbox" {...register('has_written_agreement')} /> Written agreement on
-            payment terms
+            <input type="checkbox" {...register('has_written_agreement')} />{' '}
+            {t('Written agreement on payment terms')}
           </label>
-          <Input label="Contact name" {...register('contact_name')} />
-          <Input label="Email" type="email" error={errors.email?.message} {...register('email')} />
-          <Input label="Phone" type="tel" {...register('phone')} />
-          <Input label="Address" {...register('address')} />
+          <Input label={t('Contact name')} {...register('contact_name')} />
+          <Input
+            label={t('Email')}
+            type="email"
+            error={errors.email?.message}
+            {...register('email')}
+          />
+          <Input label={t('Phone')} type="tel" {...register('phone')} />
+          <Input label={t('Address')} {...register('address')} />
           <label>
-            <input type="checkbox" {...register('opt_in_whatsapp')} /> Agreed to receive WhatsApp
-            messages
+            <input type="checkbox" {...register('opt_in_whatsapp')} />{' '}
+            {t('Agreed to receive WhatsApp messages')}
           </label>
-          {writable ? <Button type="submit">{save.isPending ? 'Saving…' : 'Save'}</Button> : null}
+          {writable ? (
+            <Button type="submit">{save.isPending ? t('Saving…') : t('Save')}</Button>
+          ) : null}
         </fieldset>
       </form>
     </>

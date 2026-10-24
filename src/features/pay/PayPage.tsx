@@ -119,13 +119,13 @@ export function PayPage() {
 }
 
 function PayBody({ token, v, onChanged }: { token: string; v: PayView; onChanged: () => void }) {
-  const t = PAY_TEXT[v.language] ?? PAY_TEXT.en;
+  const [lang, setLang] = useState<PayLang>(v.language);
+  const t = PAY_TEXT[lang] ?? PAY_TEXT.en;
   const [done, setDone] = useState(false);
   const balance = paise(v.balance_paise);
   const paid = v.balance_paise <= 0 || v.status === 'paid';
   const lens = lensFor(v);
-  const lensLine =
-    v.language === 'hi' ? lens.line_hi : v.language === 'mr' ? lens.line_mr : lens.line_en;
+  const lensLine = lang === 'hi' ? lens.line_hi : lang === 'mr' ? lens.line_mr : lens.line_en;
   const uri = v.upi_id
     ? upiUri({
         vpa: v.upi_id,
@@ -143,6 +143,20 @@ function PayBody({ token, v, onChanged }: { token: string; v: PayView; onChanged
 
   return (
     <main className="mx-auto flex max-w-xl flex-col gap-3 p-4">
+      <label className="flex items-center gap-2 self-end">
+        <span className="sr-only">Language / भाषा</span>
+        <select
+          className="ui-input"
+          style={{ width: 'auto' }}
+          value={lang}
+          onChange={(e) => setLang(e.target.value as PayLang)}
+          aria-label="Language / भाषा"
+        >
+          <option value="en">English</option>
+          <option value="hi">हिन्दी</option>
+          <option value="mr">मराठी</option>
+        </select>
+      </label>
       <h1>{v.business_name}</h1>
       <Card>
         <p>

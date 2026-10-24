@@ -251,6 +251,19 @@ describe('autonomy policy', () => {
     expect(pickChannel({ ...c, email: null, opt_in_whatsapp: true }, ['email']).channel).toBeNull();
   });
 
+  it('withdrawn consent blocks that channel, or every channel for "any"', () => {
+    const c = { email: 'a@x.test', phone: '9811111111', opt_in_whatsapp: true };
+    const both = ['email', 'whatsapp'] as const;
+    expect(pickChannel({ ...c, consent_withdrawn: ['email'] }, both).channel).toBe('whatsapp');
+    expect(pickChannel({ ...c, consent_withdrawn: ['whatsapp'] }, both).channel).toBe('email');
+    expect(
+      pickChannel({ ...c, consent_withdrawn: ['email', 'whatsapp'] }, both).channel,
+    ).toBeNull();
+    const any = pickChannel({ ...c, consent_withdrawn: ['any'] }, both);
+    expect(any.channel).toBeNull();
+    expect(any.note).toMatch(/withdrawn consent/);
+  });
+
   it('quiet hours wrap midnight in IST', () => {
     const at = (h: number) => new Date(Date.UTC(2026, 9, 24, h, 0) - 5.5 * 3600_000);
     expect(inQuiet(at(22), 21, 9)).toBe(true);

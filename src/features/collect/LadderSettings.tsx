@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Card, Input, useToast } from '@/components/ui';
@@ -8,6 +9,7 @@ import { ladderFromProfile, saveLadder } from './collectService';
 import { STAGES, STAGE_LABEL, validateLadder, type LadderConfig } from './ladder';
 
 export function LadderSettings() {
+  const { t } = useTranslation();
   const org = useOrg();
   const orgId = org.data?.orgId;
   const qc = useQueryClient();
@@ -44,8 +46,8 @@ export function LadderSettings() {
   if (!p) return null;
   return (
     <Card>
-      <h2>Collection reminders</h2>
-      <p>Days from the due date when each step is due (negative = before the due date).</p>
+      <h2>{t('Collection reminders')}</h2>
+      <p>{t('Days from the due date when each step is due (negative = before the due date).')}</p>
       {STAGES.map((s) => (
         <Input
           key={s}
@@ -57,7 +59,7 @@ export function LadderSettings() {
         />
       ))}
       <Input
-        label="Payment Demand Letter deadline (days)"
+        label={t('Payment Demand Letter deadline (days)')}
         type="number"
         value={letterDays}
         disabled={!canEdit}
@@ -66,10 +68,10 @@ export function LadderSettings() {
       {error ? <p role="alert">{error}</p> : null}
       {canEdit ? (
         <Button disabled={Boolean(error) || save.isPending} onClick={() => save.mutate()}>
-          Save
+          {t('Save')}
         </Button>
       ) : (
-        <p>Only the owner can change these.</p>
+        <p>{t('Only the owner can change these.')}</p>
       )}
     </Card>
   );

@@ -1,7 +1,9 @@
+import { tr } from '@/app/i18n';
+import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { Button, Card, Input, Select, useToast } from '@/components/ui';
+import { Button, Card, Input, Loading, Select, useToast } from '@/components/ui';
 import { useOrg } from '@/features/auth/useOrg';
 import { addDays, todayIST } from '@/lib/dates';
 import { formatINR, paise } from '@/lib/money';
@@ -33,6 +35,7 @@ function GroupCard({
   onChanged: () => void;
   reasons: Map<string, string>;
 }) {
+  const { t } = useTranslation();
   const toast = useToast();
   const c = group.customer;
   const p = group.primary;
@@ -62,44 +65,55 @@ function GroupCard({
           ch === 'whatsapp'
             ? whatsappUrl(c.phone ?? '', body)
             : ch === 'email'
-              ? mailtoUrl(c.email ?? '', `Payment reminder: ${p.invoice.number}`, body)
+              ? mailtoUrl(
+                  c.email ?? '',
+                  t('Payment reminder: {{number}}', { number: p.invoice.number }),
+                  body,
+                )
               : smsUrl(c.phone ?? '', body);
         window.open(url, '_blank', 'noopener');
       }
-      toast.show('Logged as sent.');
+      toast.show(t('Logged as sent.'));
     });
 
   const missing =
     (channel === 'whatsapp' || channel === 'sms') && !c.phone
-      ? 'No phone number for this customer.'
+      ? t('No phone number for this customer.')
       : channel === 'email' && !c.email
-        ? 'No email address for this customer.'
+        ? t('No email address for this customer.')
         : null;
 
   return (
     <Card>
       <h2>
         <Link to={`/customers/${c.id}`}>{c.name}</Link>
-        {c.tier === 'key' ? ' (key customer)' : ''}
+        {c.tier === 'key' ? t(' (key customer)') : ''}
       </h2>
       <ul>
         {group.items.map((it) => (
           <li key={it.invoice.id}>
-            <Link to={`/invoices/${it.invoice.id}`}>{it.invoice.number}</Link> · due{' '}
-            {prettyDate(it.invoice.due_date)} · {formatINR(paise(it.decision.amountDue))} ·{' '}
-            {STAGE_LABEL[it.stage]}
+            <Link to={`/invoices/${it.invoice.id}`}>{it.invoice.number}</Link> {t('· due')}{' '}
+            {t('{{prettyDate}} · {{formatINR}} ·', {
+              prettyDate: prettyDate(it.invoice.due_date),
+              formatINR: formatINR(paise(it.decision.amountDue)),
+            })}{' '}
+            {tr(STAGE_LABEL[it.stage])}
             {it.invoice === p.invoice
               ? ''
-              : ' (waits for a later day: one message per customer per day)'}
-            {it.needsApproval ? ' · needs your approval' : ''}
-            {reasons.get(it.invoice.id) ? <div>Priority: {reasons.get(it.invoice.id)}</div> : null}
+              : t(' (waits for a later day: one message per customer per day)')}
+            {it.needsApproval ? t(' · needs your approval') : ''}
+            {reasons.get(it.invoice.id) ? (
+              <div>
+                {t('Priority:')} {tr(reasons.get(it.invoice.id) ?? '')}
+              </div>
+            ) : null}
           </li>
         ))}
       </ul>
 
       {p.needsApproval ? (
         <p>
-          {p.decision.reason}{' '}
+          {tr(p.decision.reason)}{' '}
           <Button
             disabled={run.isPending}
             onClick={() =>
@@ -108,34 +122,36 @@ function GroupCard({
               })
             }
           >
-            Approve this stage
+            {t('Approve this stage')}
           </Button>
         </p>
       ) : null}
 
       {group.guide ? (
         <>
-          <h3>Next steps</h3>
+          <h3>{t('Next steps')}</h3>
           <ul>
             {group.guide.map((g) => (
-              <li key={g}>{g}</li>
+              <li key={g}>{tr(g)}</li>
             ))}
           </ul>
           <p>
-            <Link to={`/doc/case/${c.id}`}>Open case pack</Link>
+            <Link to={`/doc/case/${c.id}`}>{t('Open case pack')}</Link>
           </p>
         </>
       ) : null}
 
       {group.callPrompt ? (
         <p>
-          <strong>Call:</strong> {group.callPrompt}
+          <strong>{t('Call:')}</strong> {tr(group.callPrompt)}
         </p>
       ) : null}
 
       {group.message ? (
         <>
-          <label htmlFor={`msg-${c.id}`}>Message ({c.language})</label>
+          <label htmlFor={`msg-${c.id}`}>
+            {t('Message ({{language}})', { language: c.language })}
+          </label>
           <textarea
             id={`msg-${c.id}`}
             className="ui-input"
@@ -144,30 +160,32 @@ function GroupCard({
             onChange={(e) => setText(e.target.value)}
           />
           {group.lensLine ? (
-            <p>Compliance line included where it applies: {group.lensLine}</p>
+            <p>
+              {t('Compliance line included where it applies:')} {group.lensLine}
+            </p>
           ) : null}
           {p.stage === 'demand_letter' ? (
             <p>
-              <Link to={`/doc/letter/${p.invoice.id}`}>Open Payment Demand Letter</Link>
+              <Link to={`/doc/letter/${p.invoice.id}`}>{t('Open Payment Demand Letter')}</Link>
             </p>
           ) : null}
           {group.alreadyMessagedToday ? (
-            <p role="status">This customer already has a message today.</p>
+            <p role="status">{t('This customer already has a message today.')}</p>
           ) : null}
           <div className="flex flex-wrap gap-2">
             <Button disabled={run.isPending || !c.phone} onClick={() => send('whatsapp', true)}>
-              WhatsApp
+              {t('WhatsApp')}
             </Button>
             <Button disabled={run.isPending || !c.email} onClick={() => send('email', true)}>
-              Email
+              {t('Email')}
             </Button>
             <Button disabled={run.isPending || !c.phone} onClick={() => send('sms', true)}>
-              SMS
+              {t('SMS')}
             </Button>
           </div>
           <div className="flex flex-wrap items-end gap-2">
             <Select
-              label="Sent by"
+              label={t('Sent by')}
               value={channel}
               onChange={(e) => setChannel(e.target.value as SendChannel)}
               options={[
@@ -181,7 +199,7 @@ function GroupCard({
               disabled={run.isPending}
               onClick={() => send(channel, false)}
             >
-              Mark as sent
+              {t('Mark as sent')}
             </Button>
           </div>
           {missing ? <p>{missing}</p> : null}
@@ -190,13 +208,13 @@ function GroupCard({
 
       <div className="flex flex-wrap items-end gap-2">
         <Select
-          label="Snooze for"
+          label={t('Snooze for')}
           value={snoozeDays}
           onChange={(e) => setSnoozeDays(e.target.value)}
           options={[
-            { value: '1', label: '1 day' },
-            { value: '3', label: '3 days' },
-            { value: '7', label: '7 days' },
+            { value: '1', label: t('1 day') },
+            { value: '3', label: t('3 days') },
+            { value: '7', label: t('7 days') },
           ]}
         />
         <Button
@@ -208,12 +226,12 @@ function GroupCard({
             })
           }
         >
-          Snooze
+          {t('Snooze')}
         </Button>
       </div>
       <div className="flex flex-wrap items-end gap-2">
         <Input
-          label="Promised date"
+          label={t('Promised date')}
           type="date"
           value={promiseDate}
           onChange={(e) => setPromiseDate(e.target.value)}
@@ -232,7 +250,7 @@ function GroupCard({
             })
           }
         >
-          Promise to pay
+          {t('Promise to pay')}
         </Button>
       </div>
     </Card>
@@ -240,6 +258,7 @@ function GroupCard({
 }
 
 export function CollectTodayPage() {
+  const { t } = useTranslation();
   const org = useOrg();
   const orgId = org.data?.orgId;
   const qc = useQueryClient();
@@ -254,16 +273,20 @@ export function CollectTodayPage() {
   });
   return (
     <>
-      <h1>Collect: today</h1>
+      <h1>{t('Collect: today')}</h1>
       <p>
-        Actions due on {prettyDate(today)}. Messages go out 09:00–21:00 IST, one per customer per
-        day.
+        {t(
+          'Actions due on {{prettyDate}}. Messages go out 09:00–21:00 IST, one per customer per day.',
+          { prettyDate: prettyDate(today) },
+        )}
       </p>
       <AgentPanel />
-      {q.isLoading || org.isLoading ? <p>Loading…</p> : null}
+      {q.isLoading || org.isLoading ? <Loading /> : null}
       {q.error ? <p role="alert">{errorMessage(q.error)}</p> : null}
-      {q.data?.truncated ? <p role="status">Showing the first 1000 live invoices only.</p> : null}
-      {q.data && q.data.groups.length === 0 ? <p>Nothing to send today.</p> : null}
+      {q.data?.truncated ? (
+        <p role="status">{t('Showing the first 1000 live invoices only.')}</p>
+      ) : null}
+      {q.data && q.data.groups.length === 0 ? <p>{t('Nothing to send today.')}</p> : null}
       {(q.data ? rankGroups(q.data.groups, chase) : []).map((g) => (
         <GroupCard
           key={`${g.customer.id}-${g.primary.invoice.id}-${g.primary.stage}`}

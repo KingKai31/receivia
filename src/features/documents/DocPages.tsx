@@ -1,7 +1,8 @@
+import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import QRCode from 'qrcode';
 import { Link, useParams } from 'react-router-dom';
-import { Button } from '@/components/ui';
+import { Button, Loading } from '@/components/ui';
 import { useOrg } from '@/features/auth/useOrg';
 import { getCustomer } from '@/features/customers/customerService';
 import { getInvoice } from '@/features/invoices/invoiceService';
@@ -17,10 +18,11 @@ import {
 } from './invoiceDocument';
 
 function Toolbar({ back }: { back: string }) {
+  const { t } = useTranslation();
   return (
     <div className="doc-toolbar">
-      <Link to={back}>Back</Link>
-      <Button onClick={() => window.print()}>Print or save as PDF</Button>
+      <Link to={back}>{t('Back')}</Link>
+      <Button onClick={() => window.print()}>{t('Print or save as PDF')}</Button>
     </div>
   );
 }
@@ -45,7 +47,7 @@ export function InvoiceDocPage() {
       return { model, qr };
     },
   });
-  if (q.isLoading || org.isLoading) return <p>Loading…</p>;
+  if (q.isLoading || org.isLoading) return <Loading />;
   if (q.error) return <p role="alert">{errorMessage(q.error)}</p>;
   if (!q.data) return null;
   return (
@@ -73,7 +75,7 @@ export function NoteDocPage() {
       return buildNoteDocument({ note, invoice, supplier, buyer, today: todayIST() });
     },
   });
-  if (q.isLoading || org.isLoading) return <p>Loading…</p>;
+  if (q.isLoading || org.isLoading) return <Loading />;
   if (q.error) return <p role="alert">{errorMessage(q.error)}</p>;
   if (!q.data) return null;
   return (

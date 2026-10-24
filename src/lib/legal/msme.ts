@@ -118,9 +118,9 @@ export function msmeForm1(args: {
     'Company buyer past the MSME due date.',
     { days_past: past },
     {
-      en: 'A company that owes an MSME supplier money beyond the MSMED due date (Section 15) may have to report it in MSME Form I under the Companies Act, 2013 (Section 405 and the related order), which is generally filed half-yearly.',
-      hi: 'जो कंपनी किसी एमएसएमई आपूर्तिकर्ता को एमएसएमईडी देय तिथि (धारा 15) के बाद भी भुगतान नहीं करती, उसे कंपनी अधिनियम, 2013 (धारा 405 और संबंधित आदेश) के तहत एमएसएमई फॉर्म I में इसकी जानकारी देनी पड़ सकती है, जो आमतौर पर छमाही दाखिल होता है।',
-      mr: 'जी कंपनी एमएसएमई पुरवठादाराचे पैसे एमएसएमईडी देय तारखेनंतरही (कलम 15) देत नाही, तिला कंपनी कायदा, 2013 (कलम 405 आणि संबंधित आदेश) अंतर्गत एमएसएमई फॉर्म I मध्ये ते कळवावे लागू शकते, जो साधारणपणे सहामाही भरला जातो.',
+      en: 'A company that owes an MSME supplier money beyond the MSMED due date (Section 15) may have to report it in MSME Form I under the Companies Act, 2013 (Section 405 and the related order), which is generally filed half-yearly for amounts outstanding more than 45 days.',
+      hi: 'जो कंपनी किसी एमएसएमई आपूर्तिकर्ता को एमएसएमईडी देय तिथि (धारा 15) के बाद भी भुगतान नहीं करती, उसे कंपनी अधिनियम, 2013 (धारा 405 और संबंधित आदेश) के तहत एमएसएमई फॉर्म I में इसकी जानकारी देनी पड़ सकती है, जो आमतौर पर छमाही दाखिल होता है और 45 दिन से अधिक बकाया राशि के लिए होता है।',
+      mr: 'जी कंपनी एमएसएमई पुरवठादाराचे पैसे एमएसएमईडी देय तारखेनंतरही (कलम 15) देत नाही, तिला कंपनी कायदा, 2013 (कलम 405 आणि संबंधित आदेश) अंतर्गत एमएसएमई फॉर्म I मध्ये ते कळवावे लागू शकते, जो साधारणपणे सहामाही भरला जातो आणि 45 दिवसांपेक्षा जास्त थकीत रकमेसाठी असतो.',
     },
   );
 }

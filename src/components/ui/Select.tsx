@@ -1,4 +1,6 @@
+import { tr } from '@/app/i18n';
 import { forwardRef, useId, type SelectHTMLAttributes } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export interface SelectOption {
   value: string;
@@ -15,11 +17,12 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
   { label, options, error, id, ...rest },
   ref,
 ) {
+  const { t } = useTranslation();
   const auto = useId();
   const selectId = id ?? auto;
   return (
     <div className="ui-field">
-      <label htmlFor={selectId}>{label}</label>
+      <label htmlFor={selectId}>{t(label)}</label>
       <select
         ref={ref}
         id={selectId}
@@ -30,13 +33,13 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
       >
         {options.map((o) => (
           <option key={o.value} value={o.value}>
-            {o.label}
+            {tr(o.label)}
           </option>
         ))}
       </select>
       {error ? (
         <p id={`${selectId}-error`} className="ui-error" role="alert">
-          {error}
+          {t(error)}
         </p>
       ) : null}
     </div>

@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import i18next from 'i18next';
 
 export type ServiceErrorCode =
   'CONFLICT' | 'NOT_FOUND' | 'VALIDATION' | 'FORBIDDEN' | 'DUPLICATE' | 'UNKNOWN';
@@ -99,7 +100,36 @@ export function range(page: number, pageSize = PAGE_SIZE): [number, number] {
   return [from, from + pageSize - 1];
 }
 
-/** Message for any thrown value, for toasts and inline errors. */
+/** True for a failed request caused by the network rather than the server. */
+export function isNetworkError(e: unknown): boolean {
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) return true;
+  const msg = e instanceof Error ? e.message : String(e);
+  return /failed to fetch|networkerror|load failed|network request failed/i.test(msg);
+}
+
+/**
+ * Message for any thrown value, for toasts and inline errors. It says what happened and, where
+ * there is something to do about it, how to fix it.
+ */
 export function errorMessage(e: unknown): string {
-  return e instanceof Error ? e.message : 'Something went wrong. Try again.';
+  const hints: Partial<Record<ServiceErrorCode, string>> = {
+    FORBIDDEN: 'Ask the business owner to change your role if you need this.',
+    NOT_FOUND: 'It may have been deleted. Go back to the list and refresh it.',
+    DUPLICATE: 'Change the value, or open the existing record instead.',
+    UNKNOWN: 'Try again. If it keeps happening, the problem has been recorded.',
+  };
+  let m: string;
+  let hint: string | undefined;
+  if (isNetworkError(e)) {
+    m = 'Could not reach the server. Check your internet connection and try again.';
+  } else if (e instanceof ServiceError) {
+    m = e.message;
+    hint = hints[e.code];
+  } else if (e instanceof Error && e.message) {
+    m = e.message;
+  } else {
+    m = 'Something went wrong. Try again.';
+  }
+  const tx = (x: string) => (i18next.isInitialized ? i18next.t(x) : x);
+  return hint ? `${tx(m)} ${tx(hint)}` : tx(m);
 }

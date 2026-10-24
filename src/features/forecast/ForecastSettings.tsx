@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useEffect, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button, Card, Input, useToast } from '@/components/ui';
@@ -19,6 +20,7 @@ function toPaise(v: string): number | null {
 
 /** Opening bank balance and safety buffer: the two numbers the forecast starts from. */
 export function ForecastSettings() {
+  const { t } = useTranslation();
   const org = useOrg();
   const qc = useQueryClient();
   const toast = useToast();
@@ -51,30 +53,31 @@ export function ForecastSettings() {
   if (!ctx) return null;
   return (
     <Card>
-      <h2>Cash settings</h2>
+      <h2>{t('Cash settings')}</h2>
       <p>
-        The forecast starts from your bank balance today and warns when cash is expected to fall
-        below the buffer.
+        {t(
+          'The forecast starts from your bank balance today and warns when cash is expected to fall below the buffer.',
+        )}
       </p>
       <Input
-        label="Bank balance (₹)"
+        label={t('Bank balance (₹)')}
         value={balance}
         disabled={!canEdit}
-        error={bal === null ? 'Enter an amount in rupees' : undefined}
+        error={bal === null ? t('Enter an amount in rupees') : undefined}
         onChange={(e) => setBalance(e.target.value)}
       />
       <Input
-        label="Balance as of"
+        label={t('Balance as of')}
         type="date"
         value={on}
         disabled={!canEdit}
         onChange={(e) => setOn(e.target.value)}
       />
       <Input
-        label="Safety buffer (₹)"
+        label={t('Safety buffer (₹)')}
         value={buffer}
         disabled={!canEdit}
-        error={buf === null ? 'Enter an amount in rupees' : undefined}
+        error={buf === null ? t('Enter an amount in rupees') : undefined}
         onChange={(e) => setBuffer(e.target.value)}
       />
       {canEdit ? (
@@ -82,10 +85,10 @@ export function ForecastSettings() {
           disabled={bal === null || buf === null || save.isPending}
           onClick={() => save.mutate()}
         >
-          Save
+          {t('Save')}
         </Button>
       ) : (
-        <p>Only the owner can change these.</p>
+        <p>{t('Only the owner can change these.')}</p>
       )}
     </Card>
   );

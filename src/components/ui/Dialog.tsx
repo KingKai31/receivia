@@ -22,8 +22,8 @@ export function Dialog({ open, title, onClose, children }: DialogProps) {
   }, [open]);
 
   return (
-    <dialog ref={ref} className="ui-dialog" aria-label={title} onClose={onClose}>
-      <h2 className="mt-0">{title}</h2>
+    <dialog ref={ref} className="ui-dialog" aria-label={t(title)} onClose={onClose}>
+      <h2 className="mt-0">{t(title)}</h2>
       {children}
       <div className="mt-4 flex justify-end">
         <Button variant="secondary" onClick={onClose}>

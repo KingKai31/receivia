@@ -1,5 +1,9 @@
 import { useTranslation } from 'react-i18next';
 import { NavLink, Outlet } from 'react-router-dom';
+import { useEffect } from 'react';
+import { LanguagePicker } from '@/components/ui';
+import { useOrg } from '@/features/auth/useOrg';
+import { setErrorContext } from '@/lib/errorLog';
 
 export const NAV_ITEMS = [
   { to: '/', key: 'today', end: true },
@@ -18,8 +22,21 @@ const linkClass = ({ isActive }: { isActive: boolean }) =>
 
 export function Layout() {
   const { t } = useTranslation();
+  const org = useOrg();
+  const orgId = org.data?.orgId ?? null;
+  useEffect(() => setErrorContext(orgId), [orgId]);
   return (
     <div className="min-h-screen md:flex">
+      <a
+        href="#main"
+        onClick={(e) => {
+          e.preventDefault();
+          document.getElementById('main')?.focus();
+        }}
+        className="sr-only focus:not-sr-only focus:fixed focus:left-2 focus:top-2 focus:z-50 focus:bg-white focus:p-3"
+      >
+        {t('Skip to content')}
+      </a>
       <aside className="app-sidebar hidden md:flex md:w-56 md:flex-col md:gap-2 md:p-4">
         <strong className="mb-2 block">{t('brand')}</strong>
         <nav aria-label={t('nav.main')} className="flex flex-col gap-1">
@@ -29,8 +46,14 @@ export function Layout() {
             </NavLink>
           ))}
         </nav>
+        <div className="mt-auto">
+          <LanguagePicker />
+        </div>
       </aside>
-      <main className="min-w-0 flex-1 p-4 pb-24 md:pb-6">
+      <main id="main" tabIndex={-1} className="min-w-0 flex-1 p-4 pb-24 md:pb-6">
+        <div className="mb-3 md:hidden">
+          <LanguagePicker />
+        </div>
         <Outlet />
       </main>
       <nav
