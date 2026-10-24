@@ -346,7 +346,7 @@ async function mintPayLink(
 
 async function resendSend(
   env: AgentEnv,
-  a: { from: string; to: string; replyTo: string | null; subject: string; text: string },
+  a: { from: string; to: string; cc?: string | null; replyTo: string | null; subject: string; text: string },
 ): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
   if (!env.resendKey) return { ok: false, error: 'RESEND_API_KEY is not set' };
   try {
@@ -356,6 +356,7 @@ async function resendSend(
       body: JSON.stringify({
         from: a.from,
         to: [a.to],
+        ...(a.cc ? { cc: [a.cc] } : {}),
         subject: a.subject,
         text: a.text,
         ...(a.replyTo ? { reply_to: a.replyTo } : {}),
@@ -532,7 +533,7 @@ export async function runSend(
         }
       } else {
         // wa.me path: the owner taps the link in Today and confirms the send.
-        const url = g.customer.phone ? whatsappUrl(g.customer.phone, body) : null;
+        const url = (g.customer.ap_phone || g.customer.phone) ? whatsappUrl((g.customer.ap_phone || g.customer.phone)!, body) : null;
         await db
           .from('agent_actions')
           .update({
@@ -547,7 +548,8 @@ export async function runSend(
     }
 
     // email
-    const to = p.test_mode ? owner : g.customer.email;
+    const custEmail = g.customer.ap_email || g.customer.email;
+    const to = p.test_mode ? owner : custEmail;
     if (!to) {
       const err = p.test_mode
         ? 'No owner email to receive test messages.'
@@ -563,11 +565,12 @@ export async function runSend(
       continue;
     }
     const text = p.test_mode
-      ? `TEST MODE: this message would have gone to ${g.customer.name} <${g.customer.email ?? 'no email'}>.\n\n${body}`
+      ? `TEST MODE: this message would have gone to ${g.customer.name} <${custEmail ?? 'no email'}>.\n\n${body}`
       : body;
     const res = await resendSend(env, {
       from: `${p.legal_name || 'Receivia'} via Receivia <${env.fromEmail ?? 'onboarding@resend.dev'}>`,
       to,
+      cc: !p.test_mode && g.customer.cc_owner && owner !== to ? owner : null,
       replyTo: owner,
       subject: p.test_mode ? `[TEST] ${subject}` : subject,
       text,
