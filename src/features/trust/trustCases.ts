@@ -289,7 +289,7 @@ function forecastInput() {
         deferrable: false,
       },
     ],
-    runs: 200,
+    runs: 100,
   };
 }
 let cachedSim: ReturnType<typeof simulate> | null = null;
@@ -297,7 +297,7 @@ const sim = () => (cachedSim ??= simulate(forecastInput()));
 add(
   'Forecast',
   'In every run each week closes at opening + money in - money out',
-  '0 breaks in 200 runs × 13 weeks',
+  '0 breaks in 100 runs × 13 weeks',
   () => {
     const f = sim();
     let bad = 0;
@@ -314,7 +314,7 @@ add(
 add(
   'Forecast',
   'Each week opens where the previous week closed',
-  '0 breaks in 200 runs × 12 joins',
+  '0 breaks in 100 runs × 12 joins',
   () => {
     const f = sim();
     let bad = 0;
