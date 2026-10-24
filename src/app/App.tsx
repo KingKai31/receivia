@@ -15,6 +15,9 @@ const ApprovePage = lazy(() =>
 const SignInPage = lazy(() =>
   import('@/features/auth/SignInPage').then((m) => ({ default: m.SignInPage })),
 );
+const StatementPage = lazy(() =>
+  import('@/features/pay/StatementPage').then((m) => ({ default: m.StatementPage })),
+);
 const PayPage = lazy(() => import('@/features/pay/PayPage').then((m) => ({ default: m.PayPage })));
 const CustomerDetailPage = lazy(() =>
   import('@/features/customers/CustomerDetailPage').then((m) => ({
@@ -115,6 +118,14 @@ export function App() {
                 element={
                   <Guard>
                     <SignInPage />
+                  </Guard>
+                }
+              />
+              <Route
+                path="/pay/statement/:token"
+                element={
+                  <Guard>
+                    <StatementPage />
                   </Guard>
                 }
               />

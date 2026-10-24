@@ -24,8 +24,10 @@ Deno.serve(async (req) => {
   const res = await admin.rpc('pay_view', { p_token: token });
   if (res.error) return json({ error: 'failed' }, 500);
   if (!res.data) return json({ error: 'not_found' }, 404);
+  const extra = await admin.rpc('pay_extra_view', { p_token: token });
   return json({
     ...res.data,
+    ...(extra.data ?? {}),
     razorpay: {
       configured: Boolean(Deno.env.get('RAZORPAY_KEY_ID') && Deno.env.get('RAZORPAY_KEY_SECRET')),
       test_mode: (Deno.env.get('RAZORPAY_KEY_ID') ?? '').startsWith('rzp_test_'),

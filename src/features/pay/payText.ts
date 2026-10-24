@@ -33,6 +33,19 @@ export interface PayStrings {
   error: string;
   tooMany: string;
   contact: string;
+  receivedBtn: string;
+  receivedOn: string;
+  receivedNote: string;
+  receivedThanks: string;
+  receivedDone: string;
+  partsBtn: string;
+  partsCount: string;
+  partsDate: string;
+  partsAmount: string;
+  partsHint: string;
+  partsSent: string;
+  partsPending: string;
+  partsApproved: string;
 }
 
 export const PAY_TEXT: Record<PayLang, PayStrings> = {
@@ -75,6 +88,19 @@ export const PAY_TEXT: Record<PayLang, PayStrings> = {
     error: 'Something went wrong. Please try again.',
     tooMany: 'Too many attempts. Please wait a few minutes and try again.',
     contact: 'Contact',
+    receivedBtn: 'Goods or services received',
+    receivedOn: 'Date received',
+    receivedNote: 'Note (optional)',
+    receivedThanks: 'Thank you. We have recorded the date you received the goods or services.',
+    receivedDone: 'Received on',
+    partsBtn: 'Pay in parts',
+    partsCount: 'Number of instalments',
+    partsDate: 'Date',
+    partsAmount: 'Amount (₹)',
+    partsHint: '2 to 4 instalments, within 90 days, at least 7 days apart, adding up to the balance.',
+    partsSent: 'Sent. The business will approve the plan or reply.',
+    partsPending: 'Your instalment plan is waiting for the business to approve it.',
+    partsApproved: 'Instalment plan approved:',
   },
   hi: {
     invoice: 'चालान',
@@ -115,6 +141,19 @@ export const PAY_TEXT: Record<PayLang, PayStrings> = {
     error: 'कुछ गलत हो गया। कृपया फिर कोशिश करें।',
     tooMany: 'बहुत अधिक प्रयास। कृपया कुछ मिनट रुककर फिर कोशिश करें।',
     contact: 'संपर्क',
+    receivedBtn: 'माल या सेवा प्राप्त हुई',
+    receivedOn: 'प्राप्ति की तारीख',
+    receivedNote: 'टिप्पणी (वैकल्पिक)',
+    receivedThanks: 'धन्यवाद. हमने माल या सेवा मिलने की तारीख दर्ज कर ली है.',
+    receivedDone: 'प्राप्त हुआ:',
+    partsBtn: 'किश्तों में भुगतान',
+    partsCount: 'किश्तों की संख्या',
+    partsDate: 'तारीख',
+    partsAmount: 'राशि (₹)',
+    partsHint: '2 से 4 किश्तें, 90 दिन के भीतर, कम से कम 7 दिन के अंतर पर, कुल बकाया के बराबर.',
+    partsSent: 'भेज दिया गया. व्यवसाय योजना मंज़ूर करेगा या जवाब देगा.',
+    partsPending: 'आपकी किश्त योजना व्यवसाय की मंज़ूरी का इंतज़ार कर रही है.',
+    partsApproved: 'किश्त योजना मंज़ूर:',
   },
   mr: {
     invoice: 'बिल',
@@ -155,5 +194,18 @@ export const PAY_TEXT: Record<PayLang, PayStrings> = {
     error: 'काहीतरी चुकले. कृपया पुन्हा प्रयत्न करा.',
     tooMany: 'खूप प्रयत्न झाले. कृपया काही मिनिटे थांबून पुन्हा प्रयत्न करा.',
     contact: 'संपर्क',
+    receivedBtn: 'माल किंवा सेवा मिळाली',
+    receivedOn: 'मिळाल्याची तारीख',
+    receivedNote: 'टीप (ऐच्छिक)',
+    receivedThanks: 'धन्यवाद. माल किंवा सेवा मिळाल्याची तारीख आम्ही नोंदवली आहे.',
+    receivedDone: 'मिळाले:',
+    partsBtn: 'हप्त्यांमध्ये पेमेंट',
+    partsCount: 'हप्त्यांची संख्या',
+    partsDate: 'तारीख',
+    partsAmount: 'रक्कम (₹)',
+    partsHint: '2 ते 4 हप्ते, 90 दिवसांत, किमान 7 दिवसांच्या अंतराने, एकूण थकबाकीइतके.',
+    partsSent: 'पाठवले. व्यवसाय योजना मंजूर करेल किंवा उत्तर देईल.',
+    partsPending: 'तुमची हप्ता योजना व्यवसायाच्या मंजुरीची वाट पाहत आहे.',
+    partsApproved: 'हप्ता योजना मंजूर:',
   },
 };

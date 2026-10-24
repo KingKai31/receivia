@@ -2,7 +2,8 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { clientIp, cors, json } from '../_shared/http.ts';
 
-const KINDS = ['paid', 'dispute', 'promise'];
+const KINDS = ['paid', 'dispute', 'promise', 'received', 'instalments'];
+const EXTRA = ['received', 'instalments'];
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
@@ -24,7 +25,7 @@ Deno.serve(async (req) => {
     return json({ error: 'bad_request' }, 400);
   }
   const payload = typeof body.payload === 'object' && body.payload ? body.payload : {};
-  const res = await admin.rpc('pay_action', {
+  const res = await admin.rpc(EXTRA.includes(body.kind) ? 'pay_extra' : 'pay_action', {
     p_token: body.token,
     p_kind: body.kind,
     p_payload: payload,
