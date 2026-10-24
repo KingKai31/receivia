@@ -9,10 +9,15 @@ for (const line of fs.readFileSync('.env.local', 'utf8').split(/\r?\n/)) {
   const m = line.match(/^([A-Z0-9_]+)=(.*)$/);
   if (m && !(m[1] in process.env)) process.env[m[1]] = m[2].trim();
 }
-const base = (process.env.VITE_SUPABASE_URL ?? `https://${process.env.SUPABASE_PROJECT_REF}.supabase.co`).replace(/\/$/, '');
+const base = (
+  process.env.VITE_SUPABASE_URL ?? `https://${process.env.SUPABASE_PROJECT_REF}.supabase.co`
+).replace(/\/$/, '');
 const secret = process.env.AGENT_CRON_SECRET;
 if (!secret) throw new Error('AGENT_CRON_SECRET is not set');
-const c = new pg.Client({ connectionString: process.env.PROD_DATABASE_URL, ssl: { rejectUnauthorized: false } });
+const c = new pg.Client({
+  connectionString: process.env.PROD_DATABASE_URL,
+  ssl: { rejectUnauthorized: false },
+});
 await c.connect();
 await c.query('create extension if not exists pg_cron');
 await c.query('create extension if not exists pg_net with schema extensions');
@@ -24,7 +29,9 @@ if (!process.argv.includes('--remove')) {
     body := '{"step":"all","trigger":"pg_cron"}'::jsonb,
     timeout_milliseconds := 120000)`;
   await c.query(`select cron.schedule('receivia-agent-daily', '30 4 * * *', $1)`, [cmd]);
-  const r = await c.query(`select jobname, schedule, active from cron.job where jobname = 'receivia-agent-daily'`);
+  const r = await c.query(
+    `select jobname, schedule, active from cron.job where jobname = 'receivia-agent-daily'`,
+  );
   console.log(r.rows);
 } else console.log('removed');
 await c.end();
