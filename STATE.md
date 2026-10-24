@@ -25,7 +25,8 @@
 - [x] S5 Forecast and prioritisation (all 10 tasks done)
   - [x] 1 Delay model + grades  - [x] 2 Expenses  - [x] 3 Monte Carlo (2000 runs, seeded)  - [x] 4 Backtest  - [x] 5 What-ifs
   - [x] 6 Chase priority + Collect order  - [x] 7 Gap solver  - [x] 8 /forecast + Today tiles  - [x] 9 Demo seed  - [x] 10 Tests + smoke
-- S6 Agent and automation: not started
+- [x] S6 Agent, automation, live deploy (all 8 tasks + Step 0 done; Anthropic credits and the Render Workflow service need the owner, see Needs owner)
+  - [x] 0 Live site  - [x] 1 Planner  - [x] 2 draft-message  - [x] 3 Autonomy  - [x] 4 Senders  - [x] 5 Owner brief + n8n export  - [x] 6 Render Workflow + pg_cron fallback  - [x] 7 Settings  - [x] 8 Tests
 - S7 Quality and trust: not started
 - S9 Design pass: not started
 - S8 Ship: not started
@@ -37,24 +38,30 @@
 | VITE_SUPABASE_ANON_KEY | public anon key | local .env / Render | missing |
 | SUPABASE_SERVICE_ROLE_KEY | edge functions / tests | local .env / Supabase secrets (auto in edge runtime) | missing |
 | DEMO_EMAIL, DEMO_PASSWORD | shared demo user (used by demo-login) | .env.local + Supabase secrets | set; demo user created on first demo-login |
-| ANTHROPIC_API_KEY | agent (edge only) | Supabase secrets | missing |
+| ANTHROPIC_API_KEY | agent (edge only) | .env.local + Supabase secrets | set, but the account has no credits (API 400 credit balance too low): drafts fall back to templates |
 | RAZORPAY_KEY_ID / _KEY_SECRET | payments test mode (payment links) | Supabase secrets | missing: pay page says "Online payment not configured" |
 | RAZORPAY_WEBHOOK_SECRET | verifies the webhook signature | Supabase secrets + .env.local | a random TEST value is set (used by scripts/smoke-pay.mjs); replace with the real one from the Razorpay dashboard |
 | SUPABASE_ACCESS_TOKEN, SUPABASE_PROJECT_REF | Supabase CLI (scripts/sb.mjs) | .env.local | working |
-| RESEND_API_KEY | email | Supabase secrets | missing |
+| RESEND_API_KEY | email | .env.local + Supabase secrets | set, working (from onboarding@resend.dev) |
+| RESEND_FROM | sender address once a domain is verified | Supabase secrets | unset (defaults to onboarding@resend.dev) |
+| AGENT_CRON_SECRET | server-to-server auth for agent-run (Render, pg_cron, local runner) | .env.local + Supabase secrets; the Render workflow also needs it | set |
+| APPROVAL_SIGNING_SECRET | HMAC key for the Approve-all link in the owner brief | .env.local + Supabase secrets | set |
+| RENDER_API_KEY, WORKFLOW_SLUG | cron job that starts the Render workflow | Render env of receivia-agent-daily | missing (Needs owner 6) |
 | WHATSAPP_TOKEN, WHATSAPP_PHONE_ID | WhatsApp | Supabase secrets | missing |
 | N8N_WEBHOOK_URL, N8N_SHARED_SECRET | n8n | Supabase secrets | missing |
-| APP_BASE_URL | links in messages | Supabase secrets / Render | set to http://localhost:5173 (browser replaces the origin with its own); change when deployed |
+| APP_BASE_URL | links in messages and the brief | Supabase secrets | set to https://receivia.onrender.com |
 | TEST_DATABASE_URL, PROD_DATABASE_URL, ALLOW_SINGLE_DB | same Supabase session-pooler URL (single project); ALLOW_SINGLE_DB=true lets scripts/db-remote.mjs run with equal URLs | .env.local (git-ignored) | working |
 | DATABASE_URL (tests only, optional) | DB tests; defaults to local `postgresql://postgres:postgres@127.0.0.1:54322/postgres` | shell | default |
 | REQUIRE_DB (tests only) | `1` makes db tests fail instead of skip when DB is down | CI | set in CI |
 
 ## Services
 - Supabase: ref nxohumijpbwfxomvkckk, region ap-northeast-1 (Tokyo, accepted). Local: CLI via npm (`supabase` devDependency), project_id `receivia`.
-- Render: none — not created (render.yaml ready: static site `receivia`).
-- GitHub: no remote yet; CI in .github/workflows/ci.yml.
+- Render: static site https://receivia.onrender.com (service srv-dbe8v6vb9u1s738s3bl0, Blueprint managed, env group receivia-groupname). Workflow `receivia-agent` and cron `receivia-agent-daily` are in render.yaml; whether the Blueprint created them is unverified (no Render API key here).
+- Supabase Auth: Site URL https://receivia.onrender.com; redirect URLs https://receivia.onrender.com/** and http://localhost:5173/** (set via the Management API).
+- pg_cron job `receivia-agent-daily` installed (30 4 * * * UTC = 10:00 IST) calling agent-run for every org.
+- GitHub: origin https://github.com/KingKai31/receivia (main pushed); CI in .github/workflows/ci.yml.
 - Razorpay: test mode — no account linked
-- n8n, Resend, WhatsApp, Anthropic: not set up
+- Resend: working. Anthropic: key set, no credits. WhatsApp Cloud API and n8n: not set up (n8n export in automation/n8n).
 
 ## Database
 Migrations: `0001_foundation.sql`, `0002_demo_org.sql`, `0003_invoicing.sql`, `0004_collections.sql`, `0005_payments.sql`, `0006_inbox.sql`, `0007_forecast.sql` (all applied to the one Supabase project). Every table has id uuid pk, org_id, created_at, updated_at (audit_log included; orgs.org_id = id generated). RLS enabled on all. Child tables use composite FKs `(parent_id, org_id)` so a row can never reference another org's parent. `org_id` is immutable (trigger).
@@ -95,6 +102,8 @@ S4 (0005, 0006): `invoices.credited_paise` (issued credit notes), `tds_paise` (t
 
 S5 (0007): `business_profile.opening_balance_paise`, `opening_balance_on`, `safety_buffer_paise` (>= 0; edited in Settings by the owner); `expenses.kind` (salary/rent/tax/supplier/utility/other) and `expenses.can_defer` (not called "deferrable" because that is an SQL keyword); view `invoice_settlements` (security_invoker: one row per confirmed payment applied to an invoice, with due date and total) feeds the delay model and the backtest.
 
+S6 (0008): `business_profile.autonomy_level` (0-2, default 0), `channels`, `quiet_start_hour`/`quiet_end_hour` (21/9), `test_mode` (default true), `demo_date` (pins today for the planner), `owner_email`, `owner_language`. `agent_actions.status` is now proposed/approved/sent/failed/skipped/rejected (old executed became sent) with `run_date`, `stage`, `channel`, `priority` (chase rank), `subject`, `body_template` (wording with slot tokens, never numbers), `draft_source` ai|template, `draft_note`, `approver` (auto:L1, owner:<uid>, owner:signed-link), `decision_log` jsonb, `attempts`, `error`, `wa_url`; a unique index on (org, invoice, action_type, stage, run_date) makes planning idempotent. New `agent_runs` (run log; members read, service role writes). `record_send` is executable by service_role.
+
 Demo org: id `00000000-0000-4000-8000-00000000de60` ("Demo Traders", state 27, regular), created in migration 0002.
 
 ## Edge functions and APIs
@@ -104,6 +113,9 @@ Demo org: id `00000000-0000-4000-8000-00000000de60` ("Demo Traders", state 27, r
 | create-pay-link | POST /functions/v1/create-pay-link {invoice_id} | user JWT (owner/accountant via RLS) | New pay token (sha256 stored, 60 days) + Razorpay Payment Link (reference_id = invoice id) when keys exist; returns {url, razorpay: ok|not_configured|failed}. |
 | get-pay-view | POST /functions/v1/get-pay-view {token} | none (verify_jwt=false), 60 req/min/IP | Public fields of that token's invoice only. |
 | pay-action | POST /functions/v1/pay-action {token, kind, payload} | none, 10 req/10 min/IP | Buyer claim / dispute / promise; lands in the Inbox and pauses the ladder. |
+| agent-run | POST /functions/v1/agent-run {org_id?, step: orgs/plan/send/brief/log/all} | verify_jwt=false; header x-agent-secret (AGENT_CRON_SECRET) or an owner/accountant JWT for their own org | Planner, sender, owner brief, run log. `all` without org_id runs every org (pg_cron). Logic lives in src/features/agent/server.ts, bundled to _shared/agent.bundle.js by `node scripts/build-agent.mjs` (re-run and redeploy after changing agent code). |
+| draft-message | POST /functions/v1/draft-message | same auth | Anthropic claude-sonnet-5-5 wording (facts only, no tools), validated, falls back to the template. |
+| approve-actions | POST /functions/v1/approve-actions {t, confirm} | signed expiring token (HMAC, 48 h) | Preview or approve all proposed actions of that plan day, then send. Used by /approve. |
 | razorpay-webhook | POST https://nxohumijpbwfxomvkckk.supabase.co/functions/v1/razorpay-webhook | none (verify_jwt=false), HMAC-SHA256 signature | payment_link.paid / payment.captured: records payment + allocation idempotently. |
 
 All deployed with `node scripts/sb.mjs functions deploy <name> --project-ref '$REF' --use-api [--no-verify-jwt]` (`--use-api` because the Docker bundler hangs here). Shared pure code in supabase/functions/_shared/.
@@ -125,7 +137,15 @@ All deployed with `node scripts/sb.mjs functions deploy <name> --project-ref '$R
 | /pay/:token | public buyer page, phone first, customer language (en/hi/mr), UPI QR, Razorpay link, claim/dispute/promise, lens lines | public |
 | /forecast | band chart, weekly table, gap plan, what-ifs, chase ranking, backtest, customer grades | auth |
 | /expenses | recurring rules, one-offs, deferrable supplier bills (add, edit, switch off, delete) | auth (owner/accountant write) |
+| /approve?t= | Approve-all page behind the brief link (the signed token is the credential) | public |
 | /settings | org name, role, sign out, business profile form (owner edits) | auth |
+
+## Agent (S6)
+- Planner (rules, no AI): per org per plan day (demo_date or IST today), one action per customer from the ladder (`buildToday`), ordered by chase priority, plus owner_task rows for next_steps and promises due today. Stale unsent actions of other days become skipped. Autonomy: L0 suggest only; L1 auto-approves pre_due, due_today, overdue_firm; L2 adds final; standard tier only. Demand letters, next steps and key tier always need the owner. Channel: email if enabled and on file, else WhatsApp only when opted in; none = skipped with the reason.
+- Wording (draft.ts): the model sees structured facts only and returns {subject, body} with slot tokens; validateDraft rejects digits (incl. Devanagari), number words, rupee sign, links, unknown or missing slots, banned words, bad length; failure or no key = stage template. Customer text (latest dispute reason) goes only inside customer_text data markers, closing marker stripped. Numbers, dates, names and the pay link are filled at send time from the database.
+- Sender: revalidates against the live ladder, one message per customer per day, quiet hours (skipped in test mode), pay token minted with the service role, Resend email with reply-to owner. Test mode sends to the owner with a [TEST] subject and records only the action (no reminder/message row, so the ladder does not advance). Failures set status failed with the error; Today shows them with Retry. WhatsApp: wa.me link on the Collect page (Open WhatsApp, Mark sent); the Cloud API path runs when WHATSAPP_TOKEN and WHATSAPP_PHONE_ID exist and test mode is off.
+- Owner brief: email in owner_language ("3 to chase today, ₹2.1L, shortfall risk week 3") with an Approve-all link to /approve.
+- Daily job: Render workflow (automation/render: tasks daily, runOrg, plan, send, brief, log; 3 retries, backoff x2) started by cron receivia-agent-daily; fallback pg_cron (`node scripts/setup-pgcron.mjs`); on demand `node scripts/agent-run.mjs [--org id] [--step ...]` or Run agent now on /collect.
 
 ## Data
 - supabase/seed/seed.sql is a no-op placeholder; demo org comes from migration 0002. Demo customers + 8 open invoices: `node scripts/seed-demo.mjs` (idempotent, data in supabase/seed/demo-data.json, already run). `node scripts/reset-demo.mjs` clears payments/bank/TDS/claims/etc. and re-seeds (audit_log stays). supabase/seed/bank-statement.csv matches those invoices: exact, part, multi-invoice, 194C short, overpayment, unknown, GST TDS 2% (government), 194Q 0.1%, plus a debit.
@@ -167,6 +187,8 @@ All deployed with `node scripts/sb.mjs functions deploy <name> --project-ref '$R
 | CI / deploy | .github/workflows/ci.yml, render.yaml |
 
 ## Tests
+- S6 (2026-10-24): `npm test` 334 pass (agent 78: validator rejects digits, number words, links, banned words, unknown and missing slots, lengths; template fallback on missing key, API error and bad draft; no tools and delimited customer text; injection cannot change amounts; autonomy matrix; channel opt-in; quiet hours; planner on the demo org on 2026-10-10, 10-24 and 11-20 with an inline snapshot; idempotency; brief text and signed tokens). `npm run test:db` 42 pass (tests/db/agent.test.ts). `npm run test:db:remote` 189 pass on real Postgres (agent_runs is in the isolation suite).
+- S6 live (Playwright, Chrome channel, tests/e2e/live.spec.ts; run with `PW_CHANNEL=chrome LIVE_URL=https://receivia.onrender.com PAY_TOKEN=<token> npx playwright test tests/e2e/live.spec.ts`): 3 pass. Open live demo reaches Today; Today, /forecast and /collect load at 360px with no horizontal overflow and no console errors; a /pay/:token link opens signed out; /approve rejects a bad link. End to end on the live project: plan (11 actions on 2026-10-24); an approved reminder and the brief arrived in the owner inbox; signed Approve-all (bad token 401, replay approves 0); JWT path (own org 200, other org 401); pg_cron path through pg_net (agent_runs row with trigger pg_cron).
 - S5 (2026-10-24): `npm test` 255 pass: src/lib/forecast 46 (delay shrinkage w=n/(n+5), low-confidence flag, grades, stage/promise/dispute adjustments, bad-debt mass, expense dates incl. 31st clamp, 13-week sim invariants per run [closing = next opening, closing = opening + in - out, totals reconcile with invoices and expenses], repeatability, what-ifs leave inputs untouched, chase ordering + reason text, solver vs brute force on 300 random small inputs, tiles/ageing, demo story: week-3 shortfall covered by the solver, identical results on rebuild) + Collect ranking 4. `npm run test:db` 36 pass locally (PGlite) incl. tests/db/forecast.test.ts. `npm run test:db:remote` after S5: 178 pass on real Postgres (135 isolation + 20-connection numbering + S2/S3/S4/S5 suites); afterwards only the demo org and its demo user remain.
 - Signed-in smoke, demo login, dev server on a fresh port (the browser pane must be visible or the page crawls): `/` and `/forecast` at 360px and 1280px: no horizontal overflow, no console errors, SVG charts scale to the viewport, `/forecast` text hash identical on every reload and at both widths, `/expenses` lists the seeded rules.
 - S4 (2026-10-24): `npm test` 205 unit tests pass (incl. match 34: seed bank statement table for every line with kind, confidence, reason; Razorpay HMAC/event parsing 5; TDS ledger/26AS 5; ladder pause on claims). `npm run test:db:remote` (real Postgres, ~230 s): 174 pass = 135 isolation (now incl. payment_claims) + 20-connection numbering + S2 invoicing 9 + S3 collections 6 + S4 payments 17 (token cannot read another invoice, claim/dispute/promise actions, rate limit, gateway payment idempotency, credit notes reduce balance, bank match + TDS settle, inbox resolution). `node scripts/smoke-pay.mjs` (deployed functions, 21 checks incl. signed mock webhook + replay + 429) all pass. After the runs the project holds 0 test users and only the demo org (seeded with 8 invoices).
@@ -230,14 +252,25 @@ All deployed with `node scripts/sb.mjs functions deploy <name> --project-ref '$R
 - 2026-10-24 (S5): Safety buffer and opening balance live on business_profile (owner edits in Settings); expenses use the existing table (recurrence anchored on next_due, day kept, 31st clamped to month end).
 - 2026-10-24 (S5): Demo seed: 12 customers (6 from S4 + 6 new) with 9 invoices each issued every 20 days over 6 months (`HIS/26-27/NNNN`, paid in the past or still open per each customer's habit), 9 expense rules (salaries Rs 2,40,000 on the 1st, rent 5th, GST 20th, electricity 12th, quarterly insurance, 4 one-off bills of which steel Rs 15,00,000 and packaging are deferrable), opening balance Rs 1,50,000, buffer Rs 3,00,000. On 24 Oct 2026 this gives a week-3 shortfall of about Rs 3.1 lakh that one free chase covers. Dates are offsets from the seed day; the exact week-3 story is verified for that seed day. `reset-demo.mjs` removes the HIS invoices, expenses and history-only customers before re-seeding.
 - 2026-10-24 (S5): vite.config.ts pre-bundles all dependencies (`optimizeDeps.include`): without it the dev server re-optimised mid-session and reloaded the page in a loop. `.claude/launch.json` uses port 5181 (5173 and 5174 were held by stale processes).
+- 2026-10-24 (S6): Agent logic lives once, in the agent-run edge function (bundled from src/features/agent/server.ts with rolldown, generated file committed). The Render workflow, pg_cron, n8n and the local runner are thin callers, so every path does the same job.
+- 2026-10-24 (S6): Friendly = pre_due + due_today, reminder = overdue_firm, final reminder = final. Key tier never auto-sends (stricter than the ladder's own key rule). Demand letters never go through the model.
+- 2026-10-24 (S6): Test mode (default ON) emails the owner only and writes no reminder/message rows, so the ladder is unchanged and the demo can be replayed; quiet hours are not applied in test mode because nobody external is contacted.
+- 2026-10-24 (S6): The Approve-all link goes to the app page /approve (Supabase serves function HTML as text/plain), which calls approve-actions. Token is HMAC-SHA256, 48 h, bound to org + plan day; the page needs a click, so email link scanners cannot approve.
+- 2026-10-24 (S6): The edge runtime has no en-IN ICU data (amounts came out as 11,80000.00): formatINR now groups digits itself.
+- 2026-10-24 (S6): Public Supabase URL and anon key are committed in .env.production as a build fallback because the first Render build did not receive the env group values; Render env still overrides. The anon key is public by design.
+- 2026-10-24 (S6): Resend from onboarding@resend.dev only delivers to the Resend account owner, hence test mode and business_profile.owner_email; the demo org owner_email is set to the owner's address.
+- 2026-10-24 (S6): The demo date drives planner, sender and brief only; the rest of the UI still uses the real date.
 - 2026-10-24 (S2): Business state for unregistered businesses is picked manually (no GSTIN to derive it from); with a GSTIN it is always derived.
 
 ## Needs owner
 1. Razorpay test mode (S4 uses a signed mock payload until then): in the Razorpay test dashboard create an API key pair and a webhook. Webhook URL: `https://nxohumijpbwfxomvkckk.supabase.co/functions/v1/razorpay-webhook`, events `payment_link.paid` and `payment.captured`, choose a webhook secret. Then set `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET` in .env.local and run `node scripts/sb.mjs secrets set --env-file <file with those 3 lines> --project-ref '$REF'` (or paste them into Supabase > Edge Functions > Secrets). Until the keys exist the pay page shows "Online payment not configured"; everything else works. `scripts/smoke-pay.mjs` needs RAZORPAY_WEBHOOK_SECRET in .env.local to equal the function secret.
 2. In Supabase Auth, edit the "Magic link" / "Confirm signup" email template to show the code: include `{{ .Token }}` (6 digits). Set the email OTP length to 6. (Real sign-in by email OTP is still untested; the demo login works.)
 3. Create a GitHub repo and push `main` and the feature branches; CI runs on push/PR. Render: New Blueprint from the repo (render.yaml), set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`, then set `APP_BASE_URL` (Supabase secret) to the Render URL.
-4. Later sessions: Anthropic key, Resend key, WhatsApp Cloud API token and phone id, n8n instance and shared secret.
-5. Decide after the hackathon: split into separate test and prod Supabase projects (the DB test suites currently create and delete their own orgs/users in the live project) and consider Mumbai.
+4. Later sessions: WhatsApp Cloud API token and phone id, n8n instance.
+5a. Anthropic: the key in .env.local has no credits (credit balance too low). Add credits at console.anthropic.com > Plans and Billing. Until then every reminder uses the stage template, which works fully.
+5b. Resend: add and verify a sending domain, then set the RESEND_FROM secret so mail can go to customers; until then keep test mode ON.
+6. Render Workflow (daily 10:00 IST): `receivia-agent` (workflow) and `receivia-agent-daily` (cron) are in render.yaml. If the Blueprint did not create them (Workflows may need a paid plan): Dashboard > New > Workflow, repo KingKai31/receivia, Language Node, Region Singapore, Build `cd automation/render && npm ci`, Start `cd automation/render && node index.mjs`, env SUPABASE_FUNCTIONS_URL=https://nxohumijpbwfxomvkckk.supabase.co/functions/v1 and AGENT_CRON_SECRET (value in .env.local). Create a Render API key (Account Settings > API Keys) and set RENDER_API_KEY on the cron job, WORKFLOW_SLUG = the workflow slug. Test: Workflow > Tasks > daily > Start Task with input []. Until then pg_cron runs the same job daily; once Render runs, remove it with `node scripts/setup-pgcron.mjs --remove` or the brief is sent twice.
+7. Decide after the hackathon: split into separate test and prod Supabase projects (the DB test suites currently create and delete their own orgs/users in the live project) and consider Mumbai.
 
 ## Session log
 - 2026-10-23, S1 Foundation: scaffold, money/gst/gstin/dates libs, migrations 0001-0002, auth + demo-login, plain app shell with shared UI, render.yaml + CI, isolation tests. Commits 1467292..HEAD on feat/foundation.
@@ -249,5 +282,7 @@ All deployed with `node scripts/sb.mjs functions deploy <name> --project-ref '$R
 
 - 2026-10-24, S5 Forecast and prioritisation: feat/payments merged into main and pushed to origin; branch feat/forecast. src/lib/forecast, migration 0007, /forecast, Today dashboard, /expenses, cash settings, Collect order by chase priority, demo history seed.
 
+- 2026-10-24, S6 Agent, automation, live deploy: feat/forecast merged into main; branch feat/agent merged back and main pushed. Migration 0008, planner, draft validator, 3 edge functions, Resend sender, brief + approve link, Render workflow + cron + pg_cron, Settings/Collect/Today UI, live Playwright smoke.
+
 ## Next session
-S6 Agent and automation. Open items: Razorpay keys (Needs owner 1), email OTP sign-in untested, hi/mr copy review, inline English copy to move to i18n in the design pass, `accepted_on` has no form field, the mobile bottom nav now has 9 items (design pass), forecast rates (TReDS 12%, discount 2%, deferral fee 1.5% a month, bad-debt table) are assumptions to confirm. Never run `db-remote.mjs reset-test`.
+S7 Quality and trust. Open items from S6: Needs owner 5a, 5b, 6; the Render env group did not reach the first build (fallback .env.production in place); agent panel and settings are plain and English-only; hi/mr brief text is machine-written. Earlier open items: Razorpay keys (Needs owner 1), email OTP sign-in untested, hi/mr copy review, inline English copy to move to i18n in the design pass, `accepted_on` has no form field, the mobile bottom nav now has 9 items (design pass), forecast rates (TReDS 12%, discount 2%, deferral fee 1.5% a month, bad-debt table) are assumptions to confirm. Never run `db-remote.mjs reset-test`.

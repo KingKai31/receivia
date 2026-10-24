@@ -5,7 +5,10 @@ const live = process.env.LIVE_URL;
 
 export default defineConfig({
   testDir: 'tests/e2e',
-  use: { baseURL: live ?? 'http://localhost:5173' },
+  use: {
+    baseURL: live ?? 'http://localhost:5173',
+    ...(process.env.PW_CHANNEL ? { channel: process.env.PW_CHANNEL } : {}),
+  },
   webServer: live
     ? undefined
     : { command: 'npm run dev', url: 'http://localhost:5173', reuseExistingServer: true },

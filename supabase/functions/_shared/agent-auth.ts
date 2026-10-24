@@ -17,6 +17,7 @@ export function agentEnv(): AgentEnv {
     appBaseUrl: base,
     functionsUrl: `${Deno.env.get('SUPABASE_URL')}/functions/v1`,
     signingSecret: Deno.env.get('APPROVAL_SIGNING_SECRET') ?? '',
+    fromEmail: Deno.env.get('RESEND_FROM') ?? undefined,
   };
 }
 
