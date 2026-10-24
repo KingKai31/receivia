@@ -1,14 +1,17 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import en from '@/locales/en.json';
-import hi from '@/locales/hi.json';
-import mr from '@/locales/mr.json';
 
-export const resources = {
-  en: { translation: en },
-  hi: { translation: hi },
-  mr: { translation: mr },
-} as const;
+/** English ships in the main bundle; Hindi and Marathi load on demand (about 60 KB each). */
+const loaders: Record<string, () => Promise<{ default: Record<string, string> }>> = {
+  hi: () => import('@/locales/hi.json'),
+  mr: () => import('@/locales/mr.json'),
+};
+async function ensureLang(code: string): Promise<void> {
+  const load = loaders[code];
+  if (!load || i18n.hasResourceBundle(code, 'translation')) return;
+  i18n.addResourceBundle(code, 'translation', (await load()).default);
+}
 
 /** Names are written in their own script so anyone can find their language. */
 export const LANGUAGES = [
@@ -36,8 +39,7 @@ const patternCache = new Map<string, [RegExp, string, string[]][]>();
 function patternsFor(lng: string): [RegExp, string, string[]][] {
   let list = patternCache.get(lng);
   if (!list) {
-    const bundle =
-      (resources as unknown as Record<string, { translation: Bundle }>)[lng]?.translation ?? {};
+    const bundle = (i18n.getResourceBundle(lng, 'translation') ?? {}) as Bundle;
     list = Object.entries(bundle)
       .filter(
         ([k, v]) =>
@@ -95,8 +97,8 @@ void i18n
   .use(patternProcessor)
   .use(initReactI18next)
   .init({
-    resources,
-    lng: typeof window === 'undefined' ? 'en' : stored(),
+    resources: { en: { translation: en } },
+    lng: 'en',
     fallbackLng: 'en',
     keySeparator: false,
     nsSeparator: false,
@@ -107,6 +109,12 @@ void i18n
 function syncDocument(lng: string) {
   if (typeof document !== 'undefined') document.documentElement.lang = lng;
 }
+const originalChange = i18n.changeLanguage.bind(i18n);
+i18n.changeLanguage = async (lng, callback) => {
+  if (lng) await ensureLang(lng);
+  return originalChange(lng, callback);
+};
+if (typeof window !== 'undefined' && stored() !== 'en') void i18n.changeLanguage(stored());
 syncDocument(i18n.language);
 i18n.on('languageChanged', syncDocument);
 
