@@ -10,6 +10,9 @@ import { CustomerFormPage } from '@/features/customers/CustomerFormPage';
 import { CustomersPage } from '@/features/customers/CustomersPage';
 import { InvoiceDocPage, NoteDocPage } from '@/features/documents/DocPages';
 import { CaseDocPage, LetterDocPage } from '@/features/documents/CollectionDocPages';
+import { InboxPage } from '@/features/inbox/InboxPage';
+import { PaymentsPage } from '@/features/payments/PaymentsPage';
+import { TdsPage } from '@/features/payments/TdsPage';
 import { CollectTodayPage } from '@/features/collect/CollectTodayPage';
 import { ImportPage } from '@/features/import/ImportPage';
 import { InvoiceDetailPage } from '@/features/invoices/InvoiceDetailPage';
@@ -54,7 +57,9 @@ export function App() {
                   <Route path="/customers/:id/edit" element={<CustomerFormPage />} />
                   <Route path="/import" element={<ImportPage />} />
                   <Route path="/collect" element={<CollectTodayPage />} />
-                  <Route path="/payments" element={<StubPage titleKey="pages.payments" />} />
+                  <Route path="/inbox" element={<InboxPage />} />
+                  <Route path="/payments" element={<PaymentsPage />} />
+                  <Route path="/payments/tds" element={<TdsPage />} />
                   <Route path="/forecast" element={<StubPage titleKey="pages.forecast" />} />
                   <Route path="/settings" element={<SettingsPage />} />
                 </Route>

@@ -129,10 +129,14 @@ export function parseBankCsv(text: string, mapping: ColumnMapping): BankParse {
     const date = parseBankDate(r[col.date] ?? '');
     const credit = amount(r[col.credit]);
     const debit = amount(r[col.debit]);
-    if (!date) return void errors.push({ row: rowNo, message: `Unreadable date "${r[col.date] ?? ''}".` });
-    if (credit === null || debit === null) return void errors.push({ row: rowNo, message: 'Unreadable amount.' });
-    if (credit < 0 || debit < 0) return void errors.push({ row: rowNo, message: 'Negative amount.' });
-    if (credit > 0 && debit > 0) return void errors.push({ row: rowNo, message: 'Both credit and debit filled.' });
+    if (!date)
+      return void errors.push({ row: rowNo, message: `Unreadable date "${r[col.date] ?? ''}".` });
+    if (credit === null || debit === null)
+      return void errors.push({ row: rowNo, message: 'Unreadable amount.' });
+    if (credit < 0 || debit < 0)
+      return void errors.push({ row: rowNo, message: 'Negative amount.' });
+    if (credit > 0 && debit > 0)
+      return void errors.push({ row: rowNo, message: 'Both credit and debit filled.' });
     if (credit === 0 && debit === 0) return void errors.push({ row: rowNo, message: 'No amount.' });
     lines.push({
       date,

@@ -16,13 +16,33 @@ export interface TdsRule {
 }
 
 export const TDS_RULES: readonly TdsRule[] = [
-  { section: 'GST_TDS', ratePct: 2, label: 'GST TDS 2% (government buyers, on taxable value)', buyers: ['government'] },
-  { section: '194C', ratePct: 2, label: '194C 2% (contractor: company or firm)', buyers: ['company', 'firm', 'government', null] },
-  { section: '194C', ratePct: 1, label: '194C 1% (contractor: individual or HUF)', buyers: ['proprietor', 'individual'] },
+  {
+    section: 'GST_TDS',
+    ratePct: 2,
+    label: 'GST TDS 2% (government buyers, on taxable value)',
+    buyers: ['government'],
+  },
+  {
+    section: '194C',
+    ratePct: 2,
+    label: '194C 2% (contractor: company or firm)',
+    buyers: ['company', 'firm', 'government', null],
+  },
+  {
+    section: '194C',
+    ratePct: 1,
+    label: '194C 1% (contractor: individual or HUF)',
+    buyers: ['proprietor', 'individual'],
+  },
   { section: '194J', ratePct: 10, label: '194J 10% (professional fees)' },
   { section: '194J', ratePct: 2, label: '194J 2% (technical services, call centre)' },
   { section: '194H', ratePct: 2, label: '194H 2% (commission or brokerage)' },
-  { section: '194Q', ratePct: 0.1, label: '194Q 0.1% (purchase of goods)', buyers: ['company', 'firm', 'government', null] },
+  {
+    section: '194Q',
+    ratePct: 0.1,
+    label: '194Q 0.1% (purchase of goods)',
+    buyers: ['company', 'firm', 'government', null],
+  },
   { section: 'GST_TCS', ratePct: 0.5, label: 'GST TCS 0.5% (e-commerce operator)' },
 ];
 

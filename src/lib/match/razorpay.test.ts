@@ -10,7 +10,9 @@ const INV = '3f2b8c1e-5a4d-4c7e-9b1a-0d2e4f6a8b10';
 const event = (over: Record<string, unknown> = {}) => ({
   event: 'payment_link.paid',
   payload: {
-    payment: { entity: { id: 'pay_ABC123', amount: 118000, status: 'captured', created_at: 1_790_000_000 } },
+    payment: {
+      entity: { id: 'pay_ABC123', amount: 118000, status: 'captured', created_at: 1_790_000_000 },
+    },
     payment_link: { entity: { reference_id: INV, status: 'paid' } },
   },
   ...over,
@@ -34,7 +36,10 @@ describe('razorpay webhook helpers', () => {
   });
   it('parses a paid event into invoice id, payment id, paise and IST date', () => {
     expect(parsePaidEvent(event())).toEqual({
-      paymentId: 'pay_ABC123', invoiceId: INV, amountPaise: 118000, paidOn: '2026-09-21',
+      paymentId: 'pay_ABC123',
+      invoiceId: INV,
+      amountPaise: 118000,
+      paidOn: '2026-09-21',
     });
   });
   it('ignores other events, failed payments, bad amounts and non-uuid references', () => {

@@ -6,7 +6,8 @@ export const NAV_ITEMS = [
   { to: '/invoices', key: 'invoices', end: false },
   { to: '/customers', key: 'customers', end: false },
   { to: '/collect', key: 'collect', end: false },
-  { to: '/payments', key: 'payments', end: false },
+  { to: '/inbox', key: 'inbox', end: false },
+  { to: '/payments', key: 'payments', end: true },
   { to: '/forecast', key: 'forecast', end: false },
   { to: '/settings', key: 'settings', end: false },
 ] as const;

@@ -114,7 +114,10 @@ export function nextAction(input: LadderInput): LadderDecision {
   if (input.hasOpenDispute)
     return { action: 'paused', reason: 'Open dispute: reminders are paused until it is resolved.' };
   if (input.hasPendingClaim) {
-    return { action: 'paused', reason: 'Buyer says they have paid: confirm or reject it in the Inbox.' };
+    return {
+      action: 'paused',
+      reason: 'Buyer says they have paid: confirm or reject it in the Inbox.',
+    };
   }
   if (input.promisedFor && input.promisedFor >= today) {
     return {

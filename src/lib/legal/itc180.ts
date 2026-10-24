@@ -37,7 +37,10 @@ export function itc180(
     return result(false, 'Not a tax invoice.', none, NO_SENTENCES);
   if (invoice.reverse_charge) return result(false, 'Reverse charge supply.', none, NO_SENTENCES);
   const unpaid =
-    invoice.total_paise - invoice.paid_paise - (invoice.credited_paise ?? 0) - (invoice.tds_paise ?? 0);
+    invoice.total_paise -
+    invoice.paid_paise -
+    (invoice.credited_paise ?? 0) -
+    (invoice.tds_paise ?? 0);
   if (unpaid <= 0 || invoice.total_paise <= 0)
     return result(false, 'Nothing unpaid.', none, NO_SENTENCES);
   const tax = invoice.cgst_paise + invoice.sgst_paise + invoice.igst_paise;

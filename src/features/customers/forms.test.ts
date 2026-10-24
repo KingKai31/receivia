@@ -76,10 +76,7 @@ describe('customer form', () => {
     const { client } = fakeClient((c) =>
       c.table === 'invoices'
         ? {
-            data: [
-              { total_paise: 100000, paid_paise: 25000 },
-              { total_paise: 50000, paid_paise: 0 },
-            ],
+            data: [{ balance_paise: 75000 }, { balance_paise: 50000 }],
             error: null,
           }
         : { data: [], error: null },

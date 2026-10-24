@@ -18,7 +18,8 @@ export interface MatchCustomer {
   entityType: EntityKind;
 }
 
-export type MatchKind = 'exact' | 'multi' | 'part' | 'tds_short' | 'overpayment' | 'unknown' | 'debit';
+export type MatchKind =
+  'exact' | 'multi' | 'part' | 'tds_short' | 'overpayment' | 'unknown' | 'debit';
 
 export interface Allocation {
   invoiceId: string;
@@ -44,7 +45,21 @@ export function alnum(s: string): string {
   return s.toUpperCase().replace(/[^A-Z0-9]/g, '');
 }
 
-const NOISE = new Set(['M', 'MS', 'PVT', 'PRIVATE', 'LTD', 'LIMITED', 'LLP', 'CO', 'COMPANY', 'AND', 'THE', 'OF', 'INC']);
+const NOISE = new Set([
+  'M',
+  'MS',
+  'PVT',
+  'PRIVATE',
+  'LTD',
+  'LIMITED',
+  'LLP',
+  'CO',
+  'COMPANY',
+  'AND',
+  'THE',
+  'OF',
+  'INC',
+]);
 
 /** Significant words of a name: M/s, Pvt, Ltd, LLP and punctuation dropped, upper case. */
 export function nameTokens(name: string): string[] {
@@ -58,7 +73,10 @@ export function nameTokens(name: string): string[] {
 
 /** Customers whose significant words all appear in the text; longest name wins. */
 export function matchCustomer(text: string, customers: MatchCustomer[]): MatchCustomer | null {
-  const hay = ` ${text.toUpperCase().replace(/[^A-Z0-9]/g, ' ').replace(/\s+/g, ' ')} `;
+  const hay = ` ${text
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, ' ')
+    .replace(/\s+/g, ' ')} `;
   const compact = alnum(text);
   let best: { c: MatchCustomer; score: number } | null = null;
   for (const c of customers) {
@@ -100,15 +118,21 @@ export function namedInvoices(text: string, invoices: OpenInvoice[]): OpenInvoic
 }
 
 const byAge = (a: OpenInvoice, b: OpenInvoice) =>
-  a.dueDate.localeCompare(b.dueDate) || a.issueDate.localeCompare(b.issueDate) || a.number.localeCompare(b.number);
+  a.dueDate.localeCompare(b.dueDate) ||
+  a.issueDate.localeCompare(b.issueDate) ||
+  a.number.localeCompare(b.number);
 
-function allocate(amount: number, invs: OpenInvoice[]): { allocations: Allocation[]; left: number } {
+function allocate(
+  amount: number,
+  invs: OpenInvoice[],
+): { allocations: Allocation[]; left: number } {
   let left = amount;
   const allocations: Allocation[] = [];
   for (const inv of invs) {
     if (left <= 0) break;
     const take = Math.min(left, inv.balancePaise);
-    if (take > 0) allocations.push({ invoiceId: inv.id, invoiceNumber: inv.number, amountPaise: paise(take) });
+    if (take > 0)
+      allocations.push({ invoiceId: inv.id, invoiceNumber: inv.number, amountPaise: paise(take) });
     left -= take;
   }
   return { allocations, left };
@@ -130,7 +154,12 @@ export function suggestOne(
     creditBalancePaise: paise(0),
   };
   if (line.creditPaise <= 0) {
-    return { ...base, kind: 'debit', confidence: 1, reason: 'This is a debit (money out), so it is not matched to an invoice.' };
+    return {
+      ...base,
+      kind: 'debit',
+      confidence: 1,
+      reason: 'This is a debit (money out), so it is not matched to an invoice.',
+    };
   }
   const amount = line.creditPaise;
   const text = `${line.description} ${line.reference}`;
@@ -146,7 +175,9 @@ export function suggestOne(
     candidates = named;
     how = 'named';
   } else if (customerId) {
-    const mine = invoices.filter((i) => i.customerId === customerId && i.balancePaise > 0).sort(byAge);
+    const mine = invoices
+      .filter((i) => i.customerId === customerId && i.balancePaise > 0)
+      .sort(byAge);
     const one = mine.find((i) => i.balancePaise === amount);
     candidates = one ? [one] : mine;
     how = 'customer';
@@ -171,7 +202,8 @@ export function suggestOne(
 
   const total = candidates.reduce((s, i) => s + i.balancePaise, 0);
   const evidence =
-    (how === 'named' ? 0.55 : how === 'amount' ? 0.35 : 0) + (nameOk || (how === 'customer' && cust) ? 0.25 : 0);
+    (how === 'named' ? 0.55 : how === 'amount' ? 0.35 : 0) +
+    (nameOk || (how === 'customer' && cust) ? 0.25 : 0);
   const who = (n: number) => (n === 1 ? `Invoice ${candidates[0]!.number}` : `${n} invoices`);
   const found =
     how === 'named'
@@ -250,10 +282,14 @@ export function suggestMatches(
 ): Suggestion[] {
   const left = new Map(invoices.map((i) => [i.id, i.balancePaise]));
   return lines.map((line) => {
-    const open = invoices.map((i) => ({ ...i, balancePaise: left.get(i.id) ?? 0 })).filter((i) => i.balancePaise > 0);
+    const open = invoices
+      .map((i) => ({ ...i, balancePaise: left.get(i.id) ?? 0 }))
+      .filter((i) => i.balancePaise > 0);
     const s = suggestOne(line, open, customers);
-    for (const a of s.allocations) left.set(a.invoiceId, (left.get(a.invoiceId) ?? 0) - a.amountPaise);
-    if (s.tds && s.tdsInvoiceId) left.set(s.tdsInvoiceId, Math.max(0, (left.get(s.tdsInvoiceId) ?? 0) - s.tds.amountPaise));
+    for (const a of s.allocations)
+      left.set(a.invoiceId, (left.get(a.invoiceId) ?? 0) - a.amountPaise);
+    if (s.tds && s.tdsInvoiceId)
+      left.set(s.tdsInvoiceId, Math.max(0, (left.get(s.tdsInvoiceId) ?? 0) - s.tds.amountPaise));
     return s;
   });
 }

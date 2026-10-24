@@ -88,7 +88,10 @@ export interface LetterModel {
 export function buildLetterModel(i: LetterInput): LetterModel {
   const eligible = msmeEligibility(i.seller).applies;
   const rows: LetterRow[] = i.invoices.map((inv) => {
-    const bal = Math.max(inv.total_paise - inv.paid_paise - (inv.credited_paise ?? 0) - (inv.tds_paise ?? 0), 0);
+    const bal = Math.max(
+      inv.total_paise - inv.paid_paise - (inv.credited_paise ?? 0) - (inv.tds_paise ?? 0),
+      0,
+    );
     const due = msmeDueDate(
       inv.accepted_on ?? inv.issue_date,
       i.buyer.credit_days,
@@ -361,7 +364,12 @@ export function buildCaseModel(i: CaseInput): CaseModel {
   const invoices = i.invoices.map((inv) => {
     const accepted = inv.accepted_on ?? inv.issue_date;
     const due = msmeDueDate(accepted, i.buyer.credit_days, i.buyer.has_written_agreement);
-    const balance = paise(Math.max(inv.total_paise - inv.paid_paise - (inv.credited_paise ?? 0) - (inv.tds_paise ?? 0), 0));
+    const balance = paise(
+      Math.max(
+        inv.total_paise - inv.paid_paise - (inv.credited_paise ?? 0) - (inv.tds_paise ?? 0),
+        0,
+      ),
+    );
     const interest = elig.applies
       ? msmedInterest({ principal: balance, dueDate: due, asOf: i.today }).interest_paise
       : paise(0);
