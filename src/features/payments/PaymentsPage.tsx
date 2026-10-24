@@ -1,3 +1,5 @@
+import { tr } from '@/app/i18n';
+import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
@@ -40,6 +42,7 @@ function SuggestionCard({
   orgId: string;
   done: () => void;
 }) {
+  const { t } = useTranslation();
   const toast = useToast();
   const m = useMutation({
     mutationFn: (what: 'confirm' | 'ignore') =>
@@ -51,37 +54,50 @@ function SuggestionCard({
   return (
     <Card>
       <p>
-        <strong>{s.line.date}</strong> · {formatINR(s.line.creditPaise)} · {s.line.description}
+        <strong>{s.line.date}</strong>{' '}
+        {t('· {{formatINR}} · {{description}}', {
+          formatINR: formatINR(s.line.creditPaise),
+          description: s.line.description,
+        })}
         {s.line.reference ? ` (${s.line.reference})` : ''}
       </p>
       <p>
-        <Badge>{KIND_LABEL[s.kind] ?? s.kind}</Badge> Confidence {Math.round(s.confidence * 100)}%
+        <Badge>{KIND_LABEL[s.kind] ?? s.kind}</Badge>{' '}
+        {t('Confidence {{v}}%', { v: Math.round(s.confidence * 100) })}
       </p>
       <p>{s.reason}</p>
       {s.allocations.length ? (
         <ul>
           {s.allocations.map((a) => (
             <li key={a.invoiceId}>
-              {a.invoiceNumber}: {formatINR(a.amountPaise)}
+              {t('{{invoiceNumber}}: {{formatINR}}', {
+                invoiceNumber: a.invoiceNumber,
+                formatINR: formatINR(a.amountPaise),
+              })}
             </li>
           ))}
           {s.tds ? (
             <li>
-              TDS {s.tds.section.replace('_', ' ')} ({s.tds.ratePct}%):{' '}
+              {t('TDS {{v}} ({{ratePct}}%):', {
+                v: s.tds.section.replace('_', ' '),
+                ratePct: s.tds.ratePct,
+              })}{' '}
               {formatINR(s.tds.amountPaise)}
             </li>
           ) : null}
           {s.creditBalancePaise > 0 ? (
-            <li>Credit balance: {formatINR(s.creditBalancePaise)}</li>
+            <li>
+              {t('Credit balance:')} {formatINR(s.creditBalancePaise)}
+            </li>
           ) : null}
         </ul>
       ) : null}
       <div className="flex flex-wrap gap-2">
         <Button disabled={!canConfirm || m.isPending} onClick={() => m.mutate('confirm')}>
-          Confirm
+          {t('Confirm')}
         </Button>
         <Button variant="secondary" disabled={m.isPending} onClick={() => m.mutate('ignore')}>
-          Ignore this line
+          {t('Ignore this line')}
         </Button>
       </div>
     </Card>
@@ -97,6 +113,7 @@ const FIELDS: { key: keyof ColumnMapping; label: string; optional?: boolean }[] 
 ];
 
 function ImportCard({ orgId, done }: { orgId: string; done: () => void }) {
+  const { t } = useTranslation();
   const toast = useToast();
   const [text, setText] = useState('');
   const [mapping, setMapping] = useState<Partial<ColumnMapping>>({});
@@ -107,7 +124,12 @@ function ImportCard({ orgId, done }: { orgId: string; done: () => void }) {
   const run = useMutation({
     mutationFn: () => importBankLines(orgId, parsed!.lines),
     onSuccess: (r) => {
-      toast.show(`Imported ${r.added} new line(s), skipped ${r.skipped} already imported.`);
+      toast.show(
+        t('Imported {{added}} new line(s), skipped {{skipped}} already imported.', {
+          added: r.added,
+          skipped: r.skipped,
+        }),
+      );
       setText('');
       done();
     },
@@ -115,8 +137,8 @@ function ImportCard({ orgId, done }: { orgId: string; done: () => void }) {
   });
   return (
     <Card>
-      <h2>Import a bank statement</h2>
-      <label htmlFor="bank-file">Statement (.csv)</label>
+      <h2>{t('Import a bank statement')}</h2>
+      <label htmlFor="bank-file">{t('Statement (.csv)')}</label>
       <input
         id="bank-file"
         type="file"
@@ -138,7 +160,7 @@ function ImportCard({ orgId, done }: { orgId: string; done: () => void }) {
               value={mapping[f.key] ?? ''}
               onChange={(e) => setMapping({ ...mapping, [f.key]: e.target.value })}
               options={[
-                { value: '', label: f.optional ? 'None' : 'Choose…' },
+                { value: '', label: f.optional ? t('None') : t('Choose…') },
                 ...headers.map((h) => ({ value: h, label: h })),
               ]}
             />
@@ -146,16 +168,19 @@ function ImportCard({ orgId, done }: { orgId: string; done: () => void }) {
           {parsed ? (
             <>
               <p>
-                {parsed.lines.length} readable line(s)
-                {parsed.errors.length ? `, ${parsed.errors.length} skipped` : ''}.
+                {t('{{length}} readable line(s)', { length: parsed.lines.length })}
+                {parsed.errors.length
+                  ? t(', {{length}} skipped', { length: parsed.errors.length })
+                  : ''}
+                {t('.')}
               </p>
               {parsed.errors.slice(0, 5).map((er) => (
                 <p key={er.row} role="alert">
-                  Row {er.row}: {er.message}
+                  {t('Row {{row}}: {{message}}', { row: er.row, message: er.message })}
                 </p>
               ))}
               <Button disabled={!parsed.lines.length || run.isPending} onClick={() => run.mutate()}>
-                Import {parsed.lines.length} lines
+                {t('Import {{length}} lines', { length: parsed.lines.length })}
               </Button>
             </>
           ) : null}
@@ -166,6 +191,7 @@ function ImportCard({ orgId, done }: { orgId: string; done: () => void }) {
 }
 
 export function PaymentsPage() {
+  const { t } = useTranslation();
   const org = useOrg();
   const orgId = org.data?.orgId;
   const qc = useQueryClient();
@@ -187,31 +213,36 @@ export function PaymentsPage() {
   };
   return (
     <>
-      <h1>Payments</h1>
+      <h1>{t('Payments')}</h1>
       <p>
-        <Link to="/payments/tds">TDS certificates</Link>
+        <Link to="/payments/tds">{t('TDS certificates')}</Link>
       </p>
       {orgId ? <ImportCard orgId={orgId} done={refresh} /> : null}
-      <h2>Deposits to match</h2>
-      <p>Nothing is marked paid until you confirm.</p>
-      {sugg.isLoading ? <p>Loading…</p> : null}
+      <h2>{t('Deposits to match')}</h2>
+      <p>{t('Nothing is marked paid until you confirm.')}</p>
+      {sugg.isLoading ? <p>{t('Loading…')}</p> : null}
       {sugg.error ? <p role="alert">{errorMessage(sugg.error)}</p> : null}
-      {sugg.data?.length === 0 ? <p>No unmatched deposits.</p> : null}
+      {sugg.data?.length === 0 ? <p>{t('No unmatched deposits.')}</p> : null}
       {sugg.data?.map((s) => (
         <SuggestionCard key={s.txnId} s={s} orgId={orgId!} done={refresh} />
       ))}
       {sugg.data && sugg.data.length >= limit ? (
         <Button variant="secondary" onClick={() => setLimit(limit + STEP)}>
-          Show more
+          {t('Show more')}
         </Button>
       ) : null}
-      <h2>Recent payments</h2>
-      {pays.data?.length === 0 ? <p>No payments yet.</p> : null}
+      <h2>{t('Recent payments')}</h2>
+      {pays.data?.length === 0 ? <p>{t('No payments yet.')}</p> : null}
       <ul>
         {pays.data?.map((p) => (
           <li key={p.id}>
-            {p.received_on} · {formatINR(paise(p.amount_paise))} · {p.customers?.name ?? '—'} ·{' '}
-            {p.method} ({p.source}){p.reference ? ` · ${p.reference}` : ''}
+            {t('{{received_on}} · {{formatINR}} ·', {
+              received_on: p.received_on,
+              formatINR: formatINR(paise(p.amount_paise)),
+            })}{' '}
+            {p.customers?.name ?? '—'} {t('·')}{' '}
+            {t('{{method}} ({{source}})', { method: tr(p.method), source: tr(p.source) })}
+            {p.reference ? t(' · {{reference}}', { reference: p.reference }) : ''}
           </li>
         ))}
       </ul>

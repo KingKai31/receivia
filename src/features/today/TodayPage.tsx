@@ -1,3 +1,5 @@
+import { tr } from '@/app/i18n';
+import { useTranslation } from 'react-i18next';
 import { AgentPanel } from '@/features/agent/AgentPanel';
 import { Link } from 'react-router-dom';
 import { Card } from '@/components/ui';
@@ -21,8 +23,9 @@ function Tile({ label, value, note }: { label: string; value: string; note?: str
 }
 
 export function TodayPage() {
+  const { t } = useTranslation();
   const { ctx, computed, isLoading, error } = useForecast();
-  if (isLoading) return <p>Loading…</p>;
+  if (isLoading) return <p>{t('Loading…')}</p>;
   if (error) return <p role="alert">{errorMessage(error)}</p>;
   if (!ctx || !computed) return null;
   const { forecast, plan } = computed;
@@ -38,72 +41,87 @@ export function TodayPage() {
   const short = (n: number) => formatINRShort(paise(Math.round(n)));
   return (
     <>
-      <h1>Today</h1>
+      <h1>{t('Today')}</h1>
       <AgentPanel compact />
       <Card>
         {sf && plan ? (
           <>
-            <h2>Cash is tight in week {sf.week}</h2>
+            <h2>
+              {t('Cash is tight in week')} {sf.week}
+            </h2>
             <p>
               {safeWeeks(forecast) > 0
-                ? `Cash is safe for ${safeWeeks(forecast)} week${safeWeeks(forecast) === 1 ? '' : 's'}, then `
-                : 'Cash '}
-              is expected to end week {sf.week} {money(plan.gapPaise)} below your safety buffer.
+                ? t('Cash is safe for {{safeWeeks}} weeks, then ', {
+                    safeWeeks: safeWeeks(forecast),
+                  })
+                : t('Cash ')}
+              {t('is expected to end week {{week}} {{money}} below your safety buffer.', {
+                week: sf.week,
+                money: money(plan.gapPaise),
+              })}
             </p>
             <p className="tnum">
               {plan.steps.length === 0
-                ? 'Nothing available can close the gap in time.'
+                ? t('Nothing available can close the gap in time.')
                 : plan.feasible
-                  ? `These steps cover it for about ${money(plan.totalCostPaise)} in total:`
-                  : `Even all available steps leave ${money(plan.gapPaise - plan.coveredPaise)} short. Best steps:`}
+                  ? t('These steps cover it for about {{money}} in total:', {
+                      money: money(plan.totalCostPaise),
+                    })
+                  : t('Even all available steps leave {{money}} short. Best steps:', {
+                      money: money(plan.gapPaise - plan.coveredPaise),
+                    })}
             </p>
             <ol>
               {plan.steps.slice(0, 3).map((s) => (
-                <li key={s.id}>{s.sentence}</li>
+                <li key={s.id}>{tr(s.sentence)}</li>
               ))}
             </ol>
             <p>
-              <Link to="/forecast">See the full plan</Link>
+              <Link to="/forecast">{t('See the full plan')}</Link>
             </p>
           </>
         ) : (
           <>
-            <h2>Cash is safe for {safeWeeks(forecast)} weeks</h2>
+            <h2>{t('Cash is safe for {{safeWeeks}} weeks', { safeWeeks: safeWeeks(forecast) })}</h2>
             <p>
-              Median cash stays above your safety buffer for the whole 13-week forecast.{' '}
-              <Link to="/forecast">See the forecast</Link>
+              {t('Median cash stays above your safety buffer for the whole 13-week forecast.')}{' '}
+              <Link to="/forecast">{t('See the forecast')}</Link>
             </p>
           </>
         )}
         {ctx.invoices.length === 0 && ctx.expenses.length === 0 ? (
           <p role="status">
-            Add invoices and your expenses so the forecast has something to work with.
+            {t('Add invoices and your expenses so the forecast has something to work with.')}
           </p>
         ) : null}
       </Card>
       <div className="tiles">
         <Tile
-          label="To collect"
+          label={t('To collect')}
           value={short(tiles.toCollectPaise)}
-          note={`${ctx.invoices.length} open invoices`}
+          note={t('{{length}} open invoices', { length: ctx.invoices.length })}
         />
-        <Tile label="Overdue" value={short(tiles.overduePaise)} />
-        <Tile label="Expected this week" value={short(tiles.expectedThisWeekPaise)} />
-        <Tile label="Expected this month" value={short(tiles.expectedThisMonthPaise)} />
-        <Tile label="Bills due in 30 days" value={short(tiles.billsDue30Paise)} />
+        <Tile label={t('Overdue')} value={short(tiles.overduePaise)} />
+        <Tile label={t('Expected this week')} value={short(tiles.expectedThisWeekPaise)} />
+        <Tile label={t('Expected this month')} value={short(tiles.expectedThisMonthPaise)} />
+        <Tile label={t('Bills due in 30 days')} value={short(tiles.billsDue30Paise)} />
         <Tile
-          label="Bank balance"
+          label={t('Bank balance')}
           value={short(tiles.bankBalancePaise)}
-          note={ctx.openingBalanceOn ? `as of ${ctx.openingBalanceOn}` : undefined}
+          note={
+            ctx.openingBalanceOn
+              ? t('as of {{openingBalanceOn}}', { openingBalanceOn: ctx.openingBalanceOn })
+              : undefined
+          }
         />
         <Tile
-          label="Lowest forecast point"
+          label={t('Lowest forecast point')}
           value={short(tiles.lowestPaise)}
-          note={`week ${tiles.lowestWeek}`}
+          note={t('week {{lowestWeek}}', { lowestWeek: tiles.lowestWeek })}
         />
       </div>
       <Card>
-        <h2>How old are the unpaid invoices?</h2>
+        <h2>{t('How old are the unpaid invoices?')}</h2>
         <AgeingBar ageing={tiles.ageing} />
       </Card>
     </>

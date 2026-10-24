@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { NavLink, Outlet } from 'react-router-dom';
+import { LanguagePicker } from '@/components/ui';
 
 export const NAV_ITEMS = [
   { to: '/', key: 'today', end: true },
@@ -29,8 +30,14 @@ export function Layout() {
             </NavLink>
           ))}
         </nav>
+        <div className="mt-auto">
+          <LanguagePicker />
+        </div>
       </aside>
-      <main className="min-w-0 flex-1 p-4 pb-24 md:pb-6">
+      <main id="main" className="min-w-0 flex-1 p-4 pb-24 md:pb-6">
+        <div className="mb-3 md:hidden">
+          <LanguagePicker />
+        </div>
         <Outlet />
       </main>
       <nav

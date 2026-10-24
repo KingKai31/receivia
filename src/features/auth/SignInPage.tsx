@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Navigate, useLocation } from 'react-router-dom';
 import { z } from 'zod';
-import { Button, Card, Input } from '@/components/ui';
+import { Button, Card, Input, LanguagePicker } from '@/components/ui';
 import { useAuth } from './AuthProvider';
 import { AuthFlowError, openLiveDemo, otpSchema, sendOtp, verifyOtp } from './authApi';
 
@@ -40,6 +40,7 @@ export function SignInPage() {
   return (
     <main className="mx-auto flex max-w-md flex-col gap-4 p-4">
       <h1>{t('brand')}</h1>
+      <LanguagePicker />
       <Card title={t('auth.title')}>
         {email === null ? (
           <form

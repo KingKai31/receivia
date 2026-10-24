@@ -1,3 +1,4 @@
+import i18next from 'i18next';
 import type { ISODate } from '@/lib/dates';
 import { formatINR, paise } from '@/lib/money';
 import { buyerLens, msmeEligibility } from '@/lib/legal';
@@ -71,10 +72,45 @@ export interface TodayGroup {
   alreadyMessagedToday: boolean;
 }
 
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-export function prettyDate(d: ISODate): string {
+const MONTHS: Record<Lang, string[]> = {
+  en: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+  hi: [
+    'जन॰',
+    'फ़र॰',
+    'मार्च',
+    'अप्रैल',
+    'मई',
+    'जून',
+    'जुल॰',
+    'अग॰',
+    'सित॰',
+    'अक्टू॰',
+    'नव॰',
+    'दिस॰',
+  ],
+  mr: [
+    'जाने',
+    'फेब्रु',
+    'मार्च',
+    'एप्रिल',
+    'मे',
+    'जून',
+    'जुलै',
+    'ऑग',
+    'सप्टें',
+    'ऑक्टो',
+    'नोव्हें',
+    'डिसें',
+  ],
+};
+/** "24 Oct 2026". `lang` is the reader's language (customer language for messages, UI language elsewhere). */
+export function prettyDate(d: ISODate, lang: Lang = uiLang()): string {
   const [y, m, day] = d.split('-').map(Number);
-  return `${day} ${MONTHS[(m ?? 1) - 1]} ${y}`;
+  return `${day} ${MONTHS[lang][(m ?? 1) - 1]} ${y}`;
+}
+function uiLang(): Lang {
+  const l = i18next.language;
+  return l === 'hi' || l === 'mr' ? l : 'en';
 }
 
 export type SlotSeller = TodayInput['seller'];
@@ -97,7 +133,7 @@ export function buildSlotValues(
     customer: customer.name,
     invoice_no: primary.invoice.number,
     amount_due: formatINR(paise(primary.decision.amountDue)),
-    due_date: prettyDate(primary.invoice.due_date),
+    due_date: prettyDate(primary.invoice.due_date, lang),
     days_overdue: String(primary.decision.daysOverdue),
     pay_link: PAY_LINK_PLACEHOLDER,
     lens_line: showLens ? lensLine : '',

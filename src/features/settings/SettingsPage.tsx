@@ -18,7 +18,8 @@ export function SettingsPage() {
           <p>{t('common.loading')}</p>
         ) : org.data ? (
           <p>
-            {org.data.orgName} · {t('common.role')}: <Badge>{org.data.role}</Badge>
+            {t('{{orgName}} ·', { orgName: org.data.orgName })} {t('common.role')}
+            {t(':')} <Badge>{org.data.role}</Badge>
           </p>
         ) : (
           <p>{t('common.noOrg')}</p>

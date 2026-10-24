@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import i18next from 'i18next';
 
 export type ServiceErrorCode =
   'CONFLICT' | 'NOT_FOUND' | 'VALIDATION' | 'FORBIDDEN' | 'DUPLICATE' | 'UNKNOWN';
@@ -101,5 +102,6 @@ export function range(page: number, pageSize = PAGE_SIZE): [number, number] {
 
 /** Message for any thrown value, for toasts and inline errors. */
 export function errorMessage(e: unknown): string {
-  return e instanceof Error ? e.message : 'Something went wrong. Try again.';
+  const m = e instanceof Error ? e.message : 'Something went wrong. Try again.';
+  return i18next.isInitialized ? i18next.t(m) : m;
 }

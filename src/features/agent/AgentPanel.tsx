@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Badge, Button, Card, useToast } from '@/components/ui';
 import { useAuth } from '@/features/auth/AuthProvider';
@@ -34,6 +35,7 @@ function Row({
   canWrite: boolean;
   onChanged: () => void;
 }) {
+  const { t } = useTranslation();
   const toast = useToast();
   const m = useMutation({
     mutationFn: async (fn: () => Promise<unknown>) => fn(),
@@ -43,21 +45,26 @@ function Row({
   const amount = a.payload.amount_due_paise ? formatINR(paise(a.payload.amount_due_paise)) : '';
   return (
     <li>
-      <strong>{a.payload.customer ?? 'Customer'}</strong> · {a.payload.invoice_no} · {amount} ·{' '}
-      {stageLabel(a.stage)} · <Badge>{a.status}</Badge>
-      {a.channel ? ` · ${a.channel}` : ''}
+      <strong>{a.payload.customer ?? t('Customer')}</strong>{' '}
+      {t('· {{invoice_no}} · {{amount}} ·', { invoice_no: a.payload.invoice_no, amount })}{' '}
+      {t('{{stageLabel}} ·', { stageLabel: stageLabel(a.stage) })} <Badge>{a.status}</Badge>
+      {a.channel ? t(' · {{channel}}', { channel: a.channel }) : ''}
       <br />
       <small>{a.reasoning}</small>
       {a.draft_note ? (
         <>
           <br />
           <small>
-            Wording: {a.draft_source === 'ai' ? 'written by the model' : 'standard template'};{' '}
-            {a.draft_note}
+            {t('Wording:')} {a.draft_source === 'ai' ? 'written by the model' : 'standard template'}
+            {t(';')} {a.draft_note}
           </small>
         </>
       ) : null}
-      {a.error ? <p role="alert">Failed: {a.error}</p> : null}
+      {a.error ? (
+        <p role="alert">
+          {t('Failed:')} {a.error}
+        </p>
+      ) : null}
       {canWrite ? (
         <div className="flex flex-wrap gap-2">
           {a.status === 'proposed' && a.action_type === 'send_reminder' ? (
@@ -66,14 +73,14 @@ function Row({
                 disabled={m.isPending}
                 onClick={() => m.mutate(() => approveAndSend(orgId, a, userId))}
               >
-                Approve and send
+                {t('Approve and send')}
               </Button>
               <Button
                 variant="secondary"
                 disabled={m.isPending}
                 onClick={() => m.mutate(() => decide(a, 'rejected', userId))}
               >
-                Reject
+                {t('Reject')}
               </Button>
             </>
           ) : null}
@@ -83,7 +90,7 @@ function Row({
               disabled={m.isPending}
               onClick={() => m.mutate(() => decide(a, 'rejected', userId))}
             >
-              Done
+              {t('Done')}
             </Button>
           ) : null}
           {a.status === 'failed' ? (
@@ -91,19 +98,19 @@ function Row({
               disabled={m.isPending}
               onClick={() => m.mutate(() => retryAction(orgId, a, userId))}
             >
-              Retry
+              {t('Retry')}
             </Button>
           ) : null}
           {a.status === 'approved' && a.channel === 'whatsapp' && a.wa_url ? (
             <>
               <a href={a.wa_url} target="_blank" rel="noreferrer">
-                Open WhatsApp
+                {t('Open WhatsApp')}
               </a>
               <Button
                 disabled={m.isPending}
                 onClick={() => m.mutate(() => markWhatsappSent(orgId, a, userId))}
               >
-                Mark sent
+                {t('Mark sent')}
               </Button>
             </>
           ) : null}
@@ -115,6 +122,7 @@ function Row({
 
 /** The agent's plan for the day: proposals to approve, failures to retry, WhatsApp to tap. */
 export function AgentPanel({ compact = false }: { compact?: boolean }) {
+  const { t } = useTranslation();
   const org = useOrg();
   const { session } = useAuth();
   const orgId = org.data?.orgId;
@@ -146,7 +154,7 @@ export function AgentPanel({ compact = false }: { compact?: boolean }) {
   const run = useMutation({
     mutationFn: () => runAgentNow(orgId!),
     onSuccess: () => {
-      toast.show('Agent run finished.');
+      toast.show(t('Agent run finished.'));
       refresh();
     },
     onError: (e) => toast.show(errorMessage(e)),
@@ -159,15 +167,21 @@ export function AgentPanel({ compact = false }: { compact?: boolean }) {
   if (compact && failed.length === 0) return null;
   return (
     <Card>
-      <h2>Agent</h2>
+      <h2>{t('Agent')}</h2>
       {!compact ? (
         <>
           <p>
-            Plan for {day}. Autonomy L{settings.data?.autonomy_level ?? 0}
-            {settings.data?.test_mode ? ', test mode on (messages go to the owner)' : ''}.
+            {t('Plan for {{day}}. Autonomy L', { day })}
+            {settings.data?.autonomy_level ?? 0}
+            {settings.data?.test_mode ? t(', test mode on (messages go to the owner)') : ''}
+            {t('.')}
             {last.data
-              ? ` Last run: ${last.data.status}, ${new Date(last.data.started_at).toLocaleString('en-IN')} (${last.data.trigger}).`
-              : ' The agent has not run yet.'}
+              ? t(' Last run: {{status}}, {{v}} ({{trigger}}).', {
+                  status: last.data.status,
+                  v: new Date(last.data.started_at).toLocaleString('en-IN'),
+                  trigger: last.data.trigger,
+                })
+              : t(' The agent has not run yet.')}
           </p>
           {canWrite ? (
             <Button
@@ -175,15 +189,19 @@ export function AgentPanel({ compact = false }: { compact?: boolean }) {
               disabled={run.isPending || !orgId}
               onClick={() => run.mutate()}
             >
-              {run.isPending ? 'Running…' : 'Run agent now'}
+              {run.isPending ? t('Running…') : t('Run agent now')}
             </Button>
           ) : null}
         </>
       ) : (
-        <p role="alert">{failed.length} message(s) failed to send.</p>
+        <p role="alert">
+          {failed.length} {t('message(s) failed to send.')}
+        </p>
       )}
       {actions.error ? <p role="alert">{errorMessage(actions.error)}</p> : null}
-      {!compact && open.length === 0 ? <p>Nothing waiting. {sent.length} sent today.</p> : null}
+      {!compact && open.length === 0 ? (
+        <p>{t('Nothing waiting. {{length}} sent today.', { length: sent.length })}</p>
+      ) : null}
       <ul>
         {shown.map((a) => (
           <Row

@@ -1,4 +1,5 @@
 import { forwardRef, useId, type InputHTMLAttributes } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label: string;
@@ -10,12 +11,13 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
   { label, error, hint, id, ...rest },
   ref,
 ) {
+  const { t } = useTranslation();
   const auto = useId();
   const inputId = id ?? auto;
   const describedBy = error ? `${inputId}-error` : hint ? `${inputId}-hint` : undefined;
   return (
     <div className="ui-field">
-      <label htmlFor={inputId}>{label}</label>
+      <label htmlFor={inputId}>{t(label)}</label>
       <input
         ref={ref}
         id={inputId}
@@ -26,11 +28,11 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
       />
       {error ? (
         <p id={`${inputId}-error`} className="ui-error" role="alert">
-          {error}
+          {t(error)}
         </p>
       ) : hint ? (
         <p id={`${inputId}-hint`} className="ui-hint">
-          {hint}
+          {t(hint)}
         </p>
       ) : null}
     </div>

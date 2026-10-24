@@ -1,3 +1,5 @@
+import { tr } from '@/app/i18n';
+import { useTranslation } from 'react-i18next';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, Input, Select } from '@/components/ui';
@@ -29,6 +31,7 @@ function rupeesOrZero(v: string): number {
 const money = (n: number) => formatINR(paise(Math.round(n)));
 
 function WhatIfCard({ f }: { f: NonNullable<ReturnType<typeof useForecast>['ctx']> }) {
+  const { t } = useTranslation();
   const [kind, setKind] = useState<WhatIf['kind']>('payLater');
   const [customerId, setCustomerId] = useState('');
   const [days, setDays] = useState('30');
@@ -47,17 +50,18 @@ function WhatIfCard({ f }: { f: NonNullable<ReturnType<typeof useForecast>['ctx'
   let what: WhatIf | null = null;
   let problem = '';
   if (kind === 'payLater') {
-    if (!cust) problem = 'Add a customer first.';
-    else if (!Number.isFinite(d)) problem = 'Enter the number of days.';
+    if (!cust) problem = t('Add a customer first.');
+    else if (!Number.isFinite(d)) problem = t('Enter the number of days.');
     else what = { kind, customerId: cust, days: d };
   } else if (kind === 'newOrder') {
     const amt = rupeesOrZero(amount);
-    if (!cust) problem = 'Add a customer first.';
-    else if (amt <= 0) problem = 'Enter the order amount in rupees.';
-    else if (!date) problem = 'Pick the order date.';
+    if (!cust) problem = t('Add a customer first.');
+    else if (amt <= 0) problem = t('Enter the order amount in rupees.');
+    else if (!date) problem = t('Pick the order date.');
     else what = { kind, customerId: cust, amountPaise: amt, date };
-  } else if (!bill) problem = 'No supplier bills or expenses fall due in the next 13 weeks.';
-  else if (!Number.isFinite(d)) problem = 'Enter the number of days (negative moves it earlier).';
+  } else if (!bill) problem = t('No supplier bills or expenses fall due in the next 13 weeks.');
+  else if (!Number.isFinite(d))
+    problem = t('Enter the number of days (negative moves it earlier).');
   else what = { kind, expenseId: bill, days: d };
 
   const input = useMemo(() => toInput(f), [f]);
@@ -76,27 +80,27 @@ function WhatIfCard({ f }: { f: NonNullable<ReturnType<typeof useForecast>['ctx'
 
   return (
     <Card>
-      <h2>What if…</h2>
+      <h2>{t('What if…')}</h2>
       <Select
-        label="Scenario"
+        label={t('Scenario')}
         value={kind}
         onChange={(e) => setKind(e.target.value as WhatIf['kind'])}
         options={[
-          { value: 'payLater', label: 'A customer pays later' },
-          { value: 'newOrder', label: 'A new order comes in' },
-          { value: 'moveBill', label: 'A supplier bill moves' },
+          { value: 'payLater', label: t('A customer pays later') },
+          { value: 'newOrder', label: t('A new order comes in') },
+          { value: 'moveBill', label: t('A supplier bill moves') },
         ]}
       />
       {kind !== 'moveBill' ? (
         <Select
-          label="Customer"
+          label={t('Customer')}
           value={cust}
           onChange={(e) => setCustomerId(e.target.value)}
           options={f.customers.map((c) => ({ value: c.id, label: c.name }))}
         />
       ) : (
         <Select
-          label="Bill or expense"
+          label={t('Bill or expense')}
           value={bill}
           onChange={(e) => setBillId(e.target.value)}
           options={bills.map(([id, name]) => ({ value: id, label: name }))}
@@ -104,7 +108,7 @@ function WhatIfCard({ f }: { f: NonNullable<ReturnType<typeof useForecast>['ctx'
       )}
       {kind !== 'newOrder' ? (
         <Input
-          label={kind === 'payLater' ? 'Days later' : 'Days to move (negative = earlier)'}
+          label={kind === 'payLater' ? t('Days later') : t('Days to move (negative = earlier)')}
           type="number"
           value={days}
           onChange={(e) => setDays(e.target.value)}
@@ -112,12 +116,12 @@ function WhatIfCard({ f }: { f: NonNullable<ReturnType<typeof useForecast>['ctx'
       ) : (
         <>
           <Input
-            label="Order amount (₹)"
+            label={t('Order amount (₹)')}
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
           />
           <Input
-            label="Order date"
+            label={t('Order date')}
             type="date"
             value={date}
             min={f.today}
@@ -129,11 +133,22 @@ function WhatIfCard({ f }: { f: NonNullable<ReturnType<typeof useForecast>['ctx'
       {result && what && low ? (
         <>
           <p>
-            <strong>{describeWhatIf(what, names)}.</strong> Lowest point in the next 13 weeks goes
-            from {money(base.paise)} (week {base.week}) to {money(low.paise)} (week {low.week}).{' '}
+            <strong>
+              {tr(describeWhatIf(what, names))}
+              {t('.')}
+            </strong>{' '}
+            {t(
+              'Lowest point in the next 13 weeks goes from {{money}} (week {{week}}) to {{money2}} (week {{week2}}).',
+              {
+                money: money(base.paise),
+                week: base.week,
+                money2: money(low.paise),
+                week2: low.week,
+              },
+            )}{' '}
             {sf
-              ? `Cash would first fall below your buffer in week ${sf.week}.`
-              : 'Cash stays above your buffer.'}
+              ? t('Cash would first fall below your buffer in week {{week}}.', { week: sf.week })
+              : t('Cash stays above your buffer.')}
           </p>
           <BandChart forecast={result} shortfallWeek={sf?.week ?? null} />
         </>
@@ -143,6 +158,7 @@ function WhatIfCard({ f }: { f: NonNullable<ReturnType<typeof useForecast>['ctx'
 }
 
 export function ForecastPage() {
+  const { t } = useTranslation();
   const [includeDisputed, setIncludeDisputed] = useState(false);
   const { ctx, computed, isLoading, error } = useForecast(includeDisputed);
   const bt = useMemo(
@@ -150,7 +166,7 @@ export function ForecastPage() {
       ctx ? backtest({ history: ctx.history, customers: ctx.customers, today: ctx.today }) : null,
     [ctx],
   );
-  if (isLoading) return <p>Loading…</p>;
+  if (isLoading) return <p>{t('Loading…')}</p>;
   if (error) return <p role="alert">{errorMessage(error)}</p>;
   if (!ctx || !computed) return null;
   const { forecast, plan, chase } = computed;
@@ -163,17 +179,29 @@ export function ForecastPage() {
 
   return (
     <>
-      <h1>Forecast</h1>
+      <h1>{t('Forecast')}</h1>
       <p className="tnum">
         {sf
-          ? `Cash is expected to fall below your ${money(forecast.bufferPaise)} safety buffer in week ${sf.week} (${sf.start} to ${sf.end}).`
-          : `Cash stays above your ${money(forecast.bufferPaise)} safety buffer for the next ${safeWeeks(forecast)} weeks.`}{' '}
-        Lowest point: {money(low.paise)} in week {low.week}. Opening balance{' '}
+          ? t(
+              'Cash is expected to fall below your {{money}} safety buffer in week {{week}} ({{start}} to {{end}}).',
+              { money: money(forecast.bufferPaise), week: sf.week, start: sf.start, end: sf.end },
+            )
+          : t('Cash stays above your {{money}} safety buffer for the next {{safeWeeks}} weeks.', {
+              money: money(forecast.bufferPaise),
+              safeWeeks: safeWeeks(forecast),
+            })}{' '}
+        {t('Lowest point: {{money}} in week {{week}}. Opening balance', {
+          money: money(low.paise),
+          week: low.week,
+        })}{' '}
         {money(ctx.openingBalancePaise)}
-        {ctx.openingBalanceOn ? ` as of ${ctx.openingBalanceOn}` : ''}.
+        {ctx.openingBalanceOn
+          ? t(' as of {{openingBalanceOn}}', { openingBalanceOn: ctx.openingBalanceOn })
+          : ''}
+        {t('.')}
       </p>
       {ctx.truncated ? (
-        <p role="status">Some lists were capped, so the numbers may be incomplete.</p>
+        <p role="status">{t('Some lists were capped, so the numbers may be incomplete.')}</p>
       ) : null}
       <label>
         <input
@@ -181,24 +209,24 @@ export function ForecastPage() {
           checked={includeDisputed}
           onChange={(e) => setIncludeDisputed(e.target.checked)}
         />{' '}
-        Include disputed invoices (assumed 30 days later)
+        {t('Include disputed invoices (assumed 30 days later)')}
       </label>
       <Card>
-        <h2>Next 13 weeks</h2>
+        <h2>{t('Next 13 weeks')}</h2>
         <BandChart forecast={forecast} shortfallWeek={sf?.week ?? null} />
         <div className="table-scroll">
           <table className="tnum">
             <thead>
               <tr>
-                <th>Week</th>
-                <th>Starts</th>
-                <th>Opening (median)</th>
-                <th>In (median)</th>
-                <th>Out</th>
-                <th>Closing P10</th>
-                <th>Closing P50</th>
-                <th>Closing P90</th>
-                <th>Chance below buffer</th>
+                <th>{t('Week')}</th>
+                <th>{t('Starts')}</th>
+                <th>{t('Opening (median)')}</th>
+                <th>{t('In (median)')}</th>
+                <th>{t('Out')}</th>
+                <th>{t('Closing P10')}</th>
+                <th>{t('Closing P50')}</th>
+                <th>{t('Closing P90')}</th>
+                <th>{t('Chance below buffer')}</th>
               </tr>
             </thead>
             <tbody>
@@ -215,89 +243,105 @@ export function ForecastPage() {
                   <td>{formatINRShort(paise(w.closing.p10))}</td>
                   <td>{formatINRShort(paise(w.closing.p50))}</td>
                   <td>{formatINRShort(paise(w.closing.p90))}</td>
-                  <td>{Math.round(w.probBelowBuffer * 100)}%</td>
+                  <td>
+                    {Math.round(w.probBelowBuffer * 100)}
+                    {t('%')}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-        <p>{forecast.runs} simulated runs, always the same for the same data.</p>
+        <p>
+          {forecast.runs} {t('simulated runs, always the same for the same data.')}
+        </p>
       </Card>
 
       <Card>
-        <h2>{plan ? `Closing the week ${plan.week} gap` : 'Closing a gap'}</h2>
+        <h2>
+          {plan ? t('Closing the week {{week}} gap', { week: plan.week }) : t('Closing a gap')}
+        </h2>
         {plan ? (
           <>
-            <p>{plan.summary}</p>
+            <p>{tr(plan.summary)}</p>
             <ol>
               {plan.steps.map((s) => (
-                <li key={s.id}>{s.sentence}</li>
+                <li key={s.id}>{tr(s.sentence)}</li>
               ))}
             </ol>
             {plan.steps.length ? (
               <p className="tnum">
-                Total cost {money(plan.totalCostPaise)}; covers {money(plan.coveredPaise)} of{' '}
-                {money(plan.gapPaise)}.
+                {t('Total cost {{money}}; covers {{money2}} of', {
+                  money: money(plan.totalCostPaise),
+                  money2: money(plan.coveredPaise),
+                })}{' '}
+                {t('{{money}}.', { money: money(plan.gapPaise) })}
               </p>
             ) : null}
           </>
         ) : (
-          <p>No shortfall in the next 13 weeks, so nothing to solve.</p>
+          <p>{t('No shortfall in the next 13 weeks, so nothing to solve.')}</p>
         )}
       </Card>
 
       <WhatIfCard f={ctx} />
 
       <Card>
-        <h2>Who to chase first</h2>
-        {chase.length === 0 ? <p>Nothing outstanding.</p> : null}
+        <h2>{t('Who to chase first')}</h2>
+        {chase.length === 0 ? <p>{t('Nothing outstanding.')}</p> : null}
         <ol>
           {chase.slice(0, 10).map((c) => (
             <li key={c.invoiceId}>
-              <strong>{c.customerName}</strong>: {c.reason}.
+              <strong>{c.customerName}</strong>
+              {t(': {{reason}}.', { reason: tr(c.reason) })}
             </li>
           ))}
         </ol>
         <p>
-          <Link to="/collect">Open Collect</Link>
+          <Link to="/collect">{t('Open Collect')}</Link>
         </p>
       </Card>
 
       <Card>
-        <h2>Last {bt?.weeks.length ?? 8} weeks: forecast against actual</h2>
+        <h2>
+          {t('Last')} {bt?.weeks.length ?? 8} {t('weeks: forecast against actual')}
+        </h2>
         {bt ? (
           <>
-            <p>{bt.sentence}</p>
+            <p>{tr(bt.sentence)}</p>
             <ActualVsForecastChart result={bt} />
             <p className="tnum">
-              WAPE {bt.wape === null ? 'not available' : `${Math.round(bt.wape * 100)}%`} (lower is
-              better). Forecast made as of {bt.asOf}.
+              {t('WAPE')} {bt.wape === null ? 'not available' : `${Math.round(bt.wape * 100)}%`}{' '}
+              {t('(lower is better). Forecast made as of {{asOf}}.', { asOf: bt.asOf })}
             </p>
           </>
         ) : null}
       </Card>
 
       <Card>
-        <h2>How reliably customers pay</h2>
+        <h2>{t('How reliably customers pay')}</h2>
         {customersWithHistory.length === 0 ? (
-          <p>No paid invoices yet, so the forecast uses a default of a few days late.</p>
+          <p>{t('No paid invoices yet, so the forecast uses a default of a few days late.')}</p>
         ) : null}
         <ul>
           {customersWithHistory.map((m) => (
             <li key={m.customerId}>
-              <strong>{names.get(m.customerId)}</strong> (grade {m.grade}): {m.reason}
+              <strong>{names.get(m.customerId)}</strong>{' '}
+              {t('(grade {{grade}}): {{reason}}', { grade: m.grade, reason: tr(m.reason) })}
             </li>
           ))}
         </ul>
         <p>
-          Customers with fewer than 4 paid invoices lean on your overall average. Overall: median{' '}
-          {Math.round(ctx.models.overall.median)} days late.
+          {t(
+            'Customers with fewer than 4 paid invoices lean on your overall average. Overall: median',
+          )}{' '}
+          {t('{{v}} days late.', { v: Math.round(ctx.models.overall.median) })}
         </p>
       </Card>
 
       <p>
-        <Link to="/expenses">Edit expenses and bills</Link> ·{' '}
-        <Link to="/settings">Change bank balance and safety buffer</Link>
+        <Link to="/expenses">{t('Edit expenses and bills')}</Link> {t('·')}{' '}
+        <Link to="/settings">{t('Change bank balance and safety buffer')}</Link>
       </p>
     </>
   );

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import QRCode from 'qrcode';
@@ -60,16 +61,18 @@ function buyer(c: Customer) {
 }
 
 function Toolbar({ back, children }: { back: string; children?: React.ReactNode }) {
+  const { t } = useTranslation();
   return (
     <div className="doc-toolbar">
-      <Link to={back}>Back</Link>
+      <Link to={back}>{t('Back')}</Link>
       {children}
-      <Button onClick={() => window.print()}>Print or save as PDF</Button>
+      <Button onClick={() => window.print()}>{t('Print or save as PDF')}</Button>
     </div>
   );
 }
 
 export function LetterDocPage() {
+  const { t } = useTranslation();
   const { id } = useParams();
   const org = useOrg();
   const orgId = org.data?.orgId;
@@ -114,12 +117,12 @@ export function LetterDocPage() {
           vpa: vpa!,
           payee: model!.seller.name,
           amount: model!.upiAmount,
-          note: 'Invoice payment',
+          note: t('Invoice payment'),
         }),
         { margin: 1, width: 240 },
       ),
   });
-  if (q.isLoading || org.isLoading) return <p>Loading…</p>;
+  if (q.isLoading || org.isLoading) return <p>{t('Loading…')}</p>;
   if (q.error) return <p role="alert">{errorMessage(q.error)}</p>;
   if (!model) return null;
   return (
@@ -132,12 +135,12 @@ export function LetterDocPage() {
               checked={withInterest}
               onChange={(e) => setWithInterest(e.target.checked)}
             />{' '}
-            Add MSMED interest to the amount
+            {t('Add MSMED interest to the amount')}
           </label>
         ) : null}
       </Toolbar>
       {model.rows.length === 0 ? (
-        <p>No overdue unpaid invoices for this customer.</p>
+        <p>{t('No overdue unpaid invoices for this customer.')}</p>
       ) : (
         <LetterDocument model={model} qrDataUrl={qr.data} />
       )}
@@ -146,6 +149,7 @@ export function LetterDocPage() {
 }
 
 export function CaseDocPage() {
+  const { t } = useTranslation();
   const { customerId } = useParams();
   const org = useOrg();
   const orgId = org.data?.orgId;
@@ -193,7 +197,7 @@ export function CaseDocPage() {
       return buildCaseModel(input);
     },
   });
-  if (q.isLoading || org.isLoading) return <p>Loading…</p>;
+  if (q.isLoading || org.isLoading) return <p>{t('Loading…')}</p>;
   if (q.error) return <p role="alert">{errorMessage(q.error)}</p>;
   if (!q.data) return null;
   return (

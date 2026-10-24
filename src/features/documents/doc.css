@@ -85,3 +85,25 @@
     padding: 12mm;
   }
 }
+
+/* On phones the A4 sheet is scaled down to fit instead of scrolling sideways. */
+@media screen and (max-width: 840px) {
+  .doc-page {
+    zoom: 0.7;
+  }
+}
+@media screen and (max-width: 600px) {
+  .doc-page {
+    zoom: 0.5;
+  }
+}
+@media screen and (max-width: 420px) {
+  .doc-page {
+    zoom: 0.4;
+  }
+}
+@media print {
+  .doc-page {
+    zoom: 1;
+  }
+}

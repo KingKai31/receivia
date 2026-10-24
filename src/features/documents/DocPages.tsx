@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import QRCode from 'qrcode';
 import { Link, useParams } from 'react-router-dom';
@@ -17,15 +18,17 @@ import {
 } from './invoiceDocument';
 
 function Toolbar({ back }: { back: string }) {
+  const { t } = useTranslation();
   return (
     <div className="doc-toolbar">
-      <Link to={back}>Back</Link>
-      <Button onClick={() => window.print()}>Print or save as PDF</Button>
+      <Link to={back}>{t('Back')}</Link>
+      <Button onClick={() => window.print()}>{t('Print or save as PDF')}</Button>
     </div>
   );
 }
 
 export function InvoiceDocPage() {
+  const { t } = useTranslation();
   const { id } = useParams();
   const org = useOrg();
   const orgId = org.data?.orgId;
@@ -45,7 +48,7 @@ export function InvoiceDocPage() {
       return { model, qr };
     },
   });
-  if (q.isLoading || org.isLoading) return <p>Loading…</p>;
+  if (q.isLoading || org.isLoading) return <p>{t('Loading…')}</p>;
   if (q.error) return <p role="alert">{errorMessage(q.error)}</p>;
   if (!q.data) return null;
   return (
@@ -57,6 +60,7 @@ export function InvoiceDocPage() {
 }
 
 export function NoteDocPage() {
+  const { t } = useTranslation();
   const { id } = useParams();
   const org = useOrg();
   const orgId = org.data?.orgId;
@@ -73,7 +77,7 @@ export function NoteDocPage() {
       return buildNoteDocument({ note, invoice, supplier, buyer, today: todayIST() });
     },
   });
-  if (q.isLoading || org.isLoading) return <p>Loading…</p>;
+  if (q.isLoading || org.isLoading) return <p>{t('Loading…')}</p>;
   if (q.error) return <p role="alert">{errorMessage(q.error)}</p>;
   if (!q.data) return null;
   return (

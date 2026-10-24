@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export interface Column<T> {
   key: string;
@@ -22,16 +23,17 @@ export function ResponsiveTable<T>({
   rowKey,
   emptyText,
 }: ResponsiveTableProps<T>) {
-  if (rows.length === 0 && emptyText) return <p className="ui-hint">{emptyText}</p>;
+  const { t } = useTranslation();
+  if (rows.length === 0 && emptyText) return <p className="ui-hint">{t(emptyText)}</p>;
   return (
     <>
       <table className="ui-table hidden md:table">
-        <caption className="sr-only">{caption}</caption>
+        <caption className="sr-only">{t(caption)}</caption>
         <thead>
           <tr>
             {columns.map((c) => (
               <th key={c.key} scope="col">
-                {c.header}
+                {t(c.header)}
               </th>
             ))}
           </tr>
@@ -46,13 +48,13 @@ export function ResponsiveTable<T>({
           ))}
         </tbody>
       </table>
-      <ul className="m-0 flex list-none flex-col gap-3 p-0 md:hidden" aria-label={caption}>
+      <ul className="m-0 flex list-none flex-col gap-3 p-0 md:hidden" aria-label={t(caption)}>
         {rows.map((row) => (
           <li key={rowKey(row)} className="ui-card">
             <dl className="m-0 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
               {columns.map((c) => (
                 <div key={c.key} className="contents">
-                  <dt className="font-semibold">{c.header}</dt>
+                  <dt className="font-semibold">{t(c.header)}</dt>
                   <dd className="m-0">{c.render(row)}</dd>
                 </div>
               ))}

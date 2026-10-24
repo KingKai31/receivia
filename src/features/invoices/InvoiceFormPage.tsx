@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
@@ -35,6 +36,7 @@ interface FormValues {
 const RATE_OPTIONS = GST_RATES.map((r) => ({ value: String(r), label: `${r}%` }));
 
 export function InvoiceFormPage() {
+  const { t } = useTranslation();
   const { id } = useParams();
   const [params] = useSearchParams();
   const org = useOrg();
@@ -157,7 +159,7 @@ export function InvoiceFormPage() {
       return inv;
     },
     onSuccess: (inv) => {
-      toast.show(inv.number ? `Issued ${inv.number}.` : 'Draft saved.');
+      toast.show(inv.number ? t('Issued {{number}}.', { number: inv.number }) : t('Draft saved.'));
       void qc.invalidateQueries({ queryKey: ['invoices'] });
       void qc.invalidateQueries({ queryKey: ['invoice', inv.id] });
       nav(`/invoices/${inv.id}`);
@@ -168,19 +170,21 @@ export function InvoiceFormPage() {
   if (existing.data && existing.data.invoice.status !== 'draft') {
     return (
       <p role="alert">
-        Only drafts can be edited. Issue a credit or debit note to change an issued invoice.
+        {t('Only drafts can be edited. Issue a credit or debit note to change an issued invoice.')}
       </p>
     );
   }
   if (profile.data && !profile.data.state_code) {
     return (
-      <p role="alert">Set your business GSTIN or state in Settings before creating invoices.</p>
+      <p role="alert">
+        {t('Set your business GSTIN or state in Settings before creating invoices.')}
+      </p>
     );
   }
 
   const c = live.computed?.calc;
   const customerOptions = [
-    { value: '', label: 'Choose a customer' },
+    { value: '', label: t('Choose a customer') },
     ...(customers.data?.rows ?? []).map((x) => ({ value: x.id, label: x.name })),
     ...(customer.data && !(customers.data?.rows ?? []).some((x) => x.id === customer.data!.id)
       ? [{ value: customer.data.id, label: customer.data.name }]
@@ -189,115 +193,120 @@ export function InvoiceFormPage() {
 
   return (
     <>
-      <h1>{id ? 'Edit draft invoice' : 'New invoice'}</h1>
+      <h1>{id ? t('Edit draft invoice') : t('New invoice')}</h1>
       <form onSubmit={handleSubmit((v) => save.mutateAsync({ v, issue: false }))} noValidate>
         <fieldset disabled={!writable || save.isPending} className="m-0 grid gap-3 border-0 p-0">
           <Input
-            label="Find customer"
+            label={t('Find customer')}
             type="search"
             value={customerSearch}
             onChange={(e) => setCustomerSearch(e.target.value)}
           />
-          <Select label="Customer" options={customerOptions} {...register('customerId')} />
+          <Select label={t('Customer')} options={customerOptions} {...register('customerId')} />
           <Input
-            label="Invoice date"
+            label={t('Invoice date')}
             type="date"
             {...register('issueDate', {
               onChange: (e) => recomputeDue(e.target.value, getValues('creditDays')),
             })}
           />
           <Input
-            label="Credit days"
+            label={t('Credit days')}
             inputMode="numeric"
             {...register('creditDays', {
               onChange: (e) => recomputeDue(getValues('issueDate'), e.target.value),
             })}
           />
-          <Input label="Due date" type="date" {...register('dueDate')} />
+          <Input label={t('Due date')} type="date" {...register('dueDate')} />
           <label>
-            <input type="checkbox" {...register('reverseCharge')} /> Reverse charge applies
+            <input type="checkbox" {...register('reverseCharge')} /> {t('Reverse charge applies')}
           </label>
-          <Input label="Delivery address" {...register('deliveryAddress')} />
+          <Input label={t('Delivery address')} {...register('deliveryAddress')} />
 
-          <h2>Lines</h2>
+          <h2>{t('Lines')}</h2>
           {fields.map((f, i) => (
             <Card key={f.id}>
               <div className="grid gap-3">
                 <Input
-                  label={`Description (line ${i + 1})`}
+                  label={t('Description (line {{v}})', { v: i + 1 })}
                   {...register(`lines.${i}.description`)}
                 />
-                <Input label="HSN / SAC" {...register(`lines.${i}.hsn_sac`)} />
-                <Input label="Quantity" inputMode="decimal" {...register(`lines.${i}.qty`)} />
-                <Input label="Unit" {...register(`lines.${i}.unit`)} />
-                <Input label="Rate (₹)" inputMode="decimal" {...register(`lines.${i}.rate`)} />
+                <Input label={t('HSN / SAC')} {...register(`lines.${i}.hsn_sac`)} />
+                <Input label={t('Quantity')} inputMode="decimal" {...register(`lines.${i}.qty`)} />
+                <Input label={t('Unit')} {...register(`lines.${i}.unit`)} />
+                <Input label={t('Rate (₹)')} inputMode="decimal" {...register(`lines.${i}.rate`)} />
                 <Input
-                  label="Discount (₹)"
+                  label={t('Discount (₹)')}
                   inputMode="decimal"
                   {...register(`lines.${i}.discount`)}
                 />
                 <Select
-                  label="GST rate"
+                  label={t('GST rate')}
                   options={RATE_OPTIONS}
                   {...register(`lines.${i}.gst_rate`, { valueAsNumber: true })}
                 />
-                {c?.lines[i] ? <p>Line total: {formatINR(c.lines[i]!.total)}</p> : null}
+                {c?.lines[i] ? (
+                  <p>
+                    {t('Line total:')} {formatINR(c.lines[i]!.total)}
+                  </p>
+                ) : null}
                 {fields.length > 1 ? (
                   <Button variant="secondary" onClick={() => remove(i)}>
-                    Remove line {i + 1}
+                    {t('Remove line')} {i + 1}
                   </Button>
                 ) : null}
               </div>
             </Card>
           ))}
           <Button variant="secondary" onClick={() => append({ ...EMPTY_LINE })}>
-            Add line
+            {t('Add line')}
           </Button>
-          <Input label="Notes" {...register('notes')} />
+          <Input label={t('Notes')} {...register('notes')} />
 
           <Card>
-            <h2>Totals</h2>
+            <h2>{t('Totals')}</h2>
             {live.error ? <p role="alert">{live.error}</p> : null}
             {c ? (
               <dl className="m-0 grid grid-cols-[1fr_auto] gap-x-4 gap-y-1">
-                <dt>Taxable value</dt>
+                <dt>{t('Taxable value')}</dt>
                 <dd>{formatINR(c.taxable)}</dd>
                 {c.intraState ? (
                   <>
-                    <dt>CGST</dt>
+                    <dt>{t('CGST')}</dt>
                     <dd>{formatINR(c.cgst)}</dd>
-                    <dt>SGST</dt>
+                    <dt>{t('SGST')}</dt>
                     <dd>{formatINR(c.sgst)}</dd>
                   </>
                 ) : (
                   <>
-                    <dt>IGST</dt>
+                    <dt>{t('IGST')}</dt>
                     <dd>{formatINR(c.igst)}</dd>
                   </>
                 )}
-                <dt>Round off</dt>
+                <dt>{t('Round off')}</dt>
                 <dd>{formatINR(c.roundOff)}</dd>
                 <dt>
-                  <strong>Total</strong>
+                  <strong>{t('Total')}</strong>
                 </dt>
                 <dd>
-                  <strong>{formatINR(c.grandTotal)}</strong> ({formatINRShort(c.grandTotal)})
+                  <strong>{formatINR(c.grandTotal)}</strong>{' '}
+                  {t('({{formatINRShort}})', { formatINRShort: formatINRShort(c.grandTotal) })}
                 </dd>
               </dl>
             ) : (
-              <p>Choose a customer to see totals.</p>
+              <p>{t('Choose a customer to see totals.')}</p>
             )}
           </Card>
 
           {writable ? (
             <div className="flex flex-wrap gap-3">
               <Button type="submit" variant="secondary">
-                Save draft
+                {t('Save draft')}
               </Button>
               <Button
                 onClick={() => void handleSubmit((v) => save.mutateAsync({ v, issue: true }))()}
               >
-                Save and issue
+                {t('Save and issue')}
               </Button>
             </div>
           ) : null}

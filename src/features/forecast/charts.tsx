@@ -1,3 +1,5 @@
+import { tr } from '@/app/i18n';
+import { useTranslation } from 'react-i18next';
 import type { BacktestResult, Forecast } from '@/lib/forecast';
 import type { AgeingBuckets } from '@/lib/forecast';
 import { formatINRShort } from '@/lib/money';
@@ -26,6 +28,7 @@ export function BandChart({
   forecast: Forecast;
   shortfallWeek: number | null;
 }) {
+  const { t } = useTranslation();
   const weeks = forecast.weeks;
   const all = weeks.flatMap((w) => [w.closing.p10, w.closing.p90]).concat(forecast.bufferPaise, 0);
   const min = Math.min(...all);
@@ -43,7 +46,9 @@ export function BandChart({
       className="chart tnum"
       viewBox={`0 0 ${W} ${H}`}
       role="img"
-      aria-label="Forecast closing cash by week: median line, 10th to 90th percentile band and the safety buffer"
+      aria-label={t(
+        'Forecast closing cash by week: median line, 10th to 90th percentile band and the safety buffer',
+      )}
     >
       {ticks.map((t) => (
         <g key={t}>
@@ -81,7 +86,7 @@ export function BandChart({
         fontSize="11"
         fill="currentColor"
       >
-        Safety buffer {short(forecast.bufferPaise)}
+        {t('Safety buffer {{short}}', { short: short(forecast.bufferPaise) })}
       </text>
       {weeks.map((w, i) => (
         <text key={w.week} x={x(i)} y={H - 8} textAnchor="middle" fontSize="11" fill="currentColor">
@@ -106,7 +111,7 @@ export function BandChart({
             fill="currentColor"
           />
           <text x={x(shortfallWeek - 1) + 8} y={PAD.t + 12} fontSize="11" fill="currentColor">
-            First shortfall: week {shortfallWeek}
+            {t('First shortfall: week {{shortfallWeek}}', { shortfallWeek })}
           </text>
         </g>
       ) : null}
@@ -115,6 +120,7 @@ export function BandChart({
 }
 
 export function ActualVsForecastChart({ result }: { result: BacktestResult }) {
+  const { t } = useTranslation();
   const rows = result.weeks;
   const max = Math.max(1, ...rows.flatMap((r) => [r.actual, r.p90, r.forecast]));
   const y = scale(0, max);
@@ -125,7 +131,7 @@ export function ActualVsForecastChart({ result }: { result: BacktestResult }) {
       className="chart tnum"
       viewBox={`0 0 ${W} ${H}`}
       role="img"
-      aria-label="Collections each week: forecast with its range against what actually came in"
+      aria-label={t('Collections each week: forecast with its range against what actually came in')}
     >
       {[0, max / 2, max].map((t) => (
         <g key={t}>
@@ -178,7 +184,7 @@ export function ActualVsForecastChart({ result }: { result: BacktestResult }) {
         );
       })}
       <text x={PAD.l} y={PAD.t + 10} fontSize="11" fill="currentColor">
-        Outlined bar: forecast (line: 10th to 90th percentile). Solid bar: actual.
+        {t('Outlined bar: forecast (line: 10th to 90th percentile). Solid bar: actual.')}
       </text>
     </svg>
   );
@@ -187,12 +193,13 @@ export function ActualVsForecastChart({ result }: { result: BacktestResult }) {
 const AGEING_LABELS: [keyof AgeingBuckets, string, number][] = [
   ['notDue', 'Not due', 0.25],
   ['d1_30', '1–30 days', 0.4],
-  ['d31_60', '31–60', 0.55],
-  ['d61_90', '61–90', 0.75],
-  ['d90plus', '90+', 1],
+  ['d31_60', '31–60 days', 0.55],
+  ['d61_90', '61–90 days', 0.75],
+  ['d90plus', 'Over 90 days', 1],
 ];
 
 export function AgeingBar({ ageing }: { ageing: AgeingBuckets }) {
+  const { t } = useTranslation();
   const total = Object.values(ageing).reduce((s, x) => s + x, 0);
   return (
     <div className="tnum">
@@ -200,7 +207,9 @@ export function AgeingBar({ ageing }: { ageing: AgeingBuckets }) {
         viewBox="0 0 640 28"
         className="chart"
         role="img"
-        aria-label="Receivables by age: not due, 1 to 30, 31 to 60, 61 to 90 and over 90 days overdue"
+        aria-label={t(
+          'Receivables by age: not due, 1 to 30, 31 to 60, 61 to 90 and over 90 days overdue',
+        )}
       >
         {(() => {
           let x = 0;
@@ -217,7 +226,7 @@ export function AgeingBar({ ageing }: { ageing: AgeingBuckets }) {
       <ul className="ageing-legend">
         {AGEING_LABELS.map(([k, label]) => (
           <li key={k}>
-            {label}: {short(ageing[k])}
+            {t('{{label}}: {{short}}', { label: tr(label), short: short(ageing[k]) })}
           </li>
         ))}
       </ul>

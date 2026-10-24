@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
@@ -26,15 +27,18 @@ function InvoiceLine({
   inv: { number: string | null; balance_paise: number } | null;
   customer: string;
 }) {
+  const { t } = useTranslation();
   return (
     <p>
-      <strong>{customer}</strong> · <Link to={`/invoices/${id}`}>{inv?.number ?? 'Invoice'}</Link> ·
-      balance {formatINR(paise(inv?.balance_paise ?? 0))}
+      <strong>{customer}</strong> {t('·')}{' '}
+      <Link to={`/invoices/${id}`}>{inv?.number ?? t('Invoice')}</Link>{' '}
+      {t('· balance {{formatINR}}', { formatINR: formatINR(paise(inv?.balance_paise ?? 0)) })}
     </p>
   );
 }
 
 function ClaimCard({ item, orgId, done }: { item: ClaimItem; orgId: string; done: () => void }) {
+  const { t } = useTranslation();
   const toast = useToast();
   const [reply, setReply] = useState('');
   const m = useMutation({
@@ -47,27 +51,28 @@ function ClaimCard({ item, orgId, done }: { item: ClaimItem; orgId: string; done
       <InvoiceLine
         id={item.invoice_id}
         inv={item.invoices}
-        customer={item.customers?.name ?? 'Customer'}
+        customer={item.customers?.name ?? t('Customer')}
       />
       <p>
-        Says they paid on {item.paid_on ?? 'an unknown date'}
-        {item.reference ? `, reference ${item.reference}` : ''}.
+        {t('Says they paid on')} {item.paid_on ?? 'an unknown date'}
+        {item.reference ? t(', reference {{reference}}', { reference: item.reference }) : ''}
+        {t('.')}
       </p>
       <Input
-        label="Reply to the buyer (required to reject)"
+        label={t('Reply to the buyer (required to reject)')}
         value={reply}
         onChange={(e) => setReply(e.target.value)}
       />
       <div className="flex flex-wrap gap-2">
         <Button disabled={m.isPending} onClick={() => m.mutate(true)}>
-          Accept: mark paid
+          {t('Accept: mark paid')}
         </Button>
         <Button
           variant="secondary"
           disabled={m.isPending || !reply.trim()}
           onClick={() => m.mutate(false)}
         >
-          Reject with reply
+          {t('Reject with reply')}
         </Button>
       </div>
     </Card>
@@ -83,6 +88,7 @@ function DisputeCard({
   orgId: string;
   done: () => void;
 }) {
+  const { t } = useTranslation();
   const toast = useToast();
   const nav = useNavigate();
   const [reply, setReply] = useState('');
@@ -100,37 +106,41 @@ function DisputeCard({
       <InvoiceLine
         id={item.invoice_id}
         inv={item.invoices}
-        customer={item.customers?.name ?? 'Customer'}
+        customer={item.customers?.name ?? t('Customer')}
       />
       <p>
-        Dispute ({item.raised_via}): {item.reason}
+        {t('Dispute ({{raised_via}}): {{reason}}', {
+          raised_via: item.raised_via,
+          reason: item.reason,
+        })}
       </p>
       <Input
-        label="Reply to the buyer (required to reject)"
+        label={t('Reply to the buyer (required to reject)')}
         value={reply}
         onChange={(e) => setReply(e.target.value)}
       />
       <div className="flex flex-wrap gap-2">
         <Button disabled={m.isPending} onClick={() => m.mutate('credit_note')}>
-          Accept: issue credit note
+          {t('Accept: issue credit note')}
         </Button>
         <Button variant="secondary" disabled={m.isPending} onClick={() => m.mutate('paid')}>
-          Accept: mark paid
+          {t('Accept: mark paid')}
         </Button>
         <Button
           variant="secondary"
           disabled={m.isPending || !reply.trim()}
           onClick={() => m.mutate('rejected')}
         >
-          Reject with reply
+          {t('Reject with reply')}
         </Button>
-        <Link to={`/invoices/${item.invoice_id}`}>Open invoice</Link>
+        <Link to={`/invoices/${item.invoice_id}`}>{t('Open invoice')}</Link>
       </div>
     </Card>
   );
 }
 
 function PromiseCard({ item, done }: { item: PromiseItem; done: () => void }) {
+  const { t } = useTranslation();
   const toast = useToast();
   const m = useMutation({
     mutationFn: (s: 'kept' | 'broken' | 'cancelled') => setPromiseStatus(item, s),
@@ -142,20 +152,23 @@ function PromiseCard({ item, done }: { item: PromiseItem; done: () => void }) {
       <InvoiceLine
         id={item.invoice_id}
         inv={item.invoices}
-        customer={item.customers?.name ?? 'Customer'}
+        customer={item.customers?.name ?? t('Customer')}
       />
       <p>
-        Promised to pay on {item.promised_for} ({item.source}). Reminders are paused until then.
+        {t('Promised to pay on {{promised_for}} ({{source}}). Reminders are paused until then.', {
+          promised_for: item.promised_for,
+          source: item.source,
+        })}
       </p>
       <div className="flex flex-wrap gap-2">
         <Button variant="secondary" disabled={m.isPending} onClick={() => m.mutate('kept')}>
-          Paid as promised
+          {t('Paid as promised')}
         </Button>
         <Button variant="secondary" disabled={m.isPending} onClick={() => m.mutate('broken')}>
-          Not paid: resume reminders
+          {t('Not paid: resume reminders')}
         </Button>
         <Button variant="secondary" disabled={m.isPending} onClick={() => m.mutate('cancelled')}>
-          Cancel promise
+          {t('Cancel promise')}
         </Button>
       </div>
     </Card>
@@ -163,6 +176,7 @@ function PromiseCard({ item, done }: { item: PromiseItem; done: () => void }) {
 }
 
 export function InboxPage() {
+  const { t } = useTranslation();
   const org = useOrg();
   const orgId = org.data?.orgId;
   const qc = useQueryClient();
@@ -182,30 +196,30 @@ export function InboxPage() {
     d && (d.disputes.length >= limit || d.claims.length >= limit || d.promises.length >= limit);
   return (
     <>
-      <h1>Inbox</h1>
-      <p>What buyers have told you through the pay page or that you have logged.</p>
-      {q.isLoading ? <p>Loading…</p> : null}
+      <h1>{t('Inbox')}</h1>
+      <p>{t('What buyers have told you through the pay page or that you have logged.')}</p>
+      {q.isLoading ? <p>{t('Loading…')}</p> : null}
       {q.error ? <p role="alert">{errorMessage(q.error)}</p> : null}
       {d ? (
         <>
-          <h2>Already paid ({d.claims.length})</h2>
-          {d.claims.length === 0 ? <p>Nothing waiting.</p> : null}
+          <h2>{t('Already paid ({{length}})', { length: d.claims.length })}</h2>
+          {d.claims.length === 0 ? <p>{t('Nothing waiting.')}</p> : null}
           {d.claims.map((c) => (
             <ClaimCard key={c.id} item={c} orgId={orgId!} done={refresh} />
           ))}
-          <h2>Disputes ({d.disputes.length})</h2>
-          {d.disputes.length === 0 ? <p>Nothing waiting.</p> : null}
+          <h2>{t('Disputes ({{length}})', { length: d.disputes.length })}</h2>
+          {d.disputes.length === 0 ? <p>{t('Nothing waiting.')}</p> : null}
           {d.disputes.map((x) => (
             <DisputeCard key={x.id} item={x} orgId={orgId!} done={refresh} />
           ))}
-          <h2>Promises to pay ({d.promises.length})</h2>
-          {d.promises.length === 0 ? <p>Nothing waiting.</p> : null}
+          <h2>{t('Promises to pay ({{length}})', { length: d.promises.length })}</h2>
+          {d.promises.length === 0 ? <p>{t('Nothing waiting.')}</p> : null}
           {d.promises.map((p) => (
             <PromiseCard key={p.id} item={p} done={refresh} />
           ))}
           {more ? (
             <Button variant="secondary" onClick={() => setLimit(limit + STEP)}>
-              Show more
+              {t('Show more')}
             </Button>
           ) : null}
         </>

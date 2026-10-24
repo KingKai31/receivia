@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { Button, Card, ResponsiveTable, Select, useToast } from '@/components/ui';
@@ -33,6 +34,7 @@ type Kind = 'customers' | 'invoices';
 type Rows = { row: number; values: Record<string, string> }[];
 
 export function ImportPage() {
+  const { t } = useTranslation();
   const org = useOrg();
   const orgId = org.data?.orgId;
   const toast = useToast();
@@ -121,7 +123,7 @@ export function ImportPage() {
         const v = validateCustomerRows(rows, existing);
         const r = await commitCustomers(orgId!, v.valid);
         setReport([...v.report.filter((x) => x.status !== 'ok'), ...r.failed]);
-        setResult(`${r.imported} customers imported.`);
+        setResult(t('{{imported}} customers imported.', { imported: r.imported }));
       } else {
         const p = profile.data!;
         const numbers = rows.map((r) => r.values.number?.trim() ?? '').filter(Boolean);
@@ -139,9 +141,14 @@ export function ImportPage() {
           v.valid,
         );
         setReport([...v.report.filter((x) => x.status !== 'ok'), ...r.failed]);
-        setResult(`${r.imported} invoices imported, ${r.customersCreated} new customers created.`);
+        setResult(
+          t('{{imported}} invoices imported, {{customersCreated}} new customers created.', {
+            imported: r.imported,
+            customersCreated: r.customersCreated,
+          }),
+        );
       }
-      toast.show('Import finished.');
+      toast.show(t('Import finished.'));
     } catch (e) {
       setError(errorMessage(e));
     } finally {
@@ -153,27 +160,27 @@ export function ImportPage() {
   const skippedTags = tally ? Object.entries(tally.skippedTags) : [];
   const missing = sheet ? missingRequired(mapping, fields) : [];
 
-  if (!writable) return <p>You have read-only access, so you cannot import.</p>;
+  if (!writable) return <p>{t('You have read-only access, so you cannot import.')}</p>;
 
   return (
     <>
-      <h1>Import</h1>
+      <h1>{t('Import')}</h1>
       <Card>
         <div className="grid gap-3">
           <Select
-            label="What are you importing?"
+            label={t('What are you importing?')}
             value={kind}
             onChange={(e) => {
               setKind(e.target.value as Kind);
               reset();
             }}
             options={[
-              { value: 'invoices', label: 'Invoices (CSV, Excel or Tally sales vouchers)' },
-              { value: 'customers', label: 'Customers (CSV, Excel or Tally ledgers)' },
+              { value: 'invoices', label: t('Invoices (CSV, Excel or Tally sales vouchers)') },
+              { value: 'customers', label: t('Customers (CSV, Excel or Tally ledgers)') },
             ]}
           />
           <label>
-            File (.csv, .xlsx, .xls or Tally .xml)
+            {t('File (.csv, .xlsx, .xls or Tally .xml)')}
             <br />
             <input
               type="file"
@@ -190,18 +197,17 @@ export function ImportPage() {
 
       {tally ? (
         <Card>
-          <h2>Tally file read</h2>
+          <h2>{t('Tally file read')}</h2>
           <p>
-            {kind === 'invoices' ? tally.invoices.length : tally.customers.length} record(s) found.
+            {kind === 'invoices' ? tally.invoices.length : tally.customers.length}{' '}
+            {t('record(s) found.')}
           </p>
           {skippedTags.length ? (
             <>
-              <p>Skipped tags that this import does not use:</p>
+              <p>{t('Skipped tags that this import does not use:')}</p>
               <ul>
                 {skippedTags.map(([tag, n]) => (
-                  <li key={tag}>
-                    {tag} ({n})
-                  </li>
+                  <li key={tag}>{t('{{tag}} ({{n}})', { tag, n })}</li>
                 ))}
               </ul>
             </>
@@ -218,7 +224,7 @@ export function ImportPage() {
 
       {sheet ? (
         <Card>
-          <h2>Match your columns</h2>
+          <h2>{t('Match your columns')}</h2>
           <div className="grid gap-3 md:grid-cols-2">
             {fields.map((f) => (
               <Select
@@ -230,19 +236,21 @@ export function ImportPage() {
                   setReport(null);
                 }}
                 options={[
-                  { value: '-1', label: 'Not in my file' },
+                  { value: '-1', label: t('Not in my file') },
                   ...sheet.headers.map((h, i) => ({
                     value: String(i),
-                    label: h || `Column ${i + 1}`,
+                    label: h || t('Column {{v}}', { v: i + 1 }),
                   })),
                 ]}
               />
             ))}
           </div>
           {missing.length ? (
-            <p role="alert">Map these required fields: {missing.join(', ')}.</p>
+            <p role="alert">{t('Map these required fields: {{v}}.', { v: missing.join(', ') })}</p>
           ) : null}
-          <p>{sheet.rows.length} data row(s) in the file.</p>
+          <p>
+            {sheet.rows.length} {t('data row(s) in the file.')}
+          </p>
         </Card>
       ) : null}
 
@@ -253,13 +261,13 @@ export function ImportPage() {
             disabled={busy || missing.length > 0}
             onClick={() => void validate()}
           >
-            Check rows
+            {t('Check rows')}
           </Button>
           <Button
             disabled={busy || missing.length > 0 || !report || sum?.ok === 0 || result !== null}
             onClick={() => void runImport()}
           >
-            Import {sum ? `${sum.ok} valid row(s)` : ''}
+            {t('Import')} {sum ? t('{{ok}} valid row(s)', { ok: sum.ok }) : ''}
           </Button>
         </div>
       ) : null}
@@ -267,12 +275,16 @@ export function ImportPage() {
       {result ? <p role="status">{result}</p> : null}
       {report && sum ? (
         <>
-          <h2>Row report</h2>
+          <h2>{t('Row report')}</h2>
           <p>
-            {sum.ok} ready, {sum.skipped} already exist, {sum.errors} with problems.
+            {t('{{ok}} ready, {{skipped}} already exist, {{errors}} with problems.', {
+              ok: sum.ok,
+              skipped: sum.skipped,
+              errors: sum.errors,
+            })}
           </p>
           <ResponsiveTable<RowReport>
-            caption="Import row report"
+            caption={t('Import row report')}
             rows={report.filter((r) => r.status !== 'ok')}
             rowKey={(r) => String(r.row)}
             emptyText="Every row is valid."
@@ -281,7 +293,7 @@ export function ImportPage() {
               {
                 key: 'status',
                 header: 'Result',
-                render: (r) => (r.status === 'error' ? 'Rejected' : 'Skipped'),
+                render: (r) => (r.status === 'error' ? t('Rejected') : t('Skipped')),
               },
               { key: 'msg', header: 'Why', render: (r) => r.messages.join('; ') },
             ]}

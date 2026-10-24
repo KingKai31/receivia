@@ -1,3 +1,5 @@
+import { tr } from '@/app/i18n';
+import { useTranslation } from 'react-i18next';
 import { addDays, type ISODate } from '@/lib/dates';
 import {
   buyerLens,
@@ -148,16 +150,17 @@ export function LetterDocument({
   model: LetterModel;
   qrDataUrl?: string;
 }) {
+  const { t } = useTranslation();
   const s = m.seller;
   return (
-    <article className="doc-page" aria-label={m.title}>
+    <article className="doc-page" aria-label={tr(m.title)}>
       <header className="doc-head">
-        <h1 className="doc-title">{m.title}</h1>
-        <p className="doc-sub">{m.disclaimer}</p>
+        <h1 className="doc-title">{tr(m.title)}</h1>
+        <p className="doc-sub">{tr(m.disclaimer)}</p>
       </header>
       <section className="doc-grid">
         <div>
-          <h2>From</h2>
+          <h2>{t('From')}</h2>
           <p>
             <strong>{s.name}</strong>
             <br />
@@ -165,25 +168,25 @@ export function LetterDocument({
             {s.gstin ? (
               <>
                 <br />
-                GSTIN: {s.gstin}
+                {t('GSTIN: {{gstin}}', { gstin: s.gstin })}
               </>
             ) : null}
             {s.phone ? (
               <>
                 <br />
-                Phone: {s.phone}
+                {t('Phone: {{phone}}', { phone: s.phone })}
               </>
             ) : null}
             {s.email ? (
               <>
                 <br />
-                Email: {s.email}
+                {t('Email: {{email}}', { email: s.email })}
               </>
             ) : null}
           </p>
         </div>
         <div>
-          <h2>To</h2>
+          <h2>{t('To')}</h2>
           <p>
             <strong>{m.buyer.name}</strong>
             <br />
@@ -191,27 +194,33 @@ export function LetterDocument({
             {m.buyer.gstin ? (
               <>
                 <br />
-                GSTIN: {m.buyer.gstin}
+                {t('GSTIN: {{gstin}}', { gstin: m.buyer.gstin })}
               </>
             ) : null}
           </p>
-          <p>Date: {m.date}</p>
+          <p>
+            {t('Date:')} {m.date}
+          </p>
         </div>
       </section>
 
       <p>
-        Dear {m.buyer.name}, our records show that the invoices below have not been paid in full.
-        Please pay the balance of {formatINR(m.balancePaise)} by <strong>{m.deadline}</strong>.
+        {t(
+          'Dear {{name}}, our records show that the invoices below have not been paid in full. Please pay the balance of {{formatINR}} by',
+          { name: m.buyer.name, formatINR: formatINR(m.balancePaise) },
+        )}{' '}
+        <strong>{m.deadline}</strong>
+        {t('.')}
       </p>
 
       <table className="doc-table">
         <thead>
           <tr>
-            <th>Invoice number</th>
-            <th>Date</th>
-            <th>Amount</th>
-            <th>Payments and credits</th>
-            <th>Balance</th>
+            <th>{t('Invoice number')}</th>
+            <th>{t('Date')}</th>
+            <th>{t('Amount')}</th>
+            <th>{t('Payments and credits')}</th>
+            <th>{t('Balance')}</th>
           </tr>
         </thead>
         <tbody>
@@ -229,71 +238,93 @@ export function LetterDocument({
 
       <section className="doc-totals">
         <p>
-          Balance of invoices: <strong>{formatINR(m.balancePaise)}</strong>
+          {t('Balance of invoices:')} <strong>{formatINR(m.balancePaise)}</strong>
         </p>
         {m.interestEligible ? (
           <>
-            <p>Interest, shown separately: {formatINR(m.interestPaise)}</p>
-            <p className="doc-fine">{m.interestNote}</p>
+            <p>
+              {t('Interest, shown separately:')} {formatINR(m.interestPaise)}
+            </p>
+            <p className="doc-fine">{tr(m.interestNote ?? '')}</p>
             <p>
               {m.includeInterest
-                ? 'Interest is added to the amount below.'
-                : 'Interest is not added to the amount below.'}
+                ? t('Interest is added to the amount below.')
+                : t('Interest is not added to the amount below.')}
             </p>
           </>
         ) : null}
         <p>
-          Amount to pay: <strong>{formatINR(m.totalPayablePaise)}</strong>
+          {t('Amount to pay:')} <strong>{formatINR(m.totalPayablePaise)}</strong>
         </p>
       </section>
 
       <section>
-        <h2>How to pay</h2>
+        <h2>{t('How to pay')}</h2>
         <p>
           {s.bank_name ? (
             <>
-              Bank: {s.bank_name}
+              {t('Bank: {{bank_name}}', { bank_name: s.bank_name })}
               <br />
             </>
           ) : null}
           {s.bank_account_holder ? (
             <>
-              Account name: {s.bank_account_holder}
+              {t('Account name: {{bank_account_holder}}', {
+                bank_account_holder: s.bank_account_holder,
+              })}
               <br />
             </>
           ) : null}
           {s.bank_account_number ? (
             <>
-              Account number: {s.bank_account_number}
+              {t('Account number: {{bank_account_number}}', {
+                bank_account_number: s.bank_account_number,
+              })}
               <br />
             </>
           ) : null}
           {s.bank_ifsc ? (
             <>
-              IFSC: {s.bank_ifsc}
+              {t('IFSC: {{bank_ifsc}}', { bank_ifsc: s.bank_ifsc })}
               <br />
             </>
           ) : null}
-          {s.upi_id ? <>UPI: {s.upi_id}</> : null}
+          {s.upi_id ? (
+            <>
+              {t('UPI:')} {s.upi_id}
+            </>
+          ) : null}
         </p>
         {qrDataUrl ? (
-          <img src={qrDataUrl} alt="UPI QR code for the amount to pay" width={140} height={140} />
+          <img
+            src={qrDataUrl}
+            alt={t('UPI QR code for the amount to pay')}
+            width={140}
+            height={140}
+          />
         ) : null}
       </section>
 
       <section>
-        <h2>If you think something is wrong</h2>
+        <h2>{t('If you think something is wrong')}</h2>
         <p>
-          If you believe any amount above is incorrect, or you have already paid, please tell us by{' '}
+          {t(
+            'If you believe any amount above is incorrect, or you have already paid, please tell us by',
+          )}{' '}
           {m.deadline}
-          {s.phone || s.email ? <> at {[s.phone, s.email].filter(Boolean).join(' or ')}</> : null},
-          and we will look into it.
+          {s.phone || s.email ? (
+            <>
+              {' '}
+              {t('at')} {[s.phone, s.email].filter(Boolean).join(' or ')}
+            </>
+          ) : null}
+          {t(', and we will look into it.')}
         </p>
       </section>
 
       {m.lensLines.length ? (
         <section>
-          <h2>For your accounts</h2>
+          <h2>{t('For your accounts')}</h2>
           {m.lensLines.map((l) => (
             <p key={l} className="doc-fine">
               {l}
@@ -303,7 +334,7 @@ export function LetterDocument({
       ) : null}
 
       <p>
-        Yours sincerely,
+        {t('Yours sincerely,')}
         <br />
         {s.name}
       </p>
@@ -431,61 +462,74 @@ export function buildCaseModel(i: CaseInput): CaseModel {
 }
 
 export function CaseDocument({ model: m }: { model: CaseModel }) {
+  const { t } = useTranslation();
   return (
-    <article className="doc-page" aria-label="Case pack">
+    <article className="doc-page" aria-label={t('Case pack')}>
       <header className="doc-head">
-        <h1 className="doc-title">Case pack: {m.buyer.name}</h1>
+        <h1 className="doc-title">
+          {t('Case pack:')} {m.buyer.name}
+        </h1>
         <p className="doc-sub">
-          <strong>{m.banner}</strong>
+          <strong>{tr(m.banner)}</strong>
         </p>
         <p className="doc-sub">
-          Information for preparing a reference on the MSME Samadhaan portal
-          (samadhaan.msme.gov.in). {m.disclaimer}
+          {t(
+            'Information for preparing a reference on the MSME Samadhaan portal (samadhaan.msme.gov.in). {{disclaimer}}',
+            { disclaimer: tr(m.disclaimer) },
+          )}
         </p>
       </header>
 
       <section className="doc-grid">
         <div>
-          <h2>Supplier</h2>
+          <h2>{t('Supplier')}</h2>
           <p>
             <strong>{m.seller.name}</strong>
             <br />
             {m.seller.address}
             <br />
-            Udyam: {m.seller.udyam_number ?? 'not recorded'}
+            {t('Udyam:')} {m.seller.udyam_number ?? t('not recorded')}
             <br />
-            Size: {m.seller.enterprise_size ?? '—'} · Activity: {m.seller.activity ?? '—'}
+            {t('Size:')} {m.seller.enterprise_size ? tr(m.seller.enterprise_size) : '—'}{' '}
+            {t('· Activity:')} {m.seller.activity ? tr(m.seller.activity) : '—'}
             <br />
-            {m.eligible ? 'Appears eligible' : `May not be eligible: ${m.eligibilityReason}`}
+            {m.eligible
+              ? t('Appears eligible')
+              : t('May not be eligible: {{eligibilityReason}}', {
+                  eligibilityReason: m.eligibilityReason,
+                })}
           </p>
         </div>
         <div>
-          <h2>Buyer</h2>
+          <h2>{t('Buyer')}</h2>
           <p>
             <strong>{m.buyer.name}</strong>
             <br />
             {m.buyer.address}
             <br />
-            GSTIN: {m.buyer.gstin ?? '—'} · Type: {m.buyer.entity_type ?? '—'}
+            {t('GSTIN:')} {m.buyer.gstin ?? '—'} {t('· Type:')}{' '}
+            {m.buyer.entity_type ? tr(m.buyer.entity_type) : '—'}
             <br />
-            Credit days: {m.buyer.credit_days} · Written agreement:{' '}
-            {m.buyer.has_written_agreement ? 'yes' : 'no'}
+            {t('Credit days: {{credit_days}} · Written agreement:', {
+              credit_days: m.buyer.credit_days,
+            })}{' '}
+            {m.buyer.has_written_agreement ? t('yes') : t('no')}
           </p>
         </div>
       </section>
 
-      <h2>Invoices</h2>
+      <h2>{t('Invoices')}</h2>
       <table className="doc-table">
         <thead>
           <tr>
-            <th>Invoice</th>
-            <th>Date</th>
-            <th>Accepted</th>
-            <th>MSME due date</th>
-            <th>Amount</th>
-            <th>Paid</th>
-            <th>Balance</th>
-            <th>Interest</th>
+            <th>{t('Invoice')}</th>
+            <th>{t('Date')}</th>
+            <th>{t('Accepted')}</th>
+            <th>{t('MSME due date')}</th>
+            <th>{t('Amount')}</th>
+            <th>{t('Paid')}</th>
+            <th>{t('Balance')}</th>
+            <th>{t('Interest')}</th>
           </tr>
         </thead>
         <tbody>
@@ -495,7 +539,7 @@ export function CaseDocument({ model: m }: { model: CaseModel }) {
               <td>{prettyDate(r.issue_date)}</td>
               <td>
                 {r.accepted}
-                {r.acceptedAssumed ? ' (assumed: invoice date)' : ''}
+                {r.acceptedAssumed ? t(' (assumed: invoice date)') : ''}
               </td>
               <td>{r.msmeDue}</td>
               <td>{formatINR(paise(r.total_paise))}</td>
@@ -507,44 +551,44 @@ export function CaseDocument({ model: m }: { model: CaseModel }) {
         </tbody>
       </table>
       <p>
-        Total balance: <strong>{formatINR(m.totals.balance)}</strong> · Interest:{' '}
+        {t('Total balance:')} <strong>{formatINR(m.totals.balance)}</strong> {t('· Interest:')}{' '}
         <strong>{formatINR(m.totals.interest)}</strong>
       </p>
-      <p className="doc-fine">{m.totals.interestNote}</p>
+      <p className="doc-fine">{tr(m.totals.interestNote)}</p>
 
-      <h2>Reminders sent</h2>
+      <h2>{t('Reminders sent')}</h2>
       {m.reminders.length ? (
         <table className="doc-table">
           <thead>
             <tr>
-              <th>Date</th>
-              <th>Step</th>
-              <th>Channel</th>
+              <th>{t('Date')}</th>
+              <th>{t('Step')}</th>
+              <th>{t('Channel')}</th>
             </tr>
           </thead>
           <tbody>
             {m.reminders.map((r, k) => (
               <tr key={k}>
                 <td>{r.date}</td>
-                <td>{r.stage}</td>
-                <td>{r.channel}</td>
+                <td>{tr(r.stage)}</td>
+                <td>{tr(r.channel)}</td>
               </tr>
             ))}
           </tbody>
         </table>
       ) : (
-        <p>None recorded.</p>
+        <p>{t('None recorded.')}</p>
       )}
 
-      <h2>Payments received</h2>
+      <h2>{t('Payments received')}</h2>
       {m.payments.length ? (
         <table className="doc-table">
           <thead>
             <tr>
-              <th>Date</th>
-              <th>Amount</th>
-              <th>Method</th>
-              <th>Reference</th>
+              <th>{t('Date')}</th>
+              <th>{t('Amount')}</th>
+              <th>{t('Method')}</th>
+              <th>{t('Reference')}</th>
             </tr>
           </thead>
           <tbody>
@@ -552,38 +596,48 @@ export function CaseDocument({ model: m }: { model: CaseModel }) {
               <tr key={k}>
                 <td>{p.date}</td>
                 <td>{p.amount}</td>
-                <td>{p.method}</td>
+                <td>{tr(p.method)}</td>
                 <td>{p.reference}</td>
               </tr>
             ))}
           </tbody>
         </table>
       ) : (
-        <p>None recorded.</p>
+        <p>{t('None recorded.')}</p>
       )}
 
-      <h2>Disputes</h2>
+      <h2>{t('Disputes')}</h2>
       {m.disputes.length ? (
         <ul>
           {m.disputes.map((d, k) => (
             <li key={k}>
-              {d.status}: {d.reason} (raised {prettyDate(d.raised_at.slice(0, 10))}
-              {d.resolution_note ? `, ${d.resolution_note}` : ''})
+              {t('{{status}}: {{reason}} (raised {{prettyDate}}', {
+                status: d.status,
+                reason: d.reason,
+                prettyDate: prettyDate(d.raised_at.slice(0, 10)),
+              })}
+              {d.resolution_note
+                ? t(', {{resolution_note}}', { resolution_note: d.resolution_note })
+                : ''}
+              {t(')')}
             </li>
           ))}
         </ul>
       ) : (
-        <p>None recorded.</p>
+        <p>{t('None recorded.')}</p>
       )}
 
-      <h2>What MSME Samadhaan generally asks for</h2>
+      <h2>{t('What MSME Samadhaan generally asks for')}</h2>
       <p className="doc-fine">
-        Requirements can change; check the portal. Items marked "to collect" are not in Receivia.
+        {t(
+          'Requirements can change; check the portal. Items marked "to collect" are not in Receivia.',
+        )}
       </p>
       <ul>
         {m.checklist.map((c) => (
-          <li key={c.item}>
-            {c.have === true ? '[ready]' : c.have === false ? '[missing]' : '[to collect]'} {c.item}
+          <li key={tr(c.item)}>
+            {c.have === true ? '[ready]' : c.have === false ? '[missing]' : t('[to collect]')}{' '}
+            {tr(c.item)}
           </li>
         ))}
       </ul>

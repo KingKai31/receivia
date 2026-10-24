@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -8,6 +9,7 @@ import { PAGE_SIZE, errorMessage } from '@/lib/service/errors';
 import { listCustomers, type Customer } from './customerService';
 
 export function CustomersPage() {
+  const { t } = useTranslation();
   const org = useOrg();
   const orgId = org.data?.orgId;
   const [search, setSearch] = useState('');
@@ -20,10 +22,10 @@ export function CustomersPage() {
   });
   return (
     <>
-      <h1>Customers</h1>
+      <h1>{t('Customers')}</h1>
       <div className="flex flex-wrap items-end gap-3">
         <Input
-          label="Search by name, GSTIN or phone"
+          label={t('Search by name, GSTIN or phone')}
           type="search"
           value={search}
           onChange={(e) => {
@@ -32,14 +34,14 @@ export function CustomersPage() {
           }}
         />
         {can.writeData(org.data?.role ?? null) ? (
-          <Link to="/customers/new">Add customer</Link>
+          <Link to="/customers/new">{t('Add customer')}</Link>
         ) : null}
       </div>
       {q.error ? <p role="alert">{errorMessage(q.error)}</p> : null}
       {q.data ? (
         <>
           <ResponsiveTable<Customer>
-            caption="Customers"
+            caption={t('Customers')}
             rows={q.data.rows}
             rowKey={(c) => c.id}
             emptyText="No customers found."
@@ -51,13 +53,13 @@ export function CustomersPage() {
               },
               { key: 'gstin', header: 'GSTIN', render: (c) => c.gstin ?? '—' },
               { key: 'tier', header: 'Tier', render: (c) => <Badge>{c.tier}</Badge> },
-              { key: 'days', header: 'Credit days', render: (c) => String(c.credit_days) },
+              { key: 'days', header: t('Credit days'), render: (c) => String(c.credit_days) },
             ]}
           />
           <Pager page={page} pageSize={PAGE_SIZE} total={q.data.total} onPage={setPage} />
         </>
       ) : q.isLoading ? (
-        <p>Loading…</p>
+        <p>{t('Loading…')}</p>
       ) : null}
     </>
   );

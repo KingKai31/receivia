@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
@@ -29,6 +30,7 @@ function Line({
   business: string;
   done: () => void;
 }) {
+  const { t } = useTranslation();
   const toast = useToast();
   const open = l.deductedPaise - l.receivedPaise;
   const m = useMutation({
@@ -44,7 +46,11 @@ function Line({
       await markCertificate(orgId, l.openIds, 'requested');
       const url = contact.phone
         ? whatsappUrl(contact.phone, text)
-        : mailtoUrl(contact.email ?? '', `TDS certificate ${l.quarter}`, text);
+        : mailtoUrl(
+            contact.email ?? '',
+            t('TDS certificate {{quarter}}', { quarter: l.quarter }),
+            text,
+          );
       window.open(url, '_blank', 'noopener');
     },
     onSuccess: done,
@@ -53,11 +59,16 @@ function Line({
   return (
     <Card>
       <h3>
-        {l.customerName} · {l.quarter}
+        {t('{{customerName}} · {{quarter}}', { customerName: l.customerName, quarter: l.quarter })}
       </h3>
       <p>
-        Deducted {formatINR(paise(l.deductedPaise))} · Certificate received{' '}
-        {formatINR(paise(l.receivedPaise))} · In 26AS {formatINR(paise(l.claimedPaise))}
+        {t('Deducted {{formatINR}} · Certificate received', {
+          formatINR: formatINR(paise(l.deductedPaise)),
+        })}{' '}
+        {t('{{formatINR}} · In 26AS {{formatINR2}}', {
+          formatINR: formatINR(paise(l.receivedPaise)),
+          formatINR2: formatINR(paise(l.claimedPaise)),
+        })}
       </p>
       {open > 0 ? (
         <div className="flex flex-wrap gap-2">
@@ -65,10 +76,10 @@ function Line({
             disabled={m.isPending || (!contact.phone && !contact.email)}
             onClick={() => m.mutate('request')}
           >
-            Ask for the certificate
+            {t('Ask for the certificate')}
           </Button>
           <Button variant="secondary" disabled={m.isPending} onClick={() => m.mutate('received')}>
-            Mark received
+            {t('Mark received')}
           </Button>
         </div>
       ) : null}
@@ -77,6 +88,7 @@ function Line({
 }
 
 export function TdsPage() {
+  const { t } = useTranslation();
   const org = useOrg();
   const orgId = org.data?.orgId;
   const qc = useQueryClient();
@@ -96,13 +108,13 @@ export function TdsPage() {
 
   return (
     <>
-      <h1>TDS certificates</h1>
+      <h1>{t('TDS certificates')}</h1>
       <p>
-        <Link to="/payments">Payments</Link>
+        <Link to="/payments">{t('Payments')}</Link>
       </p>
       <Card>
-        <h2>Check against Form 26AS or AIS</h2>
-        <label htmlFor="f26">Upload the CSV export</label>
+        <h2>{t('Check against Form 26AS or AIS')}</h2>
+        <label htmlFor="f26">{t('Upload the CSV export')}</label>
         <input
           id="f26"
           type="file"
@@ -122,7 +134,13 @@ export function TdsPage() {
                 m.matched.map((x) => x.entryId),
               );
               setReport(
-                `${m.matched.length} entr${m.matched.length === 1 ? 'y' : 'ies'} found in 26AS; ${m.unmatched.length} line(s) in the file not matched to anything you recorded.`,
+                t(
+                  '{{length}} entries found in 26AS; {{length2}} line(s) in the file not matched to anything you recorded.',
+                  {
+                    length: m.matched.length,
+                    length2: m.unmatched.length,
+                  },
+                ),
               );
               refresh();
             } catch (err) {
@@ -132,10 +150,10 @@ export function TdsPage() {
         />
         {report ? <p role="status">{report}</p> : null}
       </Card>
-      {q.isLoading ? <p>Loading…</p> : null}
+      {q.isLoading ? <p>{t('Loading…')}</p> : null}
       {q.error ? <p role="alert">{errorMessage(q.error)}</p> : null}
       {q.data && summary.length === 0 ? (
-        <p>No TDS recorded yet. It appears here when you confirm a short payment as TDS.</p>
+        <p>{t('No TDS recorded yet. It appears here when you confirm a short payment as TDS.')}</p>
       ) : null}
       {q.data
         ? summary.map((l) => {
