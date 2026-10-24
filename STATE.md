@@ -44,7 +44,7 @@
 | REQUIRE_DB (tests only) | `1` makes db tests fail instead of skip when DB is down | CI | set in CI |
 
 ## Services
-- Supabase: ref none, region ap-south-1 required — not created. Local: CLI via npm (`supabase` devDependency), project_id `receivia`.
+- Supabase: ref nxohumijpbwfxomvkckk, region ap-northeast-1 (Tokyo, accepted). Local: CLI via npm (`supabase` devDependency), project_id `receivia`.
 - Render: none — not created (render.yaml ready: static site `receivia`).
 - GitHub: no remote yet; CI in .github/workflows/ci.yml.
 - Razorpay: test mode — no account linked
@@ -176,6 +176,7 @@ Demo org: id `00000000-0000-4000-8000-00000000de60` ("Demo Traders", state 27, r
 - 2026-10-24 (S3): MSME due date counts from accepted_on, else the invoice date (shown as "assumed"). RBI bank rate in config is 5.75% as a placeholder (check rbi.org.in); interest rounds each month to paise.
 - 2026-10-24 (S3): Letter lists all of the customer's overdue unpaid invoices (route id is one invoice). CLAUDE.md requires the sentence "not a legal notice from a lawyer"; the no-"legal notice" test strips that mandated sentence first.
 - 2026-10-24 (S3): scripts/db-remote.mjs uses the sslmode in the connection string (no cert verification override); refuses to run if TEST == PROD.
+- 2026-10-24 (S3): One Supabase project (ref nxohumijpbwfxomvkckk, region ap-northeast-1 Tokyo, accepted for the hackathon; CLAUDE.md updated from ap-south-1) is both test and live DB. scripts/db-remote.mjs runs with equal URLs only when ALLOW_SINGLE_DB=true is set in .env.local. Plan: split into separate test and prod projects (and consider Mumbai) after the hackathon.
 - 2026-10-24 (S2): Business state for unregistered businesses is picked manually (no GSTIN to derive it from); with a GSTIN it is always derived.
 
 ## Needs owner

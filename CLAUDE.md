@@ -17,7 +17,7 @@
 Collections and cash-flow layer on top of Tally/Vyapar. Pillars: import + GST invoicing; Buyer Compliance Lens; governed collections agent; buyer pay portal; reconciliation + TDS; probabilistic forecast + gap solver; owner brief on WhatsApp; trust layer.
 
 ## Stack
-React 18 + Vite + TypeScript strict + Tailwind + React Router + TanStack Query + zod + react-hook-form + i18next (en/hi/mr). Supabase (Postgres, Auth, RLS, Edge Functions, region ap-south-1). Vitest + fast-check + Playwright. Render static site + Render Workflows. n8n. Razorpay test mode. Anthropic API (claude-sonnet-5-5) only from edge functions.
+React 18 + Vite + TypeScript strict + Tailwind + React Router + TanStack Query + zod + react-hook-form + i18next (en/hi/mr). Supabase (Postgres, Auth, RLS, Edge Functions, region ap-northeast-1). Vitest + fast-check + Playwright. Render static site + Render Workflows. n8n. Razorpay test mode. Anthropic API (claude-sonnet-5-5) only from edge functions.
 
 ## Folders
 src/app, src/features/<feature>, src/components/ui, src/styles, src/lib/{money,gst,gstin,dates,words,legal,forecast,match}, supabase/{migrations,functions,seed}, automation/{n8n,render}, tests/e2e, docs.

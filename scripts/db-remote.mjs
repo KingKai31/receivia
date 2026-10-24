@@ -19,7 +19,11 @@ const [cmd, which] = process.argv.slice(2);
 const test = process.env.TEST_DATABASE_URL;
 const prod = process.env.PROD_DATABASE_URL;
 if (!test || !prod) throw new Error('TEST_DATABASE_URL and PROD_DATABASE_URL must be set');
-if (test === prod) throw new Error('TEST and PROD urls are identical; refusing');
+if (test === prod && process.env.ALLOW_SINGLE_DB !== 'true') {
+  throw new Error(
+    'TEST and PROD urls are identical; set ALLOW_SINGLE_DB=true to confirm one shared project',
+  );
+}
 
 const dir = 'supabase/migrations';
 const files = fs
@@ -27,7 +31,16 @@ const files = fs
   .filter((f) => f.endsWith('.sql'))
   .sort();
 
-async function connect(url) {
+/** Percent-encodes the password so characters like @ or # in it do not break URL parsing. */
+function safeUrl(url) {
+  const m = url.match(/^(postgres(?:ql)?:\/\/)([^:/@]+):(.*)@([^@/]+(?:\/.*)?)$/);
+  if (!m) return url;
+  const pw = m[3].includes('%') ? m[3] : encodeURIComponent(m[3]);
+  return `${m[1]}${m[2]}:${pw}@${m[4]}`;
+}
+
+async function connect(rawUrl) {
+  const url = safeUrl(rawUrl);
   const c = new pg.Client({ connectionString: url });
   await c.connect();
   return c;
@@ -62,7 +75,11 @@ async function apply(c) {
   }
 }
 
-if (cmd === 'reset-test') {
+if (cmd === 'ping') {
+  const c = await connect(test);
+  console.log((await c.query('select current_database() db, version() v')).rows[0].db);
+  await c.end();
+} else if (cmd === 'reset-test') {
   const c = await connect(test);
   await c.query('drop schema if exists app cascade');
   await c.query('drop schema if exists receivia_meta cascade');
