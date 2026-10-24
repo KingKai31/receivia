@@ -12,6 +12,7 @@ import { rankGroups } from '@/features/collect/rank';
 import { firstShortfall } from '@/lib/forecast';
 import { todayIST, type ISODate } from '@/lib/dates';
 import { buildBrief, signApproval, verifyApproval } from './brief';
+import { isGovernmentPath } from '@/lib/legal/government';
 import { draftMessage, templateDraft } from './draft';
 import {
   existingKey,
@@ -244,11 +245,12 @@ export async function runPlan(db: Db, orgId: string, env: AgentEnv): Promise<Pla
               lensAllowed: a.lensAllowed,
               business: p.legal_name,
               customerText,
+              formal: isGovernmentPath(g.customer),
             },
             { anthropicKey: env.anthropicKey, fetchImpl: env.fetchImpl },
           )
         : {
-            ...templateDraft(a.stage as MessageStage, g.customer.language),
+            ...templateDraft(a.stage as MessageStage, g.customer.language, isGovernmentPath(g.customer)),
             source: 'template' as const,
             note: 'draft cap reached: template',
           };
@@ -489,7 +491,11 @@ export async function runSend(
     const sv = buildSlotValues(g.primary, g.customer, p as never, today);
     const link = await mintPayLink(db, orgId, r.invoice_id, env);
     const values = { ...sv.values, pay_link: link };
-    const fallback = templateDraft(r.stage as MessageStage, g.customer.language);
+    const fallback = templateDraft(
+      r.stage as MessageStage,
+      g.customer.language,
+      isGovernmentPath(g.customer),
+    );
     let subject: string;
     let body: string;
     try {

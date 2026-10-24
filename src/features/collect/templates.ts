@@ -1,3 +1,4 @@
+import { FORMAL_TEMPLATES } from '@/lib/legal/government';
 import type { Stage } from './ladder';
 
 export type Lang = 'en' | 'hi' | 'mr';
@@ -64,8 +65,19 @@ export function renderTemplate(text: string, values: SlotValues): string {
     .trim();
 }
 
-export function buildMessage(stage: MessageStage, lang: Lang, values: SlotValues): string {
-  return renderTemplate(TEMPLATES[stage][lang] ?? TEMPLATES[stage].en, values);
+/** Template for a stage; the formal government/PSU variant when `formal` is set. */
+export function templateText(stage: MessageStage, lang: Lang, formal = false): string {
+  const set: Record<MessageStage, Record<Lang, string>> = formal ? FORMAL_TEMPLATES : TEMPLATES;
+  return set[stage][lang] ?? set[stage].en;
+}
+
+export function buildMessage(
+  stage: MessageStage,
+  lang: Lang,
+  values: SlotValues,
+  formal = false,
+): string {
+  return renderTemplate(templateText(stage, lang, formal), values);
 }
 
 // ---- Send rules ----------------------------------------------------------

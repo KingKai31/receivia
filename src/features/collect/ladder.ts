@@ -153,7 +153,7 @@ export function nextAction(input: LadderInput): LadderDecision {
 }
 
 /** Steps shown for the last stage; Samadhaan only for eligible suppliers. */
-export function nextStepsGuide(msmeEligible: boolean): string[] {
+export function nextStepsGuide(msmeEligible: boolean, government = false): string[] {
   const steps = [
     'Call the buyer and note what they say.',
     'Consider consulting a lawyer or your CA about options for recovery.',
@@ -161,6 +161,11 @@ export function nextStepsGuide(msmeEligible: boolean): string[] {
   if (msmeEligible) {
     steps.push(
       'You may be able to file a reference on the MSME Samadhaan portal (samadhaan.msme.gov.in); open the case pack for what it asks for.',
+    );
+  }
+  if (government) {
+    steps.push(
+      'Government/PSU buyer: write to the department’s nodal officer for payments, then (if eligible) MSME Samadhaan, then CPGRAMS (pgportal.gov.in). The case pack has a checklist for each.',
     );
   }
   return steps;

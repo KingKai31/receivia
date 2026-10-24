@@ -1,5 +1,6 @@
 import type { ISODate } from '@/lib/dates';
 import { STAGES, STAGE_LABEL, type Stage } from '@/features/collect/ladder';
+import { isGovernmentPath } from '@/lib/legal/government';
 import { buildSlotValues, type TodayCustomer, type TodayGroup } from '@/features/collect/today';
 import type { SlotValues } from '@/features/collect/templates';
 
@@ -61,10 +62,17 @@ export function autoDecision(a: {
 }
 
 export function pickChannel(
-  c: Pick<TodayCustomer, 'email' | 'phone' | 'consent_withdrawn'> & { opt_in_whatsapp?: boolean },
+  c: Pick<TodayCustomer, 'email' | 'phone' | 'consent_withdrawn' | 'entity_type' | 'is_psu'> & { opt_in_whatsapp?: boolean },
   channels: readonly Channel[],
 ): { channel: Channel | null; note: string } {
   const out = c.consent_withdrawn ?? [];
+  if (isGovernmentPath(c)) {
+    if (out.includes('any') || out.includes('email'))
+      return { channel: null, note: 'The customer has withdrawn consent to be contacted.' };
+    return c.email && channels.includes('email')
+      ? { channel: 'email', note: 'Government buyer: formal email only.' }
+      : { channel: null, note: 'Government buyer: needs an email address (no WhatsApp).' };
+  }
   if (out.includes('any'))
     return { channel: null, note: 'The customer has withdrawn consent to be contacted.' };
   const emailOk = channels.includes('email') && c.email && !out.includes('email');

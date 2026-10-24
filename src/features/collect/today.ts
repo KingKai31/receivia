@@ -1,7 +1,7 @@
 import i18next from 'i18next';
 import type { ISODate } from '@/lib/dates';
 import { formatINR, paise } from '@/lib/money';
-import { buyerLens, msmeEligibility } from '@/lib/legal';
+import { buyerLens, isGovernmentPath, msmeEligibility } from '@/lib/legal';
 import type { BuyerFacts, InvoiceFacts, SellerFacts } from '@/lib/legal';
 import {
   CALL_PROMPT,
@@ -26,6 +26,8 @@ export interface TodayInvoice extends InvoiceFacts {
   disputed: boolean;
   approved_stages: Stage[];
   updated_at: string;
+  /** Government bill-tracking reference, shown to government buyers. */
+  bill_ref?: string | null;
 }
 
 export interface TodayCustomer extends BuyerFacts {
@@ -139,7 +141,15 @@ export function buildSlotValues(
     days_overdue: String(primary.decision.daysOverdue),
     pay_link: PAY_LINK_PLACEHOLDER,
     lens_line: showLens ? lensLine : '',
-    contact: [seller.legal_name, seller.phone].filter(Boolean).join(' '),
+    contact: [
+      isGovernmentPath(customer) && primary.invoice.bill_ref
+        ? `Bill reference: ${primary.invoice.bill_ref}`
+        : null,
+      seller.legal_name,
+      seller.phone,
+    ]
+      .filter(Boolean)
+      .join(' '),
   };
   return { values, lensLine };
 }
@@ -193,7 +203,12 @@ export function buildToday(input: TodayInput): TodayGroup[] {
     if (!primary.needsApproval && primary.stage !== 'next_steps') {
       const sv = buildSlotValues(primary, customer, input.seller, input.today);
       lensLine = sv.lensLine;
-      message = buildMessage(primary.stage as MessageStage, customer.language, sv.values);
+      message = buildMessage(
+        primary.stage as MessageStage,
+        customer.language,
+        sv.values,
+        isGovernmentPath(customer),
+      );
     }
     groups.push({
       customer,
@@ -204,7 +219,7 @@ export function buildToday(input: TodayInput): TodayGroup[] {
       callPrompt: primary.stage === 'final' && !primary.needsApproval ? CALL_PROMPT : null,
       guide:
         primary.stage === 'next_steps' && !primary.needsApproval
-          ? nextStepsGuide(msmeEligibility(input.seller).applies)
+          ? nextStepsGuide(msmeEligibility(input.seller).applies, isGovernmentPath(customer))
           : null,
       alreadyMessagedToday: input.messagedToday.includes(cid),
     });

@@ -17,6 +17,8 @@ import {
 } from '@/components/ui';
 import { useOrg } from '@/features/auth/useOrg';
 import { getCustomer } from '@/features/customers/customerService';
+import { isGovernmentPath } from '@/lib/legal/government';
+import { BillRefField } from './BillRefField';
 import { listNotesForInvoice, type Note } from '@/features/notes/noteService';
 import { formatINR, paise } from '@/lib/money';
 import { can } from '@/lib/permissions';
@@ -147,6 +149,13 @@ export function InvoiceDetailPage() {
           { key: 't', header: 'Total', render: (l) => formatINR(paise(l.total_paise)) },
         ]}
       />
+      {customer.data && isGovernmentPath(customer.data) ? (
+        <BillRefField
+          invoiceId={i.id}
+          value={(i as { bill_ref?: string | null }).bill_ref ?? null}
+          writable={writable}
+        />
+      ) : null}
       <Title>{t('Credit and debit notes')}</Title>
       <ResponsiveTable<Note>
         caption={t('Notes')}

@@ -9,6 +9,7 @@ import {
   GENERAL_INFO_LINE,
 } from '@/lib/legal';
 import type { BuyerFacts, SellerFacts } from '@/lib/legal';
+import { governmentGuide, isGovernmentPath } from '@/lib/legal/government';
 import { formatINR, paise, type Paise } from '@/lib/money';
 import { prettyDate } from '@/features/collect/today';
 import { STAGE_LABEL, type Stage } from '@/features/collect/ladder';
@@ -388,6 +389,8 @@ export interface CaseModel {
   payments: { date: string; amount: string; method: string; reference: string }[];
   disputes: CaseInput['disputes'];
   checklist: { item: string; have: boolean | null }[];
+  /** Government / PSU buyers: Form I, TReDS and escalation steps. */
+  gov: ReturnType<typeof governmentGuide> | null;
 }
 
 export function buildCaseModel(i: CaseInput): CaseModel {
@@ -458,11 +461,14 @@ export function buildCaseModel(i: CaseInput): CaseModel {
       { item: 'Your bank details', have: Boolean(i.seller.bank_account_number) },
       { item: 'Amount claimed, with interest calculated under Section 16', have: true },
     ],
+    gov: isGovernmentPath(i.buyer) ? governmentGuide(i.buyer) : null,
   };
 }
 
 export function CaseDocument({ model: m }: { model: CaseModel }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const lang: 'en' | 'hi' | 'mr' =
+    i18n.language === 'hi' || i18n.language === 'mr' ? i18n.language : 'en';
   return (
     <article className="doc-page" aria-label={t('Case pack')}>
       <header className="doc-head">
@@ -641,6 +647,24 @@ export function CaseDocument({ model: m }: { model: CaseModel }) {
           </li>
         ))}
       </ul>
+
+      {m.gov ? (
+        <section aria-label={t('Government and PSU buyers')}>
+          <h2>{t('Government and PSU buyers')}</h2>
+          {m.gov.formI ? <p>{m.gov.formI[lang]}</p> : null}
+          {m.gov.treds ? <p>{m.gov.treds[lang]}</p> : null}
+          {m.gov.steps.map((s) => (
+            <div key={s.key}>
+              <h3>{s.title[lang]}</h3>
+              <ul>
+                {s.checklist.map((c) => (
+                  <li key={c.en}>[ ] {c[lang]}</li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </section>
+      ) : null}
     </article>
   );
 }

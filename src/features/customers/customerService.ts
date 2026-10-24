@@ -26,6 +26,7 @@ export interface Customer {
   tier: 'key' | 'standard';
   language: 'en' | 'hi' | 'mr';
   entity_type: EntityType | null;
+  is_psu: boolean;
   presumptive_tax: 'unknown' | 'yes' | 'no';
   contact_name: string | null;
   email: string | null;
@@ -64,6 +65,7 @@ export const customerSchema = z.object({
   phone: z.string().trim(),
   address: z.string().trim(),
   opt_in_whatsapp: z.boolean(),
+  is_psu: z.boolean(),
 });
 export type CustomerForm = z.infer<typeof customerSchema>;
 
@@ -82,6 +84,7 @@ export const EMPTY_CUSTOMER: CustomerForm = {
   phone: '',
   address: '',
   opt_in_whatsapp: false,
+  is_psu: false,
 };
 
 const blank = (v: string) => (v.trim() ? v.trim() : null);
@@ -102,6 +105,7 @@ export function customerToForm(c: Customer): CustomerForm {
     phone: c.phone ?? '',
     address: c.address ?? '',
     opt_in_whatsapp: c.opt_in_whatsapp,
+    is_psu: c.is_psu ?? false,
   };
 }
 
@@ -121,6 +125,7 @@ export function formToRow(
     tier: f.tier,
     language: f.language,
     entity_type: f.entity_type || null,
+    is_psu: f.is_psu,
     presumptive_tax: f.presumptive_tax,
     contact_name: blank(f.contact_name),
     email: blank(f.email),

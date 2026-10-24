@@ -136,6 +136,10 @@ export function CustomerFormPage() {
             {...register('presumptive_tax')}
           />
           <label>
+            <input type="checkbox" {...register('is_psu')} />{' '}
+            {t('Public sector undertaking (PSU / CPSE)')}
+          </label>
+          <label>
             <input type="checkbox" {...register('has_written_agreement')} />{' '}
             {t('Written agreement on payment terms')}
           </label>

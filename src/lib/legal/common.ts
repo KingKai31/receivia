@@ -49,6 +49,8 @@ export interface BuyerFacts {
   presumptive_tax: Presumptive;
   credit_days: number;
   has_written_agreement: boolean;
+  /** Public sector undertaking / CPSE flag (government path). */
+  is_psu?: boolean;
 }
 
 export interface InvoiceFacts {

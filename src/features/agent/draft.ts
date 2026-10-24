@@ -1,6 +1,6 @@
 import {
   SLOTS,
-  TEMPLATES,
+  templateText,
   type Lang,
   type MessageStage,
   type Slot,
@@ -157,10 +157,10 @@ const SUBJECTS: Record<Lang, Record<MessageStage, string>> = {
 };
 
 /** The fixed wording for a stage: used when the model is off, fails validation, or the stage is fixed. */
-export function templateDraft(stage: MessageStage, lang: Lang): Draft {
+export function templateDraft(stage: MessageStage, lang: Lang, formal = false): Draft {
   return {
     subject: (SUBJECTS[lang] ?? SUBJECTS.en)[stage],
-    body: (TEMPLATES[stage][lang] ?? TEMPLATES[stage].en).trim(),
+    body: templateText(stage, lang, formal).trim(),
   };
 }
 
@@ -191,6 +191,8 @@ export interface DraftFacts {
   business: string;
   relationshipDays?: number;
   customerText?: string | null;
+  /** Government / PSU buyer: fixed formal wording, never model-drafted. */
+  formal?: boolean;
 }
 
 /** Strips the markers from untrusted text so it can never close its own data block. */
@@ -229,10 +231,11 @@ export const MODEL = 'claude-sonnet-5-5';
 /** Asks the model for wording and validates it; always returns something safe to send. */
 export async function draftMessage(facts: DraftFacts, env: DraftEnv): Promise<DraftResult> {
   const fallback = (note: string): DraftResult => ({
-    ...templateDraft(facts.stage, facts.language),
+    ...templateDraft(facts.stage, facts.language, facts.formal),
     source: 'template',
     note,
   });
+  if (facts.formal) return fallback('formal wording for government buyers');
   if (!AI_STAGES.includes(facts.stage)) return fallback('fixed wording for this stage');
   if (!env.anthropicKey) return fallback('no model key: template');
   try {
