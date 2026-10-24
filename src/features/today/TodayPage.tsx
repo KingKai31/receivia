@@ -2,6 +2,7 @@ import { Freshness } from '@/features/forecast/Freshness';
 import { tr } from '@/app/i18n';
 import { useTranslation } from 'react-i18next';
 import { AgentPanel } from '@/features/agent/AgentPanel';
+import { ImpactCard, RoiCardView } from '@/features/impact/ImpactCards';
 import { Link } from 'react-router-dom';
 import {
   Alert,
@@ -177,6 +178,9 @@ export function TodayPage() {
           note={t('week {{lowestWeek}}', { lowestWeek: tiles.lowestWeek })}
         />
       </HorizontalTiles>
+
+      <ImpactCard dismissible />
+      <RoiCardView />
 
       <AgentPanel compact />
 
