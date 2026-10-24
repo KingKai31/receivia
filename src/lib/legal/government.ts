@@ -2,7 +2,7 @@ import { GENERAL_INFO_HI, GENERAL_INFO_LINE, GENERAL_INFO_MR, type Sentences } f
 
 /** Buyer facts that decide the government / PSU path. */
 export interface GovBuyer {
-  entity_type: string | null;
+  entity_type?: string | null;
   is_psu?: boolean | null;
 }
 

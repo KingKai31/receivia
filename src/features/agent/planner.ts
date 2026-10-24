@@ -62,7 +62,8 @@ export function autoDecision(a: {
 }
 
 export function pickChannel(
-  c: Pick<TodayCustomer, 'email' | 'phone' | 'consent_withdrawn' | 'entity_type' | 'is_psu'> & { opt_in_whatsapp?: boolean },
+  c: Pick<TodayCustomer, 'email' | 'phone' | 'consent_withdrawn'> &
+    Partial<Pick<TodayCustomer, 'entity_type' | 'is_psu'>> & { opt_in_whatsapp?: boolean },
   channels: readonly Channel[],
 ): { channel: Channel | null; note: string } {
   const out = c.consent_withdrawn ?? [];
