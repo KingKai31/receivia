@@ -205,6 +205,18 @@ try {
     );
   }
   await c.query('commit');
+  // A few customers prefer Hindi or Marathi so the demo shows reminders and pay pages in those languages.
+  for (const [name, lang] of [
+    ['Theta Pharma Ltd', 'hi'],
+    ['Eta Foods', 'mr'],
+    ['Kappa Logistics LLP', 'hi'],
+  ]) {
+    await c.query('update public.customers set language = $3 where org_id = $1 and name = $2', [
+      DEMO_ORG,
+      name,
+      lang,
+    ]);
+  }
   console.log(`demo seed: ${data.customers.length} customers, ${added} new invoices`);
 } catch (e) {
   await c.query('rollback');

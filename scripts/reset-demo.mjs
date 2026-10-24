@@ -24,6 +24,7 @@ try {
     'messages',
     'reminders',
     'pay_tokens',
+    'agent_actions',
   ]) {
     await c.query(`delete from public.${t} where org_id = $1`, [DEMO_ORG]);
   }
