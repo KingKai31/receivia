@@ -209,6 +209,8 @@ All deployed with `node scripts/sb.mjs functions deploy <name> --project-ref '$R
 - `npm run lint`, `npm run typecheck`, `npm run build`: pass (bundle ~1.1 MB; xlsx not yet code-split).
 - e2e (Playwright): config only, no specs. New screens not exercised in a browser (no Supabase session available).
 
+- S9 Lighthouse mobile, live, 2026-10-25 (local Edge, simulated slow 4G): /sign-in 87 perf / 100 a11y, /trust 86 / 100, /privacy 84 / 100. Perf target 90 NOT met (FCP about 3.5 s, JS-bound; a pre-design build measured 83 on the same machine, so the design is not the cause). Tried: lazy hi/mr locales, cheaper blobs. Next: split supabase/react-query out of the entry chunk. /, /forecast and /pay/:token need a session or token and were not measured.
+
 ## Decisions
 - 2026-10-24 (S7): i18n key = the English sentence (keySeparator and nsSeparator off); ids like `nav.today` stay in en.json; hi.json and mr.json are flat maps. A missing translation shows English and fails src/app/i18n.test.ts. Messages built in code (ladder reasons, import errors, forecast sentences, match reasons) are translated by `{{slot}}` pattern keys (longest literal text first, rejected when more than 60% of the text is captured); `tr()` falls back to piece by piece (split at "; ", ". ", ", "). Customer names and other user data are never translated. Message bodies sent to customers use the customer's own language; the UI follows the picker (saved in localStorage).
 - 2026-10-24 (S7): Amount in words has Hindi and Marathi tables (src/lib/money/wordsIndic.ts); print documents follow the picker language.
