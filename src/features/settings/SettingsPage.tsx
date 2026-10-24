@@ -3,6 +3,7 @@ import { Badge, Button, Card } from '@/components/ui';
 import { signOut } from '@/features/auth/authApi';
 import { useOrg } from '@/features/auth/useOrg';
 import { ForecastSettings } from '@/features/forecast/ForecastSettings';
+import { AgentSettings } from '@/features/agent/AgentSettings';
 import { LadderSettings } from '@/features/collect/LadderSettings';
 import { BusinessProfileForm } from './BusinessProfileForm';
 
@@ -29,6 +30,7 @@ export function SettingsPage() {
       <BusinessProfileForm />
       <ForecastSettings />
       <LadderSettings />
+      <AgentSettings />
     </>
   );
 }

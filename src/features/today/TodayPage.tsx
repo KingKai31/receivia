@@ -1,3 +1,4 @@
+import { AgentPanel } from '@/features/agent/AgentPanel';
 import { Link } from 'react-router-dom';
 import { Card } from '@/components/ui';
 import { AgeingBar } from '@/features/forecast/charts';
@@ -38,6 +39,7 @@ export function TodayPage() {
   return (
     <>
       <h1>Today</h1>
+      <AgentPanel compact />
       <Card>
         {sf && plan ? (
           <>

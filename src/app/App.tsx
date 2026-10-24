@@ -1,3 +1,4 @@
+import { ApprovePage } from '@/features/agent/ApprovePage';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { ToastProvider } from '@/components/ui';
@@ -41,6 +42,7 @@ export function App() {
             <Routes>
               <Route path="/sign-in" element={<SignInPage />} />
               <Route path="/pay/:token" element={<PayPage />} />
+              <Route path="/approve" element={<ApprovePage />} />
               <Route path="/trust" element={<TrustPage />} />
               <Route element={<RequireAuth />}>
                 <Route path="/doc/invoice/:id" element={<InvoiceDocPage />} />

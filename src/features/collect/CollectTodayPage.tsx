@@ -19,6 +19,7 @@ import { STAGE_LABEL } from './ladder';
 import { PAY_LINK_PLACEHOLDER, prettyDate, type TodayGroup } from './today';
 import { rankGroups, reasonByInvoice } from './rank';
 import { canSend, mailtoUrl, smsUrl, whatsappUrl } from './templates';
+import { AgentPanel } from '@/features/agent/AgentPanel';
 import { useForecast } from '@/features/forecast/useForecast';
 
 function GroupCard({
@@ -258,6 +259,7 @@ export function CollectTodayPage() {
         Actions due on {prettyDate(today)}. Messages go out 09:00–21:00 IST, one per customer per
         day.
       </p>
+      <AgentPanel />
       {q.isLoading || org.isLoading ? <p>Loading…</p> : null}
       {q.error ? <p role="alert">{errorMessage(q.error)}</p> : null}
       {q.data?.truncated ? <p role="status">Showing the first 1000 live invoices only.</p> : null}
