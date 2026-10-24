@@ -183,6 +183,7 @@ export const INSERTS: Record<string, Builder> = {
     `insert into agent_actions (org_id, action_type) values ($1, 'send_reminder')`,
     [o],
   ],
+  agent_runs: (o) => [`insert into agent_runs (org_id, run_date) values ($1, '2026-10-24')`, [o]],
   pay_tokens: (o, r, t) => [
     `insert into pay_tokens (org_id, invoice_id, token_hash, expires_at)
      values ($1, $2, encode(extensions.digest($3, 'sha256'), 'hex'), now() + interval '1 day')`,
@@ -226,6 +227,7 @@ export const ALL_ORG_TABLES = [
   'business_profile',
   ...STANDARD_TABLES,
   'invoice_counters',
+  'agent_runs',
   'pay_tokens',
   'audit_log',
 ] as const;
@@ -262,6 +264,7 @@ export async function seedOrg(admin: pg.Client, org: string): Promise<Refs> {
     'payment_claims',
     'ims_status',
     'agent_actions',
+    'agent_runs',
     'pay_tokens',
   ]) {
     await one(t, refs, fx);

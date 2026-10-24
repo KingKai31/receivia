@@ -77,6 +77,35 @@ export function prettyDate(d: ISODate): string {
   return `${day} ${MONTHS[(m ?? 1) - 1]} ${y}`;
 }
 
+export type SlotSeller = TodayInput['seller'];
+
+/** Slot values for one item, computed from facts only (never from model output). */
+export function buildSlotValues(
+  primary: TodayItem,
+  customer: TodayCustomer,
+  seller: SlotSeller,
+  today: ISODate,
+): { values: SlotValues; lensLine: string } {
+  const lens = buyerLens({ seller, buyer: customer, invoice: primary.invoice, today });
+  const lang = customer.language;
+  const lensLine = lang === 'hi' ? lens.line_hi : lang === 'mr' ? lens.line_mr : lens.line_en;
+  const showLens =
+    primary.stage === 'overdue_firm' ||
+    primary.stage === 'final' ||
+    primary.stage === 'demand_letter';
+  const values: SlotValues = {
+    customer: customer.name,
+    invoice_no: primary.invoice.number,
+    amount_due: formatINR(paise(primary.decision.amountDue)),
+    due_date: prettyDate(primary.invoice.due_date),
+    days_overdue: String(primary.decision.daysOverdue),
+    pay_link: PAY_LINK_PLACEHOLDER,
+    lens_line: showLens ? lensLine : '',
+    contact: [seller.legal_name, seller.phone].filter(Boolean).join(' '),
+  };
+  return { values, lensLine };
+}
+
 export function buildToday(input: TodayInput): TodayGroup[] {
   const cfg = input.config ?? DEFAULT_LADDER;
   const custs = new Map(input.customers.map((c) => [c.id, c]));
@@ -124,29 +153,9 @@ export function buildToday(input: TodayInput): TodayGroup[] {
     let message: string | null = null;
     let lensLine = '';
     if (!primary.needsApproval && primary.stage !== 'next_steps') {
-      const lens = buyerLens({
-        seller: input.seller,
-        buyer: customer,
-        invoice: primary.invoice,
-        today: input.today,
-      });
-      const lang = customer.language;
-      lensLine = lang === 'hi' ? lens.line_hi : lang === 'mr' ? lens.line_mr : lens.line_en;
-      const showLens =
-        primary.stage === 'overdue_firm' ||
-        primary.stage === 'final' ||
-        primary.stage === 'demand_letter';
-      const values: SlotValues = {
-        customer: customer.name,
-        invoice_no: primary.invoice.number,
-        amount_due: formatINR(paise(primary.decision.amountDue)),
-        due_date: prettyDate(primary.invoice.due_date),
-        days_overdue: String(primary.decision.daysOverdue),
-        pay_link: PAY_LINK_PLACEHOLDER,
-        lens_line: showLens ? lensLine : '',
-        contact: [input.seller.legal_name, input.seller.phone].filter(Boolean).join(' '),
-      };
-      message = buildMessage(primary.stage as MessageStage, lang, values);
+      const sv = buildSlotValues(primary, customer, input.seller, input.today);
+      lensLine = sv.lensLine;
+      message = buildMessage(primary.stage as MessageStage, customer.language, sv.values);
     }
     groups.push({
       customer,

@@ -417,3 +417,12 @@ enabled = true
 
 [functions.demo-login]
 verify_jwt = false
+
+[functions.agent-run]
+verify_jwt = false
+
+[functions.draft-message]
+verify_jwt = false
+
+[functions.approve-actions]
+verify_jwt = false

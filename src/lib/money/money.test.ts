@@ -87,3 +87,15 @@ describe('amountInWordsIndian', () => {
     );
   });
 });
+
+describe('Indian grouping without Intl', () => {
+  it('groups lakhs and crores', async () => {
+    const { groupIndian } = await import('./paise');
+    expect(groupIndian(0)).toBe('0');
+    expect(groupIndian(999)).toBe('999');
+    expect(groupIndian(1000)).toBe('1,000');
+    expect(groupIndian(118000)).toBe('1,18,000');
+    expect(groupIndian(1180000)).toBe('11,80,000');
+    expect(groupIndian(123456789)).toBe('12,34,56,789');
+  });
+});

@@ -32,7 +32,14 @@ export function parseRupees(input: string): Paise {
   return paise(neg ? -total : total);
 }
 
-const inr = new Intl.NumberFormat('en-IN');
+/** Indian digit grouping (1,18,000) without Intl: some runtimes (edge functions) ship without en-IN data. */
+export function groupIndian(n: number): string {
+  const s = String(Math.trunc(n));
+  if (s.length <= 3) return s;
+  const head = s.slice(0, -3).replace(/\B(?=(\d{2})+(?!\d))/g, ',');
+  return `${head},${s.slice(-3)}`;
+}
+const inr = { format: groupIndian };
 
 function split(p: Paise): { sign: string; rupees: number; rem: number } {
   const abs = Math.abs(p);
