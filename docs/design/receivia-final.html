@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Receivia · Final design</title>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lenis@1.1.13/dist/lenis.min.js"></script>
+<style>
+:root{
+  --ink:#1c2230; --muted:#5d6472;
+  --blue:#7e98b2; --blue-deep:#56708c; --blue-mist:#b4c4d4;
+  --peach:#e09a84; --peach-deep:#c4694e; --rose:#d3aaa2;
+  --glass:rgba(255,255,255,.5); --glass-hi:rgba(255,255,255,.68); --edge:rgba(255,255,255,.7);
+  --dark:#3d3a44; --warn:#b4513a; --warn-soft:rgba(247,216,206,.85); --ok:#2e7555; --ok-soft:rgba(216,239,227,.85);
+  --soft-blue:rgba(180,196,212,.6); --soft-peach:rgba(240,200,186,.65);
+  --ease:cubic-bezier(.16,1,.3,1);
+  --font:"Figtree","Noto Sans Devanagari",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html.lenis{height:auto}.lenis.lenis-smooth{scroll-behavior:auto}
+body{margin:0;font-family:var(--font);color:var(--ink);-webkit-font-smoothing:antialiased;overflow-x:hidden;background:#c7b6b4}
+.num{font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+/* colour field: peach-mauve top, blue-grey bottom, like the reference */
+.field{position:fixed;inset:0;z-index:-1;overflow:hidden;background:linear-gradient(165deg,#d6b1a7 0%,#c4b0b2 38%,#a7b1bf 70%,#8e9cad 100%)}
+.blob{position:absolute;border-radius:50%;filter:blur(80px);will-change:transform}
+.b1{width:380px;height:380px;background:var(--blue);top:-80px;right:-120px;opacity:.7}
+.b2{width:340px;height:340px;background:var(--peach);top:30%;left:-140px;opacity:.55}
+.b3{width:420px;height:420px;background:var(--blue-mist);bottom:-120px;right:-80px;opacity:.75}
+.wrap{max-width:440px;margin:0 auto;padding:18px 16px 96px}
+.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+.brand{font-weight:700;font-size:18px;letter-spacing:-.01em}
+.glass{background:var(--glass);border:1px solid var(--edge);border-radius:24px;
+  backdrop-filter:blur(24px) saturate(150%);-webkit-backdrop-filter:blur(24px) saturate(150%);
+  box-shadow:0 10px 34px rgba(60,55,75,.12),inset 0 1px 0 rgba(255,255,255,.75)}
+.chip{font-size:12px;padding:7px 12px;border-radius:99px;color:var(--muted)}
+/* hero: blue top melting into coral, exactly the reference card */
+.hero{position:relative;border-radius:30px;padding:30px 22px 22px;color:#fff;overflow:hidden;isolation:isolate;
+  border:1px solid rgba(255,255,255,.45);box-shadow:0 20px 44px rgba(70,60,80,.22),inset 0 1px 0 rgba(255,255,255,.5)}
+.hero::before{content:"";position:absolute;inset:-20%;z-index:-1;
+  background:radial-gradient(60% 55% at 70% 95%,#d9785c 0%,rgba(217,120,92,0) 70%),radial-gradient(70% 60% at 20% 0%,#8aa3ba 0%,rgba(138,163,186,0) 75%),linear-gradient(180deg,#9db0c1 0%,#b9a3a3 60%,#cf8f7b 100%);
+  animation:hue 14s ease-in-out infinite alternate}
+@keyframes hue{to{transform:translate(4%,-3%) scale(1.06)}}
+.hero small{display:block;text-align:center;font-size:13px;opacity:.9}
+.big{font-size:46px;font-weight:500;text-align:center;margin:6px 0 4px}
+.sub{text-align:center;font-size:13px;opacity:.9}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:22px}
+.btn{border:0;border-radius:99px;padding:14px;font:600 14px var(--font);cursor:pointer;transition:transform .5s var(--ease),box-shadow .5s var(--ease)}
+.btn:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(40,30,40,.18)}
+.btn:active{transform:scale(.97)}
+.btn.light{background:#fff;color:var(--peach-deep)}
+.btn.dark{background:linear-gradient(180deg,#4a4550,#35323b);color:#fff}
+h2{font-size:17px;font-weight:600;margin:34px 4px 12px;display:flex;justify-content:space-between;align-items:baseline}
+h2 a{font-size:13px;font-weight:500;color:var(--peach-deep);text-decoration:none}
+.alert{margin-top:16px;padding:16px 18px;display:flex;gap:12px;background:var(--glass-hi)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--warn);margin-top:7px;flex:none;animation:pulse 2.6s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(180,81,58,.45)}70%,100%{box-shadow:0 0 0 9px rgba(180,81,58,0)}}
+.alert p{margin:0;font-size:14px;line-height:1.5}
+.tiles{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;padding:2px 2px 8px;margin:0 -2px;scrollbar-width:none}
+.tiles::-webkit-scrollbar{display:none}
+.tile{flex:0 0 72%;scroll-snap-align:start;padding:16px;display:flex;gap:12px;align-items:center}
+.ico{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;flex:none}
+.ico svg{width:18px;height:18px;fill:none;stroke-width:1.8}
+.i-peach{background:var(--soft-peach)}.i-peach svg{stroke:var(--peach-deep)}
+.i-blue{background:var(--soft-blue)}.i-blue svg{stroke:var(--blue-deep)}
+.tile b{display:block;font-size:18px;font-weight:600}.tile span{font-size:12px;color:var(--muted)}
+.chart{padding:18px 16px 14px}.chart svg{width:100%;height:150px;display:block;overflow:visible}
+.ttl{font-size:15px;font-weight:600;margin:0 0 10px;display:flex;justify-content:space-between}
+.ttl span{font-size:12px;font-weight:500;color:var(--muted)}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--muted);margin-top:8px}
+.legend i{display:inline-block;width:10px;height:3px;border-radius:2px;margin-right:6px;vertical-align:middle}
+.list{padding:10px 0}.list .ttl{padding:6px 16px 4px}
+.row{display:flex;align-items:center;gap:12px;padding:12px 16px}.row+.row{border-top:1px solid rgba(255,255,255,.6)}
+.av{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;font-weight:600;font-size:14px;flex:none}
+.who{flex:1;min-width:0}.who b{display:block;font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.who span{font-size:12px;color:var(--muted)}
+.amt{text-align:right}.amt b{display:block;font-size:15px;font-weight:600}
+.pill{display:inline-block;font-size:11px;font-weight:600;padding:3px 8px;border-radius:99px;margin-top:3px}
+.p-over{background:var(--warn-soft);color:var(--warn)}.p-due{background:var(--soft-blue);color:var(--blue-deep)}.p-ok{background:var(--ok-soft);color:var(--ok)}
+/* timeline with scroll-filled progress line */
+.steps{position:relative;padding:20px 18px 6px 52px}
+.rail{position:absolute;left:30px;top:30px;bottom:34px;width:2px;background:rgba(255,255,255,.7);border-radius:2px;overflow:hidden}
+.rail i{position:absolute;inset:0;background:linear-gradient(var(--blue-deep),var(--peach-deep));transform-origin:top;transform:scaleY(0)}
+.step{position:relative;padding-bottom:20px}
+.step::before{content:"";position:absolute;left:-28px;top:4px;width:12px;height:12px;border-radius:50%;background:#fff;border:2px solid var(--blue-mist);transition:border-color .6s var(--ease),background .6s var(--ease)}
+.step.on::before{border-color:var(--peach-deep);background:var(--peach)}
+.step b{display:block;font-size:15px;font-weight:600}.step span{font-size:13px;color:var(--muted)}
+.step time{float:right;font-size:12px;color:var(--muted)}
+.gst{padding:18px}.gst table{width:100%;border-collapse:collapse;font-size:14px}
+.gst td{padding:9px 0;border-bottom:1px solid rgba(255,255,255,.65)}.gst td:last-child{text-align:right}
+.gst tr:last-child td{border:0;font-weight:700;font-size:16px;padding-top:12px}
+.gauge{margin-top:14px;padding:20px;display:flex;align-items:center;gap:18px}
+.gauge svg{width:124px;height:72px;flex:none}
+.gauge b{font-size:32px;font-weight:600;display:block}.gauge span{font-size:13px;color:var(--muted)}
+.foot{margin-top:26px;text-align:center;font-size:12px;color:rgba(28,34,48,.6)}
+
+/* ---------- motion ---------- */
+/* page load: hero settles in from soft focus */
+.intro{animation:intro 1.4s var(--ease) both}
+@keyframes intro{from{opacity:0;transform:translateY(24px) scale(.96);filter:blur(10px)}}
+.intro-late{animation:intro 1.4s var(--ease) .25s both}
+/* scroll reveal: masked rise + focus */
+.rv{opacity:0;transform:translateY(46px) scale(.985);filter:blur(10px);clip-path:inset(12% 0 0 0 round 24px);
+  transition:opacity 1.2s var(--ease),transform 1.2s var(--ease),filter 1.2s var(--ease),clip-path 1.2s var(--ease)}
+.rv.in{opacity:1;transform:none;filter:none;clip-path:inset(0 0 0 0 round 24px)}
+.words .w{display:inline-block;overflow:hidden;vertical-align:bottom}
+.words .w>span{display:inline-block;transform:translateY(105%);transition:transform 1s var(--ease)}
+.words.in .w>span{transform:none}
+.seq>*{opacity:0;transform:translateY(18px);transition:opacity 1s var(--ease),transform 1s var(--ease)}
+.seq.in>*{opacity:1;transform:none}
+.p50{stroke-dasharray:640;stroke-dashoffset:640;transition:stroke-dashoffset 2.2s var(--ease) .3s}.in .p50{stroke-dashoffset:0}
+.band{opacity:0;transform:scaleY(.6);transform-origin:center;transition:opacity 1.6s var(--ease) .6s,transform 1.6s var(--ease) .6s}.in .band{opacity:1;transform:none}
+.mark{opacity:0;transform:scale(0);transform-origin:140px 128px;transition:all .8s var(--ease) 1.6s}.in .mark{opacity:1;transform:none}
+.arc{stroke-dasharray:157;stroke-dashoffset:157;transition:stroke-dashoffset 1.8s var(--ease) .2s}.in .arc{stroke-dashoffset:45}
+@media (prefers-reduced-motion:reduce){*,*::before{animation:none!important;transition:none!important}.rv,.seq>*{opacity:1;transform:none;filter:none;clip-path:none}.words .w>span{transform:none}.p50,.arc{stroke-dashoffset:0}.band,.mark{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+<div class="field"><span class="blob b1" data-par=".18"></span><span class="blob b2" data-par="-.12"></span><span class="blob b3" data-par=".08"></span></div>
+<div class="wrap">
+  <div class="top intro"><span class="brand">Receivia</span><span class="chip glass">EN · हि · मरा</span></div>
+
+  <section class="hero intro-late">
+    <small>Money to collect</small>
+    <div class="big num" id="total">₹6,42,500</div>
+    <div class="sub num">₹2,18,000 overdue · 12 customers</div>
+    <div class="actions"><button class="btn light">Send reminders</button><button class="btn dark">New invoice</button></div>
+  </section>
+
+  <div class="glass alert rv"><span class="dot"></span><p><strong>You may be short ₹1,30,000 around 1 Nov</strong> when salaries are due. Collecting 3 invoices covers it.</p></div>
+
+  <h2><span class="words">This week</span><a href="#">See all</a></h2>
+  <div class="tiles seq">
+    <div class="glass tile"><span class="ico i-blue"><svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg></span><div><b class="num" data-count="184000">₹1,84,000</b><span>Expected in</span></div></div>
+    <div class="glass tile"><span class="ico i-peach"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12l7 7 7-7"/></svg></span><div><b class="num" data-count="296500">₹2,96,500</b><span>Bills going out</span></div></div>
+    <div class="glass tile"><span class="ico i-blue"><svg viewBox="0 0 24 24"><path d="M4 7h16v10H4zM8 12h8"/></svg></span><div><b class="num" data-count="41200">₹41,200</b><span>TDS to claim</span></div></div>
+  </div>
+
+  <h2><span class="words">Your next 13 weeks</span></h2>
+  <div class="glass chart rv">
+    <p class="ttl">Cash forecast <span>Likely · range</span></p>
+    <svg viewBox="0 0 320 150" aria-label="Cash forecast">
+      <defs><linearGradient id="bandg" x1="0" x2="1"><stop offset="0" stop-color="#9fb3c6" stop-opacity=".55"/><stop offset="1" stop-color="#e3a892" stop-opacity=".5"/></linearGradient>
+      <linearGradient id="lineg" x1="0" x2="1"><stop offset="0" stop-color="#56708c"/><stop offset="1" stop-color="#c4694e"/></linearGradient></defs>
+      <line x1="0" y1="98" x2="320" y2="98" stroke="#b4513a" stroke-opacity=".7" stroke-dasharray="4 5"/>
+      <path class="band" d="M0 60 C40 50 70 70 100 95 C130 120 150 125 180 100 C220 70 260 55 320 40 L320 85 C260 95 220 110 180 132 C150 145 130 140 100 120 C70 98 40 82 0 78 Z" fill="url(#bandg)"/>
+      <path class="p50" d="M0 69 C40 66 70 84 100 108 C130 130 150 134 180 116 C220 90 260 75 320 62" fill="none" stroke="url(#lineg)" stroke-width="2.6" stroke-linecap="round"/>
+      <g class="mark"><circle cx="140" cy="128" r="9" fill="#b4513a" fill-opacity=".18"/><circle cx="140" cy="128" r="4" fill="#b4513a"/></g>
+    </svg>
+    <div class="legend"><span><i style="background:linear-gradient(90deg,#56708c,#c4694e)"></i>Likely</span><span><i style="background:linear-gradient(90deg,#9fb3c6,#e3a892);height:8px"></i>Range</span><span><i style="background:#b4513a"></i>Safety level</span></div>
+  </div>
+
+  <h2><span class="words">Chase these first</span><a href="#">See all</a></h2>
+  <div class="glass list rv">
+    <div class="seq">
+      <div class="row"><span class="av" style="background:var(--soft-peach);color:var(--peach-deep)">MS</span><div class="who"><b>Mithai Sweets, Ahmedabad</b><span class="num">INV/26-27/0042 · 38 days late</span></div><div class="amt"><b class="num">₹1,18,000</b><span class="pill p-over">Overdue</span></div></div>
+      <div class="row"><span class="av" style="background:var(--soft-blue);color:var(--blue-deep)">PD</span><div class="who"><b>Pune Distributors</b><span class="num">INV/26-27/0051 · 21 days late</span></div><div class="amt"><b class="num">₹64,900</b><span class="pill p-over">Overdue</span></div></div>
+      <div class="row"><span class="av" style="background:var(--soft-blue);color:var(--blue-deep)">CH</span><div class="who"><b>City Hospital</b><span class="num">INV/26-27/0058 · due in 3 days</span></div><div class="amt"><b class="num">₹47,200</b><span class="pill p-due">Due soon</span></div></div>
+      <div class="row"><span class="av" style="background:var(--soft-peach);color:var(--peach-deep)">AP</span><div class="who"><b>Aarav Pharma Packers</b><span class="num">INV/26-27/0039 · paid today</span></div><div class="amt"><b class="num">₹82,600</b><span class="pill p-ok">Paid</span></div></div>
+    </div>
+  </div>
+
+  <h2><span class="words">How this invoice is chased</span></h2>
+  <div class="glass steps rv" id="steps">
+    <div class="rail"><i id="railFill"></i></div>
+    <div class="step"><time>15 Sep</time><b>Invoice sent</b><span>GST invoice with UPI QR</span></div>
+    <div class="step"><time>14 Oct</time><b>Friendly reminder</b><span>WhatsApp in Hindi, approved by you</span></div>
+    <div class="step"><time>22 Oct</time><b>Firm reminder</b><span>Buyer told input tax credit may be at risk</span></div>
+    <div class="step"><time>Today</time><b>Paid by UPI</b><span>Matched automatically, reminders stopped</span></div>
+  </div>
+
+  <h2><span class="words">Invoice INV/26-27/0042</span></h2>
+  <div class="glass gst rv">
+    <table class="num seq">
+      <tr><td>Taxable value</td><td>₹1,00,000.00</td></tr>
+      <tr><td>IGST 18% (MH → GJ)</td><td>₹18,000.00</td></tr>
+      <tr><td>Round off</td><td>₹0.00</td></tr>
+      <tr><td>Total</td><td>₹1,18,000.00</td></tr>
+    </table>
+  </div>
+
+  <div class="glass gauge rv">
+    <svg viewBox="0 0 124 72"><defs><linearGradient id="arcg" x1="0" x2="1"><stop offset="0" stop-color="#56708c"/><stop offset="1" stop-color="#c4694e"/></linearGradient></defs>
+      <path d="M12 64 A50 50 0 0 1 112 64" fill="none" stroke="rgba(255,255,255,.75)" stroke-width="10" stroke-linecap="round"/>
+      <path class="arc" d="M12 64 A50 50 0 0 1 112 64" fill="none" stroke="url(#arcg)" stroke-width="10" stroke-linecap="round"/></svg>
+    <div><b class="num" data-count="71" data-suffix="%">71%</b><span>Collected on time this quarter</span></div>
+  </div>
+
+  <p class="foot">Design preview · sample data</p>
+</div>
+<script>
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+/* buttery scroll like the reference sites */
+let lenis=null;
+if(!reduce&&window.Lenis){lenis=new Lenis({duration:1.15,easing:t=>Math.min(1,1.001-Math.pow(2,-10*t)),smoothWheel:true});const raf=t=>{lenis.raf(t);requestAnimationFrame(raf)};requestAnimationFrame(raf)}
+/* split headings into masked words */
+document.querySelectorAll('.words').forEach(h=>{const words=h.textContent.trim().split(' ');h.textContent='';
+  words.forEach((w,i)=>{const o=document.createElement('span');o.className='w';const s=document.createElement('span');s.textContent=w+' ';s.style.transitionDelay=i*80+'ms';o.appendChild(s);h.appendChild(o)})});
+document.querySelectorAll('.seq').forEach(g=>[...g.children].forEach((c,i)=>c.style.transitionDelay=(150+i*110)+'ms'));
+document.querySelectorAll('table.seq tbody').forEach(g=>{g.parentElement.classList.remove('seq');g.classList.add('seq');[...g.children].forEach((c,i)=>c.style.transitionDelay=(250+i*120)+'ms')});
+/* count-up */
+const fmt=(n,suf)=>suf?Math.round(n)+suf:'₹'+Math.round(n).toLocaleString('en-IN');
+function count(el,ms=1500){if(reduce)return;const end=+el.dataset.count||+el.textContent.replace(/\D/g,'');const suf=el.dataset.suffix;let t0;
+  const f=t=>{t0??=t;const p=Math.min((t-t0)/ms,1);el.textContent=fmt(end*(1-Math.pow(1-p,4)),suf);p<1&&requestAnimationFrame(f)};requestAnimationFrame(f)}
+setTimeout(()=>count(document.getElementById('total'),1800),250);
+/* reveal on scroll */
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(!e.isIntersecting)return;const t=e.target;t.classList.add('in');
+  t.querySelectorAll('.seq').forEach(s=>s.classList.add('in'));t.querySelectorAll('[data-count]').forEach(n=>setTimeout(()=>count(n),300));io.unobserve(t)}),{threshold:.18,rootMargin:'0px 0px -6% 0px'});
+document.querySelectorAll('.rv,.words,.wrap>.seq').forEach(el=>io.observe(el));
+/* scroll-linked: background parallax + timeline progress */
+const blobs=[...document.querySelectorAll('[data-par]')],steps=document.getElementById('steps'),fill=document.getElementById('railFill'),stepEls=[...steps.querySelectorAll('.step')];
+function onScroll(){const y=scrollY;
+  blobs.forEach(b=>b.style.transform=`translate3d(0,${y*b.dataset.par}px,0)`);
+  const r=steps.getBoundingClientRect(),p=Math.max(0,Math.min(1,(innerHeight*.75-r.top)/(r.height)));
+  fill.style.transform=`scaleY(${p})`;stepEls.forEach((s,i)=>s.classList.toggle('on',p>=(i+.2)/stepEls.length))}
+if(!reduce){lenis?lenis.on('scroll',onScroll):addEventListener('scroll',()=>requestAnimationFrame(onScroll),{passive:true});onScroll()}
+else{fill.style.transform='scaleY(1)';stepEls.forEach(s=>s.classList.add('on'))}
+</script>
+</body>
+</html>

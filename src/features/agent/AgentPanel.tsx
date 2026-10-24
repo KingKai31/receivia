@@ -1,8 +1,10 @@
+import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Badge, Button, Card, useToast } from '@/components/ui';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { useOrg } from '@/features/auth/useOrg';
+import { AgentPipeline } from './AgentPipeline';
 import { STAGE_LABEL, type Stage } from '@/features/collect/ladder';
 import { todayIST } from '@/lib/dates';
 import { formatINR, paise } from '@/lib/money';
@@ -44,7 +46,7 @@ function Row({
   });
   const amount = a.payload.amount_due_paise ? formatINR(paise(a.payload.amount_due_paise)) : '';
   return (
-    <li>
+    <li className="row-in ui-row-card" style={{ marginBottom: 10 }}>
       <strong>{a.payload.customer ?? t('Customer')}</strong>{' '}
       {t('· {{invoice_no}} · {{amount}} ·', { invoice_no: a.payload.invoice_no, amount })}{' '}
       {t('{{stageLabel}} ·', { stageLabel: stageLabel(a.stage) })} <Badge>{a.status}</Badge>
@@ -59,6 +61,35 @@ function Row({
             {t(';')} {a.draft_note}
           </small>
         </>
+      ) : null}
+      {a.body_template && a.status !== 'skipped' ? (
+        <blockquote
+          className="soft-in"
+          style={{ margin: '8px 0 4px', paddingLeft: 10, borderLeft: '3px solid var(--blue-mist)' }}
+        >
+          <small style={{ whiteSpace: 'pre-line' }}>{a.body_template.slice(0, 280)}</small>
+        </blockquote>
+      ) : null}
+      {a.draft_source ? (
+        <small className="soft-in" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          {a.draft_note?.startsWith('draft rejected') ? (
+            t('Safety check stopped the model wording, so the standard template was used.')
+          ) : (
+            <>
+              <svg className="tick" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                <path
+                  d="M5 12l5 5 9-10"
+                  fill="none"
+                  stroke="var(--ok)"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              {t('Safety check passed')}
+            </>
+          )}
+        </small>
       ) : null}
       {a.error ? (
         <p role="alert">
@@ -135,11 +166,13 @@ export function AgentPanel({ compact = false }: { compact?: boolean }) {
     enabled: Boolean(orgId),
     queryFn: () => loadAgentSettings(orgId!),
   });
+  const runningRef = useRef(false);
   const day = settings.data?.demo_date ?? todayIST();
   const actions = useQuery({
     queryKey: ['agent-actions', orgId, day],
     enabled: Boolean(orgId) && Boolean(settings.data),
     queryFn: () => loadActions(orgId!, day),
+    refetchInterval: () => (runningRef.current ? 2000 : false),
   });
   const last = useQuery({
     queryKey: ['agent-last-run', orgId],
@@ -159,15 +192,18 @@ export function AgentPanel({ compact = false }: { compact?: boolean }) {
     },
     onError: (e) => toast.show(errorMessage(e)),
   });
+  runningRef.current = run.isPending;
   const all = actions.data ?? [];
   const failed = all.filter((a) => a.status === 'failed');
   const open = all.filter((a) => ['proposed', 'approved', 'failed'].includes(a.status));
   const sent = all.filter((a) => a.status === 'sent');
-  const shown = compact ? failed : open;
-  if (compact && failed.length === 0) return null;
+  const shown = compact
+    ? all.filter((a) => a.status === 'proposed' || a.status === 'failed')
+    : open;
+  if (compact && shown.length === 0) return null;
   return (
     <Card>
-      <h2>{t('Agent')}</h2>
+      <h2>{compact ? t('Awaiting your approval') : t('Agent')}</h2>
       {!compact ? (
         <>
           <p>
@@ -183,6 +219,7 @@ export function AgentPanel({ compact = false }: { compact?: boolean }) {
                 })
               : t(' The agent has not run yet.')}
           </p>
+          <AgentPipeline running={run.isPending} actions={all} last={last.data ?? null} />
           {canWrite ? (
             <Button
               variant="secondary"
@@ -193,11 +230,11 @@ export function AgentPanel({ compact = false }: { compact?: boolean }) {
             </Button>
           ) : null}
         </>
-      ) : (
+      ) : failed.length > 0 ? (
         <p role="alert">
           {failed.length} {t('message(s) failed to send.')}
         </p>
-      )}
+      ) : null}
       {actions.error ? <p role="alert">{errorMessage(actions.error)}</p> : null}
       {!compact && open.length === 0 ? (
         <p>{t('Nothing waiting. {{length}} sent today.', { length: sent.length })}</p>

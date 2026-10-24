@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import QRCode from 'qrcode';
 import { useParams } from 'react-router-dom';
-import { Badge, Button, Card, Input, Select } from '@/components/ui';
+import { Badge, Button, Card, CountDown, CountUp, Input, Select, Skeleton } from '@/components/ui';
 import { upiUri } from '@/features/documents/invoiceDocument';
 import { addDays, todayIST } from '@/lib/dates';
 import { buyerLens } from '@/lib/legal';
@@ -97,14 +97,15 @@ export function PayPage() {
   });
   if (q.isLoading)
     return (
-      <main className="mx-auto max-w-xl p-4">
-        <p>{PAY_TEXT.en.loading}</p>
+      <main className="app-main" style={{ maxWidth: 560 }}>
+        <p className="sr-only">{PAY_TEXT.en.loading}</p>
+        <Skeleton />
       </main>
     );
   if (q.error || !q.data) {
     const e = q.error instanceof PayError ? q.error : null;
     return (
-      <main className="mx-auto max-w-xl p-4">
+      <main className="app-main" style={{ maxWidth: 560 }}>
         <p role="alert">
           {e?.kind === 'rate_limited'
             ? PAY_TEXT.en.tooMany
@@ -140,40 +141,128 @@ function PayBody({ token, v, onChanged }: { token: string; v: PayView; onChanged
     queryFn: () => QRCode.toDataURL(uri!, { margin: 1, width: 240 }),
   });
   const paused = v.open_dispute || v.pending_claim || done;
+  const online = v.razorpay.configured && v.razorpay_link_url ? v.razorpay_link_url : null;
+  const payHref = online ?? uri;
 
   return (
-    <main className="mx-auto flex max-w-xl flex-col gap-3 p-4">
-      <label className="flex items-center gap-2 self-end">
-        <span className="sr-only">Language / भाषा</span>
-        <select
-          className="ui-input"
-          style={{ width: 'auto' }}
-          value={lang}
-          onChange={(e) => setLang(e.target.value as PayLang)}
-          aria-label="Language / भाषा"
-        >
-          <option value="en">English</option>
-          <option value="hi">हिन्दी</option>
-          <option value="mr">मराठी</option>
-        </select>
-      </label>
-      <h1>{v.business_name}</h1>
-      <Card>
-        <p>
-          {t.invoice} <strong>{v.invoice_number}</strong>
-        </p>
-        <p>
-          {t.amountDue}: <strong>{formatINR(balance)}</strong>
-        </p>
-        <p>
+    <main className="app-main" style={{ maxWidth: 560 }}>
+      <div className="app-top">
+        <strong className="brand">{v.business_name}</strong>
+        <div role="group" aria-label="Language / भाषा" className="chip-group glass">
+          {(
+            [
+              ['en', 'EN', 'English'],
+              ['hi', 'हि', 'हिन्दी'],
+              ['mr', 'मरा', 'मराठी'],
+            ] as const
+          ).map(([code, short, name]) => (
+            <button
+              key={code}
+              type="button"
+              className="chip-btn"
+              lang={code}
+              aria-label={name}
+              aria-pressed={lang === code}
+              onClick={() => setLang(code)}
+            >
+              {short}
+            </button>
+          ))}
+        </div>
+      </div>
+      <h1 className="sr-only">{v.business_name}</h1>
+      <section className="hero page-enter" aria-label={t.amountDue}>
+        {paid ? (
+          <svg
+            className="tick"
+            viewBox="0 0 40 40"
+            width="44"
+            height="44"
+            aria-hidden="true"
+            style={{ display: 'block', margin: '0 auto' }}
+          >
+            <circle
+              cx="20"
+              cy="20"
+              r="18"
+              fill="none"
+              stroke="#fff"
+              strokeOpacity=".6"
+              strokeWidth="2"
+            />
+            <path
+              d="M11 21l6 6 12-13"
+              fill="none"
+              stroke="#fff"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        ) : null}
+        <span className="hero-label">
+          {t.invoice} <strong>{v.invoice_number}</strong> · {t.amountDue}
+        </span>
+        <div className="hero-big">
+          {paid ? (
+            <CountDown from={v.total_paise} format={(n) => formatINR(paise(n))} />
+          ) : (
+            <CountUp value={v.balance_paise} format={(n) => formatINR(paise(n))} />
+          )}
+        </div>
+        <div className="hero-sub num">
           {t.dueOn}: {v.due_date}
-        </p>
-        {paid ? <p role="status">{t.fullyPaid}</p> : null}
-        {done ? <p role="status">{t.thanks}</p> : null}
-        {v.pending_claim ? <p role="status">{t.claimPending}</p> : null}
-        {v.open_dispute ? <p role="status">{t.disputeOpen}</p> : null}
-        {paused && !v.pending_claim && !v.open_dispute ? <p role="status">{t.paused}</p> : null}
-      </Card>
+        </div>
+        {paid ? (
+          <p role="status" className="hero-sub">
+            {t.fullyPaid}
+          </p>
+        ) : null}
+        {done ? (
+          <p role="status" className="hero-sub soft-in">
+            <svg
+              className="tick"
+              viewBox="0 0 40 40"
+              width="20"
+              height="20"
+              aria-hidden="true"
+              style={{ verticalAlign: 'middle', marginRight: 6 }}
+            >
+              <path
+                d="M11 21l6 6 12-13"
+                fill="none"
+                stroke="#fff"
+                strokeWidth="4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            {t.thanks}
+          </p>
+        ) : null}
+        {v.pending_claim ? (
+          <p role="status" className="hero-sub">
+            {t.claimPending}
+          </p>
+        ) : null}
+        {v.open_dispute ? (
+          <p role="status" className="hero-sub">
+            {t.disputeOpen}
+          </p>
+        ) : null}
+        {paused && !v.pending_claim && !v.open_dispute && !done ? (
+          <p role="status" className="hero-sub">
+            {t.paused}
+          </p>
+        ) : null}
+        {!paid && payHref ? (
+          <div className="hero-actions" style={{ gridTemplateColumns: '1fr' }}>
+            <a className="ui-button" data-variant="light" href={payHref}>
+              {t.payNow}
+            </a>
+          </div>
+        ) : null}
+      </section>
 
       {v.replies.length ? (
         <Card>
@@ -189,22 +278,32 @@ function PayBody({ token, v, onChanged }: { token: string; v: PayView; onChanged
           {uri ? (
             <Card>
               <h2>{t.upiTitle}</h2>
-              {qr.data ? <img src={qr.data} alt={t.upiQrAlt} width={200} height={200} /> : null}
-              <a className="ui-button" data-variant="primary" href={uri}>
-                {t.upiButton}
-              </a>
+              {qr.data ? (
+                <img
+                  src={qr.data}
+                  alt={t.upiQrAlt}
+                  width={200}
+                  height={200}
+                  style={{ borderRadius: 16 }}
+                />
+              ) : null}
+              <p>
+                <a className="ui-button" data-variant="primary" href={uri}>
+                  {t.upiButton}
+                </a>
+              </p>
             </Card>
           ) : null}
           <Card>
-            {v.razorpay.configured && v.razorpay_link_url ? (
-              <p>
-                <a className="ui-button" data-variant="primary" href={v.razorpay_link_url}>
+            {online ? (
+              <p style={{ margin: 0 }}>
+                <a className="ui-button" data-variant="primary" href={online}>
                   {t.online}
                 </a>{' '}
                 {v.razorpay.test_mode ? <Badge>{t.testMode}</Badge> : null}
               </p>
             ) : (
-              <p>{t.onlineNotConfigured}</p>
+              <p style={{ margin: 0 }}>{t.onlineNotConfigured}</p>
             )}
           </Card>
 
@@ -221,12 +320,14 @@ function PayBody({ token, v, onChanged }: { token: string; v: PayView; onChanged
 
       {lensLine ? (
         <Card>
-          <h2>{t.lensHeading}</h2>
-          <p>{lensLine}</p>
+          <details className="collapsible">
+            <summary>{t.lensHeading}</summary>
+            <p>{lensLine}</p>
+          </details>
         </Card>
       ) : null}
       {v.business_phone || v.business_email ? (
-        <p>
+        <p className="ui-hint">
           {t.contact}: {[v.business_phone, v.business_email].filter(Boolean).join(' · ')}
         </p>
       ) : null}

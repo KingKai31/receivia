@@ -6,6 +6,7 @@ import { useLocation } from 'react-router-dom';
 import { AuthProvider } from '@/features/auth/AuthProvider';
 import { RequireAuth } from '@/features/auth/RequireAuth';
 import { Layout } from './Layout';
+import { Field } from './Field';
 import './i18n';
 
 const ApprovePage = lazy(() =>
@@ -107,6 +108,7 @@ export function App() {
       <AuthProvider>
         <ToastProvider>
           <BrowserRouter>
+            <Field />
             <Routes>
               <Route
                 path="/sign-in"

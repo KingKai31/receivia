@@ -1,9 +1,10 @@
 import { useTranslation } from 'react-i18next';
-import { Badge, Button, Card } from '@/components/ui';
+import { Badge, Button, Card, ThemeToggle } from '@/components/ui';
 import { signOut } from '@/features/auth/authApi';
 import { useOrg } from '@/features/auth/useOrg';
 import { ForecastSettings } from '@/features/forecast/ForecastSettings';
 import { AgentSettings } from '@/features/agent/AgentSettings';
+import { WorkflowRuns } from '@/features/agent/WorkflowRuns';
 import { LadderSettings } from '@/features/collect/LadderSettings';
 import { DataPrivacyCard } from '@/features/privacy/DataPrivacyCard';
 import { BusinessProfileForm } from './BusinessProfileForm';
@@ -25,14 +26,18 @@ export function SettingsPage() {
         ) : (
           <p>{t('common.noOrg')}</p>
         )}
-        <Button variant="secondary" onClick={() => void signOut()}>
-          {t('auth.signOut')}
-        </Button>
+        <div className="flex flex-wrap items-center gap-3">
+          <ThemeToggle />
+          <Button variant="secondary" onClick={() => void signOut()}>
+            {t('auth.signOut')}
+          </Button>
+        </div>
       </Card>
       <BusinessProfileForm />
       <ForecastSettings />
       <LadderSettings />
       <AgentSettings />
+      <WorkflowRuns />
       <DataPrivacyCard />
     </>
   );

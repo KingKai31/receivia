@@ -3,9 +3,30 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#3f3f46" />
+    <meta name="theme-color" content="#c7b6b4" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#161d2c" media="(prefers-color-scheme: dark)" />
     <link rel="icon" href="/icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="preload"
+      as="style"
+      href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;600&display=swap"
+    />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;600&display=swap"
+      media="print"
+      onload="this.media='all'"
+    />
+    <script>
+      document.documentElement.classList.add('js');
+      try {
+        var th = localStorage.getItem('receivia.theme');
+        if (th === 'dark' || th === 'light') document.documentElement.dataset.theme = th;
+      } catch (e) {}
+    </script>
     <title>Receivia</title>
   </head>
   <body>
