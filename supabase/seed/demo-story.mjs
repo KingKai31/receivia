@@ -7,8 +7,10 @@ export const DEMO_ORG = '00000000-0000-4000-8000-00000000de60';
 export const BUFFER_PAISE = 20000000; // ₹2,00,000
 export const TARGET_GAP_PAISE = 13000000; // week 3 closes about ₹1,30,000 under the buffer
 
-export const addDays = (iso, n) => new Date(Date.parse(iso) + n * 86400000).toISOString().slice(0, 10);
-export const istToday = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date());
+export const addDays = (iso, n) =>
+  new Date(Date.parse(iso) + n * 86400000).toISOString().slice(0, 10);
+export const istToday = () =>
+  new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date());
 export const fyOf = (iso) => {
   const y = Number(iso.slice(0, 4));
   const s = Number(iso.slice(5, 7)) >= 4 ? y : y - 1;
@@ -52,9 +54,27 @@ export const CUSTOMERS = [
   ['mithai', 'Mithai Sweets', '24', 'company', 'key', 'en', 'AABCM3140D', '9879000011'],
   ['pune', 'Pune Distributors', '27', 'firm', 'standard', 'en', 'AAEFP7712C', '9822000012'],
   ['hospital', 'City Hospital', '27', 'government', 'standard', 'en', 'AAAGC0021H', '9822000013'],
-  ['bharat', 'Bharat Auto Components Ltd', '27', 'company', 'standard', 'en', 'AABCB9054J', '9822000014'],
+  [
+    'bharat',
+    'Bharat Auto Components Ltd',
+    '27',
+    'company',
+    'standard',
+    'en',
+    'AABCB9054J',
+    '9822000014',
+  ],
   ['sai', 'Sai Stationery Mart', '27', 'proprietor', 'standard', 'en', null, '9822000015'],
-  ['pharma', 'Sanjivani Pharma Packers Pvt Ltd', '27', 'company', 'standard', 'en', 'AACCS2210M', '9822000016'],
+  [
+    'pharma',
+    'Sanjivani Pharma Packers Pvt Ltd',
+    '27',
+    'company',
+    'standard',
+    'en',
+    'AACCS2210M',
+    '9822000016',
+  ],
   ['raj', 'Raj Plastics', '27', 'firm', 'standard', 'hi', 'AAFFR5033Q', '9822000017'],
   ['kolhapur', 'Kolhapur Foods', '27', 'firm', 'standard', 'mr', 'AAFFK6178B', '9822000018'],
   ['nashik', 'Nashik Agro Pack', '27', 'proprietor', 'standard', 'en', 'AAKPN4402E', '9822000019'],
@@ -75,23 +95,52 @@ export const CUSTOMERS = [
 
 // customer, issue offset, taxable rupees, days paid after the due date (null = still open). Credit is 30 days.
 const ROWS = [
-  ['mithai', -170, 90000, 6], ['mithai', -135, 120000, 9], ['mithai', -100, 80000, 8],
-  ['mithai', -68, 100000, null], ['mithai', -5, 110000, null],
-  ['pune', -165, 140000, 22], ['pune', -130, 160000, 25], ['pune', -95, 150000, 28],
-  ['pune', -42, 130000, null], ['pune', -20, 160000, null],
-  ['hospital', -200, 290000, 52], ['hospital', -160, 300000, 48], ['hospital', -110, 280000, 50], ['hospital', -50, 320000, null],
-  ['bharat', -150, 350000, 14], ['bharat', -115, 400000, 16], ['bharat', -80, 380000, 15],
-  ['bharat', -36, 200000, null], ['bharat', -12, 420000, null],
-  ['sai', -140, 18000, 18], ['sai', -100, 20000, 20], ['sai', -55, 20000, null],
-  ['pharma', -172, 250000, 1], ['pharma', -140, 260000, 0], ['pharma', -105, 240000, 2],
-  ['pharma', -70, 270000, 1], ['pharma', -22, 290000, null],
-  ['raj', -155, 100000, 9], ['raj', -110, 110000, 10], ['raj', -38, 100000, null],
-  ['kolhapur', -130, 80000, 11], ['kolhapur', -90, 85000, 13], ['kolhapur', -34, 90000, null],
-  ['nashik', -145, 70000, 12], ['nashik', -100, 72000, 14], ['nashik', -27, 75000, null],
-  ['aurang', -120, 150000, 7], ['aurang', -85, 160000, 6], ['aurang', -40, 140000, null],
+  ['mithai', -170, 90000, 6],
+  ['mithai', -135, 120000, 9],
+  ['mithai', -100, 80000, 8],
+  ['mithai', -68, 100000, null],
+  ['mithai', -5, 110000, null],
+  ['pune', -165, 140000, 22],
+  ['pune', -130, 160000, 25],
+  ['pune', -95, 150000, 28],
+  ['pune', -42, 130000, null],
+  ['pune', -20, 160000, null],
+  ['hospital', -200, 290000, 52],
+  ['hospital', -160, 300000, 48],
+  ['hospital', -110, 280000, 50],
+  ['hospital', -50, 320000, null],
+  ['bharat', -150, 350000, 14],
+  ['bharat', -115, 400000, 16],
+  ['bharat', -80, 380000, 15],
+  ['bharat', -36, 200000, null],
+  ['bharat', -12, 420000, null],
+  ['sai', -140, 18000, 18],
+  ['sai', -100, 20000, 20],
+  ['sai', -55, 20000, null],
+  ['pharma', -172, 250000, 1],
+  ['pharma', -140, 260000, 0],
+  ['pharma', -105, 240000, 2],
+  ['pharma', -70, 270000, 1],
+  ['pharma', -22, 290000, null],
+  ['raj', -155, 100000, 9],
+  ['raj', -110, 110000, 10],
+  ['raj', -38, 100000, null],
+  ['kolhapur', -130, 80000, 11],
+  ['kolhapur', -90, 85000, 13],
+  ['kolhapur', -34, 90000, null],
+  ['nashik', -145, 70000, 12],
+  ['nashik', -100, 72000, 14],
+  ['nashik', -27, 75000, null],
+  ['aurang', -120, 150000, 7],
+  ['aurang', -85, 160000, 6],
+  ['aurang', -40, 140000, null],
   ['aurang', -8, 170000, null],
-  ['surat', -125, 130000, 16], ['surat', -75, 135000, 17], ['surat', -32, 125000, null],
-  ['mumbai', -100, 200000, 5], ['mumbai', -60, 210000, 4], ['mumbai', -10, 220000, null],
+  ['surat', -125, 130000, 16],
+  ['surat', -75, 135000, 17],
+  ['surat', -32, 125000, null],
+  ['mumbai', -100, 200000, 5],
+  ['mumbai', -60, 210000, 4],
+  ['mumbai', -10, 220000, null],
 ];
 
 export function buildInvoices(today) {
@@ -122,7 +171,8 @@ export function buildInvoices(today) {
 
 /** Open invoices keyed for the story beats. */
 export function beats(invoices) {
-  const open = (c, dueOff) => invoices.find((i) => i.customer === c && i.paid_off === null && i.due_off === dueOff);
+  const open = (c, dueOff) =>
+    invoices.find((i) => i.customer === c && i.paid_off === null && i.due_off === dueOff);
   return {
     mithaiOverdue: open('mithai', -38),
     puneOverdue: open('pune', -12),
@@ -133,15 +183,78 @@ export function beats(invoices) {
 }
 
 export const EXPENSES = [
-  { name: 'Salaries', kind: 'salary', amount_paise: 24000000, recurrence: 'monthly', day: 1, can_defer: false },
-  { name: 'Godown and office rent', kind: 'rent', amount_paise: 11000000, recurrence: 'monthly', day: 5, can_defer: false },
-  { name: 'Electricity', kind: 'utility', amount_paise: 3200000, recurrence: 'monthly', day: 12, can_defer: false },
-  { name: 'GST payment', kind: 'tax', amount_paise: 9500000, recurrence: 'monthly', day: 20, can_defer: false },
-  { name: 'Insurance premium', kind: 'other', amount_paise: 6000000, recurrence: 'quarterly', due_off: 45, can_defer: false },
-  { name: 'Kraft paper mill bill', kind: 'supplier', amount_paise: 80000000, recurrence: null, due_off: 9, can_defer: false },
-  { name: 'Machinery loan instalment', kind: 'other', amount_paise: 60000000, recurrence: null, due_off: 16, can_defer: false },
-  { name: 'Starch and ink supplier bill', kind: 'supplier', amount_paise: 18000000, recurrence: null, due_off: 17, can_defer: true },
-  { name: 'Corrugation machine service', kind: 'other', amount_paise: 30000000, recurrence: null, due_off: 40, can_defer: false },
+  {
+    name: 'Salaries',
+    kind: 'salary',
+    amount_paise: 24000000,
+    recurrence: 'monthly',
+    day: 1,
+    can_defer: false,
+  },
+  {
+    name: 'Godown and office rent',
+    kind: 'rent',
+    amount_paise: 11000000,
+    recurrence: 'monthly',
+    day: 5,
+    can_defer: false,
+  },
+  {
+    name: 'Electricity',
+    kind: 'utility',
+    amount_paise: 3200000,
+    recurrence: 'monthly',
+    day: 12,
+    can_defer: false,
+  },
+  {
+    name: 'GST payment',
+    kind: 'tax',
+    amount_paise: 9500000,
+    recurrence: 'monthly',
+    day: 20,
+    can_defer: false,
+  },
+  {
+    name: 'Insurance premium',
+    kind: 'other',
+    amount_paise: 6000000,
+    recurrence: 'quarterly',
+    due_off: 45,
+    can_defer: false,
+  },
+  {
+    name: 'Kraft paper mill bill',
+    kind: 'supplier',
+    amount_paise: 80000000,
+    recurrence: null,
+    due_off: 9,
+    can_defer: false,
+  },
+  {
+    name: 'Machinery loan instalment',
+    kind: 'other',
+    amount_paise: 60000000,
+    recurrence: null,
+    due_off: 16,
+    can_defer: false,
+  },
+  {
+    name: 'Starch and ink supplier bill',
+    kind: 'supplier',
+    amount_paise: 18000000,
+    recurrence: null,
+    due_off: 17,
+    can_defer: true,
+  },
+  {
+    name: 'Corrugation machine service',
+    kind: 'other',
+    amount_paise: 30000000,
+    recurrence: null,
+    due_off: 40,
+    can_defer: false,
+  },
 ];
 
 export const nextDayOfMonth = (today, day) => {
@@ -173,7 +286,12 @@ export function expenseInputs(today) {
 /** What the forecast engine takes as input for this story, given its library (lib/forecast bundle). */
 export function forecastInput(lib, today, openingBalancePaise = 0) {
   const invoices = buildInvoices(today);
-  const customers = CUSTOMERS.map((c) => ({ id: c.key, name: c.name, entityType: c.entity_type, creditDays: 30 }));
+  const customers = CUSTOMERS.map((c) => ({
+    id: c.key,
+    name: c.name,
+    entityType: c.entity_type,
+    creditDays: 30,
+  }));
   const hist = [];
   const open = [];
   for (const i of invoices) {
@@ -187,7 +305,13 @@ export function forecastInput(lib, today, openingBalancePaise = 0) {
         events: [{ date: addDays(today, i.paid_off), amountPaise: i.total_paise }],
       });
     } else {
-      open.push({ id: i.number, number: i.number, customerId: i.customer, dueDate: i.due, balancePaise: i.total_paise });
+      open.push({
+        id: i.number,
+        number: i.number,
+        customerId: i.customer,
+        dueDate: i.due,
+        balancePaise: i.total_paise,
+      });
     }
   }
   const models = lib.buildDelayModels(lib.delaySamples(hist));
@@ -198,7 +322,15 @@ export function forecastInput(lib, today, openingBalancePaise = 0) {
     open,
     models,
     occ,
-    input: { today, openingBalancePaise, bufferPaise: BUFFER_PAISE, invoices: open, customers, models, occurrences: occ },
+    input: {
+      today,
+      openingBalancePaise,
+      bufferPaise: BUFFER_PAISE,
+      invoices: open,
+      customers,
+      models,
+      occurrences: occ,
+    },
   };
 }
 

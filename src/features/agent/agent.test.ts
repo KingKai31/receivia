@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import demo from '../../../supabase/seed/demo-data.json';
+import demo from './fixtures/planner-demo.json';
 import { buildToday, type TodayCustomer, type TodayInvoice } from '@/features/collect/today';
 import { renderTemplate, type SlotValues } from '@/features/collect/templates';
 import { STAGES } from '@/features/collect/ladder';

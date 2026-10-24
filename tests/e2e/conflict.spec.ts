@@ -11,7 +11,7 @@ test('a concurrent edit shows the conflict message instead of overwriting', asyn
   await openDemo(page);
   await page.goto('/customers');
   await page
-    .getByRole('link', { name: /Alpha|Beta|Delta/ })
+    .getByRole('link', { name: /Mithai|Pune|Raj/ })
     .first()
     .waitFor({ timeout: 60_000 });
   const href = await page

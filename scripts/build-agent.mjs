@@ -32,6 +32,10 @@ await build({
   input: path.join(root, 'src/lib/forecast/index.ts'),
   platform: 'neutral',
   resolve: { alias: { '@': path.join(root, 'src') } },
-  output: { file: path.join(root, 'supabase/seed/forecast.bundle.js'), format: 'esm', minify: false },
+  output: {
+    file: path.join(root, 'supabase/seed/forecast.bundle.js'),
+    format: 'esm',
+    minify: false,
+  },
 });
 console.log('built supabase/seed/forecast.bundle.js');

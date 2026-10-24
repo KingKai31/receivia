@@ -20,7 +20,7 @@ import {
   type OpenInvoice,
 } from './index';
 
-const seed = JSON.parse(readFileSync('supabase/seed/demo-data.json', 'utf8')) as {
+const seed = JSON.parse(readFileSync('src/lib/match/fixtures/demo-data.json', 'utf8')) as {
   customers: { key: string; name: string; entity_type: MatchCustomer['entityType'] }[];
   invoices: {
     number: string;
@@ -44,7 +44,7 @@ const invoices: OpenInvoice[] = seed.invoices.map((i) => ({
   issueDate: i.issue_date,
   dueDate: i.due_date,
 }));
-const csv = readFileSync('supabase/seed/bank-statement.csv', 'utf8');
+const csv = readFileSync('src/lib/match/fixtures/bank-statement.csv', 'utf8');
 const MAP = {
   date: 'Date',
   description: 'Description',

@@ -25,7 +25,9 @@ describe('demo org story', () => {
   it('has 12 customers, about 45 invoices over 6 months, GSTINs with valid check digits', () => {
     expect(story.CUSTOMERS).toHaveLength(12);
     expect(story.buildInvoices(T).length).toBeGreaterThanOrEqual(40);
-    expect(d.hist.map((h: { issueDate: string }) => h.issueDate).sort()[0] <= addDays(T, -150)).toBe(true);
+    expect(
+      d.hist.map((h: { issueDate: string }) => h.issueDate).sort()[0] <= addDays(T, -150),
+    ).toBe(true);
     expect(story.gstin('27', 'AAPFU0939F')).toBe('27AAPFU0939F1ZV');
   });
   it('tells the headline story: Mithai Sweets, 38 days overdue, ₹1,18,000 with IGST', () => {
@@ -37,26 +39,34 @@ describe('demo org story', () => {
   it('salaries are ₹2,40,000 on the 1st', () => {
     const sal = d.occ.filter((o: { name: string }) => o.name === 'Salaries');
     expect(sal.length).toBeGreaterThanOrEqual(3);
-    expect(sal.every((o: { amountPaise: number; date: string }) => o.amountPaise === 24000000 && o.date.endsWith('-01'))).toBe(true);
+    expect(
+      sal.every(
+        (o: { amountPaise: number; date: string }) =>
+          o.amountPaise === 24000000 && o.date.endsWith('-01'),
+      ),
+    ).toBe(true);
   });
-  it.each(DATES)('week 3 is the first shortfall by about ₹1,30,000 and the solver covers it (%s)', (today) => {
-    const x = build(today);
-    const s = firstShortfall(x.f);
-    expect(s?.week).toBe(3);
-    const gap = story.BUFFER_PAISE - x.f.weeks[2]!.closing.p50;
-    expect(Math.abs(gap - 13000000)).toBeLessThan(200000);
-    const plan = solveGap({
-      today,
-      forecast: x.f,
-      invoices: x.open,
-      customers: x.customers,
-      models: x.models,
-      occurrences: x.occ,
-    })!;
-    expect(plan.feasible).toBe(true);
-    expect(plan.coveredPaise).toBeGreaterThanOrEqual(plan.gapPaise);
-    expect(plan.steps.length).toBeGreaterThanOrEqual(1);
-  });
+  it.each(DATES)(
+    'week 3 is the first shortfall by about ₹1,30,000 and the solver covers it (%s)',
+    (today) => {
+      const x = build(today);
+      const s = firstShortfall(x.f);
+      expect(s?.week).toBe(3);
+      const gap = story.BUFFER_PAISE - x.f.weeks[2]!.closing.p50;
+      expect(Math.abs(gap - 13000000)).toBeLessThan(200000);
+      const plan = solveGap({
+        today,
+        forecast: x.f,
+        invoices: x.open,
+        customers: x.customers,
+        models: x.models,
+        occurrences: x.occ,
+      })!;
+      expect(plan.feasible).toBe(true);
+      expect(plan.coveredPaise).toBeGreaterThanOrEqual(plan.gapPaise);
+      expect(plan.steps.length).toBeGreaterThanOrEqual(1);
+    },
+  );
   it('gives identical results on every load', () => {
     expect(JSON.stringify(build(T).f.weeks)).toBe(JSON.stringify(d.f.weeks));
   });

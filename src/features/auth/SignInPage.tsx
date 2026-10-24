@@ -52,6 +52,9 @@ export function SignInPage() {
       <h1 className="hero-big" style={{ color: 'var(--ink)', textAlign: 'left', fontSize: 40 }}>
         {t('brand')}
       </h1>
+      <Button disabled={busy} onClick={() => run(openLiveDemo)}>
+        {t('auth.demo')}
+      </Button>
       <Card title={t('auth.title')}>
         {email === null ? (
           <form
@@ -71,7 +74,7 @@ export function SignInPage() {
               inputMode="email"
               {...emailRhf.register('email')}
             />
-            <Button type="submit" disabled={busy}>
+            <Button type="submit" variant="secondary" disabled={busy}>
               {t('auth.sendCode')}
             </Button>
           </form>
@@ -103,9 +106,6 @@ export function SignInPage() {
           </p>
         ) : null}
       </Card>
-      <Button variant="secondary" disabled={busy} onClick={() => run(openLiveDemo)}>
-        {t('auth.demo')}
-      </Button>
     </main>
   );
 }

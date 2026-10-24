@@ -48,7 +48,7 @@ test('approve a Hindi reminder', async () => {
   await expect(page.getByRole('heading', { name: 'Agent' })).toBeVisible(BIG);
   const row = () =>
     page
-      .locator('li', { hasText: 'Theta Pharma Ltd' })
+      .locator('li', { hasText: 'Raj Plastics' })
       .filter({ has: page.getByRole('button', { name: 'Approve and send' }) });
   await page.waitForTimeout(6000);
   if (!(await row().count())) {
@@ -66,7 +66,7 @@ test('the pay link opens signed out and the buyer says "I have already paid"', a
   browser,
 }) => {
   test.setTimeout(150_000);
-  // Mint a pay link for Theta Pharma's invoice with the signed-in session, as the app does when sending.
+  // Mint a pay link for Raj Plastics' open invoice with the signed-in session, as the app does when sending.
   const session = await page.evaluate(() => {
     const key = Object.keys(localStorage).find((k) => /^sb-.*-auth-token$/.test(k))!;
     return {
@@ -80,12 +80,11 @@ test('the pay link opens signed out and the buyer says "I have already paid"', a
     .trim();
   const auth = { Authorization: `Bearer ${session.token}`, apikey: anon };
   const inv = await page.request.get(
-    `${base}/rest/v1/invoices?select=id&number=eq.HIS/26-27/0080`,
-    {
-      headers: auth,
-    },
+    `${base}/rest/v1/invoices?select=id,number,customers!inner(name)&customers.name=eq.Raj%20Plastics&balance_paise=gt.0&order=due_date.asc&limit=1`,
+    { headers: auth },
   );
-  const invoiceId = ((await inv.json()) as { id: string }[])[0]!.id;
+  const found = ((await inv.json()) as { id: string; number: string }[])[0]!;
+  const invoiceId = found.id;
   const link = await page.request.post(`${base}/functions/v1/create-pay-link`, {
     headers: { ...auth, 'content-type': 'application/json' },
     data: { invoice_id: invoiceId },
@@ -98,7 +97,7 @@ test('the pay link opens signed out and the buyer says "I have already paid"', a
     await browser.newContext({ viewport: { width: 360, height: 800 } })
   ).newPage();
   await buyer.goto(url.replace(/^https?:\/\/[^/]+/, process.env.LIVE_URL!));
-  await expect(buyer.getByText('HIS/26-27/0080')).toBeVisible(BIG);
+  await expect(buyer.getByText(found.number)).toBeVisible(BIG);
   await expect(buyer.getByText('देय राशि')).toBeVisible(); // a Hindi page for a Hindi customer
   await buyer.getByRole('button', { name: /पहले ही भुगतान/ }).click();
   await buyer.getByLabel(/भुगतान संदर्भ/).fill('UTR-E2E-0001');

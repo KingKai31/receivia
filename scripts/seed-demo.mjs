@@ -46,14 +46,27 @@ try {
 
   const ids = {};
   for (const cu of CUSTOMERS) {
-    const ex = await c.query('select id from public.customers where org_id = $1 and name = $2', [DEMO_ORG, cu.name]);
+    const ex = await c.query('select id from public.customers where org_id = $1 and name = $2', [
+      DEMO_ORG,
+      cu.name,
+    ]);
     ids[cu.key] =
       ex.rows[0]?.id ??
       (
         await c.query(
           `insert into public.customers (org_id, name, gstin, state_code, entity_type, tier, language, phone, email, credit_days, has_written_agreement)
            values ($1, $2, $3, $4, $5, $6, $7, $8, $9, 30, true) returning id`,
-          [DEMO_ORG, cu.name, cu.gstin, cu.state_code, cu.entity_type, cu.tier, cu.language, cu.phone, cu.email],
+          [
+            DEMO_ORG,
+            cu.name,
+            cu.gstin,
+            cu.state_code,
+            cu.entity_type,
+            cu.tier,
+            cu.language,
+            cu.phone,
+            cu.email,
+          ],
         )
       ).rows[0].id;
   }
@@ -62,7 +75,10 @@ try {
   const invId = {};
   let added = 0;
   for (const inv of invoices) {
-    const ex = await c.query('select id from public.invoices where org_id = $1 and number = $2', [DEMO_ORG, inv.number]);
+    const ex = await c.query('select id from public.invoices where org_id = $1 and number = $2', [
+      DEMO_ORG,
+      inv.number,
+    ]);
     if (ex.rowCount) {
       invId[inv.number] = ex.rows[0].id;
       continue;
@@ -73,8 +89,19 @@ try {
            supplier_state_code, place_of_supply, taxable_paise, cgst_paise, sgst_paise, igst_paise, total_paise, source_ref)
          values ($1, $2, $3, $4, 'issued', 'import', $5, $6, '27', $7, $8, $9, $10, $11, $12, $13) returning id`,
         [
-          DEMO_ORG, ids[inv.customer], inv.number, fyOf(inv.issue), inv.issue, inv.due, inv.place,
-          inv.taxable_paise, inv.cgst, inv.sgst, inv.igst, inv.total_paise, `demo:${inv.number}`,
+          DEMO_ORG,
+          ids[inv.customer],
+          inv.number,
+          fyOf(inv.issue),
+          inv.issue,
+          inv.due,
+          inv.place,
+          inv.taxable_paise,
+          inv.cgst,
+          inv.sgst,
+          inv.igst,
+          inv.total_paise,
+          `demo:${inv.number}`,
         ],
       )
     ).rows[0].id;
@@ -85,7 +112,14 @@ try {
         await c.query(
           `insert into public.payments (org_id, customer_id, amount_paise, received_on, method, status, source, idempotency_key, reference)
            values ($1, $2, $3, $4, 'bank_transfer', 'confirmed', 'manual', $5, $6) returning id`,
-          [DEMO_ORG, ids[inv.customer], inv.total_paise, addDays(TODAY, inv.paid_off), `demo:${inv.number}`, `NEFT ${inv.number}`],
+          [
+            DEMO_ORG,
+            ids[inv.customer],
+            inv.total_paise,
+            addDays(TODAY, inv.paid_off),
+            `demo:${inv.number}`,
+            `NEFT ${inv.number}`,
+          ],
         )
       ).rows[0].id;
       await c.query(
@@ -98,17 +132,20 @@ try {
   // Story rows: one open dispute, one active promise, one "already paid" claim waiting in the Inbox.
   const b = beats(invoices);
   const story = async (table, invoice, sql, args) => {
-    const ex = await c.query(`select 1 from public.${table} where org_id = $1 and invoice_id = $2`, [
-      DEMO_ORG,
-      invId[invoice.number],
-    ]);
-    if (!ex.rowCount) await c.query(sql, [DEMO_ORG, invId[invoice.number], ids[invoice.customer], ...args]);
+    const ex = await c.query(
+      `select 1 from public.${table} where org_id = $1 and invoice_id = $2`,
+      [DEMO_ORG, invId[invoice.number]],
+    );
+    if (!ex.rowCount)
+      await c.query(sql, [DEMO_ORG, invId[invoice.number], ids[invoice.customer], ...args]);
   };
   await story(
     'disputes',
     b.aurangDispute,
     `insert into public.disputes (org_id, invoice_id, customer_id, reason, raised_via) values ($1, $2, $3, $4, 'portal')`,
-    ['Short delivery: 200 boxes of the 1,000 ordered did not arrive. Please issue a credit note for the missing boxes.'],
+    [
+      'Short delivery: 200 boxes of the 1,000 ordered did not arrive. Please issue a credit note for the missing boxes.',
+    ],
   );
   await story(
     'promises',
@@ -120,18 +157,36 @@ try {
     'payment_claims',
     b.saiClaim,
     `insert into public.payment_claims (org_id, invoice_id, customer_id, reference, paid_on, amount_paise, note) values ($1, $2, $3, $4, $5, $6, $7)`,
-    ['UPI-SAI-7741', addDays(TODAY, -2), b.saiClaim.total_paise, 'Paid by UPI on Friday evening, please check.'],
+    [
+      'UPI-SAI-7741',
+      addDays(TODAY, -2),
+      b.saiClaim.total_paise,
+      'Paid by UPI on Friday evening, please check.',
+    ],
   );
 
   let expenses = 0;
   for (const e of EXPENSES) {
-    const ex = await c.query('select 1 from public.expenses where org_id = $1 and name = $2', [DEMO_ORG, e.name]);
+    const ex = await c.query('select 1 from public.expenses where org_id = $1 and name = $2', [
+      DEMO_ORG,
+      e.name,
+    ]);
     if (ex.rowCount) continue;
     const first = e.day ? nextDayOfMonth(TODAY, e.day) : addDays(TODAY, e.due_off);
     await c.query(
       `insert into public.expenses (org_id, name, kind, category, amount_paise, expense_date, is_recurring, recurrence, next_due, can_defer)
        values ($1, $2, $3, $3, $4, $5, $6, $7, $8, $9)`,
-      [DEMO_ORG, e.name, e.kind, e.amount_paise, first, Boolean(e.recurrence), e.recurrence, e.recurrence ? first : null, e.can_defer],
+      [
+        DEMO_ORG,
+        e.name,
+        e.kind,
+        e.amount_paise,
+        first,
+        Boolean(e.recurrence),
+        e.recurrence,
+        e.recurrence ? first : null,
+        e.can_defer,
+      ],
     );
     expenses++;
   }
@@ -150,11 +205,10 @@ try {
     [DEMO_ORG, fy, invoices.length],
   );
   if (!upd.rowCount)
-    await c.query(`insert into public.invoice_counters (org_id, fy, series, last_seq) values ($1, $2, 'INV', $3)`, [
-      DEMO_ORG,
-      fy,
-      invoices.length,
-    ]);
+    await c.query(
+      `insert into public.invoice_counters (org_id, fy, series, last_seq) values ($1, $2, 'INV', $3)`,
+      [DEMO_ORG, fy, invoices.length],
+    );
   await c.query('commit');
   console.log(
     `demo seed (${TODAY}): ${CUSTOMERS.length} customers, ${added} new invoices, ${expenses} new expenses, opening Rs ${(opening / 100).toLocaleString('en-IN')}`,

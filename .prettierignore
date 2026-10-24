@@ -7,3 +7,4 @@ test-results
 *.md
 supabase/functions/_shared/agent.bundle.js
 automation/render/node_modules
+supabase/seed/forecast.bundle.js
