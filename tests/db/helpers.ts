@@ -167,6 +167,10 @@ export const INSERTS: Record<string, Builder> = {
     `insert into expenses (org_id, name, amount_paise, expense_date) values ($1, 'Rent', 1000000, '2026-10-01')`,
     [o],
   ],
+  payment_claims: (o, r) => [
+    `insert into payment_claims (org_id, invoice_id, reference, paid_on) values ($1, $2, 'UTR1', '2026-10-10')`,
+    [o, r.invoice],
+  ],
   tds_entries: (o) => [
     `insert into tds_entries (org_id, section, rate, amount_paise) values ($1, '194C', 1, 1000)`,
     [o],
@@ -211,6 +215,7 @@ export const STANDARD_TABLES = [
   'messages',
   'expenses',
   'tds_entries',
+  'payment_claims',
   'ims_status',
   'agent_actions',
 ] as const;
@@ -254,6 +259,7 @@ export async function seedOrg(admin: pg.Client, org: string): Promise<Refs> {
     'messages',
     'expenses',
     'tds_entries',
+    'payment_claims',
     'ims_status',
     'agent_actions',
     'pay_tokens',
