@@ -64,6 +64,10 @@ export function Layout() {
         <div key={pathname} className="page-enter">
           <Outlet />
         </div>
+        <footer className="mt-6 text-sm">
+          <a href="/how-it-works">{t('How it works')}</a> {t('·')}{' '}
+          <a href="/trust">{t('pages.trust')}</a>
+        </footer>
       </main>
       {more ? (
         <div className="more-sheet glass glass-solid" id="more-sheet">

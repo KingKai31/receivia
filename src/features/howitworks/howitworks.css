@@ -1,0 +1,233 @@
+.hw {
+  max-width: 920px;
+  margin-inline: auto;
+}
+.hw h2 {
+  margin-top: 0;
+}
+.hw h3 {
+  margin: 18px 0 6px;
+  font-size: 1rem;
+}
+.hw-lead {
+  max-width: 62ch;
+}
+.hw-sec {
+  padding: 22px;
+  margin-bottom: 18px;
+}
+.hw-toc {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0;
+  margin: 12px 0 20px;
+  list-style: none;
+}
+.hw-toc a {
+  display: inline-block;
+  padding: 8px 14px;
+  border-radius: var(--radius-pill);
+  background: var(--soft-blue);
+  color: var(--ink);
+  text-decoration: none;
+  min-height: 24px;
+}
+.hw-formula {
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  background: var(--soft-blue);
+  border-radius: 14px;
+  padding: 10px 14px;
+  overflow-wrap: anywhere;
+  margin: 8px 0;
+}
+.hw-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+.hw-card {
+  border-radius: 18px;
+  background: var(--glass-hi);
+  padding: 14px 16px;
+}
+.hw-card h3 {
+  margin-top: 0;
+}
+.hw-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.hw-table th,
+.hw-table td {
+  text-align: left;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--row-line);
+  vertical-align: top;
+}
+.hw-table td.n,
+.hw-table th.n {
+  text-align: right;
+}
+.hw-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.hw-svg text {
+  font-family: var(--font);
+  fill: var(--ink);
+  font-size: 13px;
+}
+.hw-svg .box {
+  fill: var(--glass-hi);
+  stroke: var(--blue-deep);
+  stroke-width: 1.5;
+}
+.hw-svg .box-peach {
+  fill: var(--soft-peach);
+  stroke: var(--peach-deep);
+  stroke-width: 1.5;
+}
+.hw-svg .link {
+  fill: none;
+  stroke: var(--blue-deep);
+  stroke-width: 2.5;
+  stroke-dasharray: 6 8;
+}
+.hw-svg .link-peach {
+  stroke: var(--peach-deep);
+}
+.hw-svg .band90 {
+  fill: var(--soft-blue);
+}
+.hw-svg .band50 {
+  fill: none;
+  stroke: var(--blue-deep);
+  stroke-width: 2.5;
+}
+.hw-svg .buffer {
+  stroke: var(--peach-deep);
+  stroke-dasharray: 5 5;
+  stroke-width: 1.5;
+}
+.hw-svg .bar {
+  fill: var(--blue-deep);
+}
+.hw-svg .muted {
+  fill: var(--muted);
+  font-size: 11px;
+}
+.in .hw-svg .link,
+.rv.in .hw-svg .link {
+  animation: hw-flow 1.4s linear infinite;
+}
+.in .hw-svg .band50 {
+  stroke-dasharray: 700;
+  stroke-dashoffset: 700;
+  animation: hw-draw 2.2s var(--ease) forwards;
+}
+.in .hw-svg .bar {
+  transform-box: fill-box;
+  transform-origin: bottom;
+  animation: hw-grow 1.2s var(--ease) both;
+}
+@keyframes hw-flow {
+  to {
+    stroke-dashoffset: -28;
+  }
+}
+@keyframes hw-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes hw-grow {
+  from {
+    transform: scaleY(0);
+  }
+}
+.hw-steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 10px;
+  padding: 0;
+  margin: 14px 0;
+  list-style: none;
+  counter-reset: s;
+}
+.hw-steps li {
+  position: relative;
+  border-radius: 16px;
+  padding: 12px;
+  background: var(--glass-hi);
+  border: 1.5px solid var(--blue-deep);
+  text-align: center;
+  font-weight: 600;
+}
+.hw-steps li small {
+  display: block;
+  font-weight: 400;
+  color: var(--muted);
+  margin-top: 4px;
+}
+.in .hw-steps li {
+  animation: hw-step 7.2s infinite;
+}
+.in .hw-steps li:nth-child(2) {
+  animation-delay: 1.2s;
+}
+.in .hw-steps li:nth-child(3) {
+  animation-delay: 2.4s;
+}
+.in .hw-steps li:nth-child(4) {
+  animation-delay: 3.6s;
+}
+.in .hw-steps li:nth-child(5) {
+  animation-delay: 4.8s;
+}
+.in .hw-steps li:nth-child(6) {
+  animation-delay: 6s;
+}
+@keyframes hw-step {
+  0%,
+  16% {
+    background: var(--soft-peach);
+    border-color: var(--peach-deep);
+  }
+  17%,
+  100% {
+    background: var(--glass-hi);
+    border-color: var(--blue-deep);
+  }
+}
+.hw-bar {
+  height: 14px;
+  border-radius: 99px;
+  background: var(--soft-blue);
+  overflow: hidden;
+  margin: 8px 0;
+}
+.hw-bar > span {
+  display: block;
+  height: 100%;
+  background: var(--blue-deep);
+  width: var(--w);
+  transform-origin: left;
+}
+.in .hw-bar > span {
+  animation: hw-bar 1.6s var(--ease) both;
+}
+@keyframes hw-bar {
+  from {
+    transform: scaleX(0);
+  }
+}
+.hw-live {
+  font-weight: 700;
+}
+@media (prefers-reduced-motion: reduce) {
+  .in .hw-svg .band50 {
+    stroke-dashoffset: 0;
+  }
+}
