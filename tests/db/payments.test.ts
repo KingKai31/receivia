@@ -195,3 +195,53 @@ describe('bank match confirmation', () => {
     ).rejects.toThrow(/exceed/);
   });
 });
+
+describe('inbox resolution', () => {
+  async function claimFor(inv: string): Promise<string> {
+    return (
+      await db.query<{ id: string }>(
+        `insert into payment_claims (org_id, invoice_id, customer_id, reference, paid_on) values ($1, $2, $3, 'UTR9', '2026-06-02') returning id`,
+        [orgId, inv, customerId],
+      )
+    ).rows[0]!.id;
+  }
+  it('accepting a claim records the payment and marks the invoice paid; resolving twice is a no-op', async () => {
+    const a = await invoice(40000);
+    const c = await claimFor(a);
+    await db.query('select public.resolve_claim($1, $2, true, $3)', [orgId, c, 'Thanks, received']);
+    await db.query('select public.resolve_claim($1, $2, true, $3)', [orgId, c, 'again']);
+    expect(await row(a)).toMatchObject({ status: 'paid', balance_paise: 0 });
+    expect((await db.query('select 1 from payments where reference = $1 and received_on = $2', ['UTR9', '2026-06-02'])).rows.length).toBeGreaterThanOrEqual(1);
+    const st = (await db.query<{ status: string; owner_reply: string }>('select status, owner_reply from payment_claims where id = $1', [c])).rows[0]!;
+    expect(st).toMatchObject({ status: 'accepted', owner_reply: 'Thanks, received' });
+  });
+  it('rejecting a claim needs a reply and leaves the invoice open', async () => {
+    const a = await invoice(40000);
+    const c = await claimFor(a);
+    await expect(db.query('select public.resolve_claim($1, $2, false, $3)', [orgId, c, ' '])).rejects.toThrow(/reply/);
+    await db.query('select public.resolve_claim($1, $2, false, $3)', [orgId, c, 'Not in our bank']);
+    expect(await row(a)).toMatchObject({ status: 'issued', balance_paise: 40000 });
+  });
+  it('dispute outcomes: rejected needs a reply, paid closes the invoice, flag clears when resolved', async () => {
+    const a = await invoice(40000);
+    const d = (await db.query<{ id: string }>(`insert into disputes (org_id, invoice_id, reason) values ($1, $2, 'wrong') returning id`, [orgId, a])).rows[0]!.id;
+    const flag = async () => (await db.query<{ disputed: boolean }>('select disputed from invoices where id = $1', [a])).rows[0]!.disputed;
+    expect(await flag()).toBe(true);
+    await expect(db.query(`select public.resolve_dispute($1, $2, 'rejected', '')`, [orgId, d])).rejects.toThrow(/reply/);
+    await expect(db.query(`select public.resolve_dispute($1, $2, 'bogus', 'x')`, [orgId, d])).rejects.toThrow(/outcome/);
+    await db.query(`select public.resolve_dispute($1, $2, 'paid', 'settled')`, [orgId, d]);
+    expect(await flag()).toBe(false);
+    expect(await row(a)).toMatchObject({ status: 'paid' });
+    const b = await invoice(40000);
+    const d2 = (await db.query<{ id: string }>(`insert into disputes (org_id, invoice_id, reason) values ($1, $2, 'wrong') returning id`, [orgId, b])).rows[0]!.id;
+    await db.query(`select public.resolve_dispute($1, $2, 'rejected', 'The goods were delivered')`, [orgId, d2]);
+    const v = (await db.query<{ v: { replies: string[]; open_dispute: boolean } }>('select public.pay_view($1) as v', [await token(b)])).rows[0]!.v;
+    expect(v.replies).toContain('The goods were delivered');
+    expect(v.open_dispute).toBe(false);
+  });
+  it('manual payment is capped at the balance for allocation', async () => {
+    const a = await invoice(10000);
+    await db.query(`select public.record_manual_payment($1, $2, 15000, 'cash', null, null)`, [orgId, a]);
+    expect(await row(a)).toMatchObject({ status: 'paid', paid_paise: 10000 });
+  });
+});

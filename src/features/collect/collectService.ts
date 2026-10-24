@@ -81,6 +81,7 @@ export async function loadToday(
   const customers: Customer[] = [];
   const sent: { invoice_id: string; stage: Stage }[] = [];
   const promises: { invoice_id: string; promised_for: string }[] = [];
+  const pendingClaims: string[] = [];
   const dayStart = `${today}T00:00:00+05:30`;
   const dayEnd = `${addDays(today, 1)}T00:00:00+05:30`;
   const messaged: string[] = [];
@@ -117,6 +118,14 @@ export async function loadToday(
         .in('invoice_id', c);
       if (p.error) throw fromPgError(p.error);
       promises.push(...((p.data ?? []) as { invoice_id: string; promised_for: string }[]));
+      const cl = await client
+        .from('payment_claims')
+        .select('invoice_id')
+        .eq('org_id', orgId)
+        .eq('status', 'pending')
+        .in('invoice_id', c);
+      if (cl.error) throw fromPgError(cl.error);
+      pendingClaims.push(...((cl.data ?? []) as { invoice_id: string }[]).map((x) => x.invoice_id));
     }),
   ]);
 
@@ -133,6 +142,7 @@ export async function loadToday(
     customers: customers as unknown as TodayCustomer[],
     sent,
     promises,
+    pendingClaims,
     messagedToday: messaged,
   });
   return { groups, truncated, profile };
@@ -140,14 +150,16 @@ export async function loadToday(
 
 export type SendChannel = 'whatsapp' | 'email' | 'sms';
 
-/** Creates a single-use pay link token (stored hashed) and returns the public URL. */
+/** Creates a pay link (token stored hashed, 60 days) through the create-pay-link edge function. */
 export async function createPayLink(
   invoiceId: string,
   client: SupabaseClient = supabase,
 ): Promise<string> {
-  const res = await client.rpc('create_pay_token', { p_invoice: invoiceId, p_ttl: '30 days' });
-  if (res.error) throw fromPgError(res.error);
-  return `${window.location.origin}/pay/${res.data as string}`;
+  const res = await client.functions.invoke('create-pay-link', { body: { invoice_id: invoiceId } });
+  if (res.error || !res.data?.url) throw new Error('Could not create the pay link. Try again.');
+  // The function builds the URL from APP_BASE_URL; in the browser use the origin we are on.
+  const token = String(res.data.url).split('/pay/')[1] ?? '';
+  return `${window.location.origin}/pay/${token}`;
 }
 
 /** Logs a reminder + message atomically. Idempotent per invoice/stage/channel. */

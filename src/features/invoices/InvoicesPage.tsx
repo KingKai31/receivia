@@ -138,7 +138,7 @@ export function InvoicesPage() {
               {
                 key: 'balance',
                 header: 'Balance',
-                render: (r) => formatINR(paise(r.total_paise - r.paid_paise)),
+                render: (r) => formatINR(paise(r.balance_paise)),
               },
               {
                 key: 'status',

@@ -45,7 +45,7 @@ export function InvoiceDetailPage() {
   if (inv.error) return <p role="alert">{errorMessage(inv.error)}</p>;
   if (!inv.data) return null;
   const { invoice: i, lines } = inv.data;
-  const balance = paise(i.total_paise - i.paid_paise);
+  const balance = paise(i.balance_paise);
 
   return (
     <>
@@ -86,6 +86,18 @@ export function InvoiceDetailPage() {
           <dd>{formatINR(paise(i.total_paise))}</dd>
           <dt>Paid</dt>
           <dd>{formatINR(paise(i.paid_paise))}</dd>
+          {i.credited_paise > 0 ? (
+            <>
+              <dt>Credit notes</dt>
+              <dd>{formatINR(paise(i.credited_paise))}</dd>
+            </>
+          ) : null}
+          {i.tds_paise > 0 ? (
+            <>
+              <dt>TDS</dt>
+              <dd>{formatINR(paise(i.tds_paise))}</dd>
+            </>
+          ) : null}
           <dt>Balance</dt>
           <dd>{formatINR(balance)}</dd>
         </dl>

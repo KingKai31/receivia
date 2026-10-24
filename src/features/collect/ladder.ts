@@ -54,6 +54,8 @@ export interface LadderInvoice {
   due_date: ISODate;
   total_paise: number;
   paid_paise: number;
+  credited_paise?: number;
+  tds_paise?: number;
   status: 'draft' | 'issued' | 'partially_paid' | 'paid' | 'void';
 }
 
@@ -65,6 +67,8 @@ export interface LadderInput {
   /** Stages already sent or marked sent for this invoice, on any channel. */
   sentStages: readonly Stage[];
   hasOpenDispute: boolean;
+  /** The buyer says they already paid and the owner has not yet confirmed or rejected it. */
+  hasPendingClaim?: boolean;
   /** Open promise date, if any. */
   promisedFor?: ISODate | null;
   /** Stages the owner has approved for a key-tier customer. */
@@ -91,7 +95,7 @@ export type LadderDecision =
     };
 
 export function amountDue(i: LadderInvoice): number {
-  return Math.max(i.total_paise - i.paid_paise, 0);
+  return Math.max(i.total_paise - i.paid_paise - (i.credited_paise ?? 0) - (i.tds_paise ?? 0), 0);
 }
 
 /**
@@ -109,6 +113,9 @@ export function nextAction(input: LadderInput): LadderDecision {
   if (due <= 0 || invoice.status === 'paid') return { action: 'none', reason: 'Nothing is owed.' };
   if (input.hasOpenDispute)
     return { action: 'paused', reason: 'Open dispute: reminders are paused until it is resolved.' };
+  if (input.hasPendingClaim) {
+    return { action: 'paused', reason: 'Buyer says they have paid: confirm or reject it in the Inbox.' };
+  }
   if (input.promisedFor && input.promisedFor >= today) {
     return {
       action: 'paused',

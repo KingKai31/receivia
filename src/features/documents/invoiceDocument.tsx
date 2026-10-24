@@ -154,7 +154,7 @@ export function buildInvoiceDocument({
             total: money(i.taxable_paise + i.cgst_paise + i.sgst_paise + i.igst_paise),
           },
         ];
-  const balance = paise(i.total_paise - i.paid_paise);
+  const balance = paise(i.balance_paise);
   const hasBank = s.bank_account_number || s.upi_id;
   return {
     heading: HEADINGS[i.invoice_type],

@@ -32,6 +32,10 @@ export interface Invoice {
   round_off_paise: number;
   total_paise: number;
   paid_paise: number;
+  credited_paise: number;
+  tds_paise: number;
+  balance_paise: number;
+  razorpay_link_url: string | null;
   notes: string | null;
   source: 'manual' | 'import';
   reverse_charge: boolean;
@@ -245,6 +249,8 @@ export function describeTimelineEntry(e: TimelineEntry): string {
     return `Status changed from ${String(o.status)} to ${String(n.status)}`;
   }
   if (o.paid_paise !== n.paid_paise) return 'Payment recorded';
+  if (o.credited_paise !== n.credited_paise) return 'Credit note applied';
+  if (o.tds_paise !== n.tds_paise) return 'TDS recorded';
   if (o.disputed !== n.disputed) return n.disputed ? 'Marked disputed' : 'Dispute cleared';
   return 'Invoice edited';
 }

@@ -217,7 +217,7 @@ export async function customerSummary(
   const [inv, pay] = await Promise.all([
     client
       .from('invoices')
-      .select('total_paise, paid_paise')
+      .select('balance_paise')
       .eq('customer_id', customerId)
       .in('status', ['issued', 'partially_paid'])
       .limit(5000),
@@ -230,9 +230,9 @@ export async function customerSummary(
   ]);
   if (inv.error) throw fromPgError(inv.error);
   if (pay.error) throw fromPgError(pay.error);
-  const rows = (inv.data ?? []) as { total_paise: number; paid_paise: number }[];
+  const rows = (inv.data ?? []) as { balance_paise: number }[];
   return {
-    owed: paise(rows.reduce((s, r) => s + (r.total_paise - r.paid_paise), 0)),
+    owed: paise(rows.reduce((s, r) => s + r.balance_paise, 0)),
     openInvoices: rows.length,
     payments: (pay.data ?? []) as CustomerPayment[],
   };

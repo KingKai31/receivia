@@ -46,6 +46,8 @@ export interface TodayInput {
   customers: TodayCustomer[];
   sent: { invoice_id: string; stage: Stage }[];
   promises: { invoice_id: string; promised_for: ISODate }[];
+  /** Invoices with an unresolved "I have already paid" claim. */
+  pendingClaims?: string[];
   /** Customers who already have an outbound message today (IST). */
   messagedToday: string[];
 }
@@ -95,6 +97,7 @@ export function buildToday(input: TodayInput): TodayGroup[] {
       config: cfg,
       sentStages: input.sent.filter((s) => s.invoice_id === inv.id).map((s) => s.stage),
       hasOpenDispute: inv.disputed,
+      hasPendingClaim: (input.pendingClaims ?? []).includes(inv.id),
       promisedFor: promise ?? null,
       approvedStages: inv.approved_stages,
     });

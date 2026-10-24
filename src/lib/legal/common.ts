@@ -57,6 +57,8 @@ export interface InvoiceFacts {
   accepted_on?: ISODate | null;
   total_paise: number;
   paid_paise: number;
+  credited_paise?: number;
+  tds_paise?: number;
   cgst_paise: number;
   sgst_paise: number;
   igst_paise: number;

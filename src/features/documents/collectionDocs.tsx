@@ -32,6 +32,8 @@ export interface DocInvoice {
   due_date: ISODate;
   total_paise: number;
   paid_paise: number;
+  credited_paise?: number;
+  tds_paise?: number;
   cgst_paise: number;
   sgst_paise: number;
   igst_paise: number;
@@ -86,7 +88,7 @@ export interface LetterModel {
 export function buildLetterModel(i: LetterInput): LetterModel {
   const eligible = msmeEligibility(i.seller).applies;
   const rows: LetterRow[] = i.invoices.map((inv) => {
-    const bal = inv.total_paise - inv.paid_paise;
+    const bal = Math.max(inv.total_paise - inv.paid_paise - (inv.credited_paise ?? 0) - (inv.tds_paise ?? 0), 0);
     const due = msmeDueDate(
       inv.accepted_on ?? inv.issue_date,
       i.buyer.credit_days,
@@ -99,7 +101,7 @@ export function buildLetterModel(i: LetterInput): LetterModel {
       number: inv.number,
       date: prettyDate(inv.issue_date),
       amount: formatINR(paise(inv.total_paise)),
-      partPayments: formatINR(paise(inv.paid_paise)),
+      partPayments: formatINR(paise(inv.total_paise - bal)),
       balance: formatINR(paise(bal)),
       balancePaise: bal,
       interestPaise: interest,
@@ -205,7 +207,7 @@ export function LetterDocument({
             <th>Invoice number</th>
             <th>Date</th>
             <th>Amount</th>
-            <th>Part payments</th>
+            <th>Payments and credits</th>
             <th>Balance</th>
           </tr>
         </thead>
@@ -359,7 +361,7 @@ export function buildCaseModel(i: CaseInput): CaseModel {
   const invoices = i.invoices.map((inv) => {
     const accepted = inv.accepted_on ?? inv.issue_date;
     const due = msmeDueDate(accepted, i.buyer.credit_days, i.buyer.has_written_agreement);
-    const balance = paise(inv.total_paise - inv.paid_paise);
+    const balance = paise(Math.max(inv.total_paise - inv.paid_paise - (inv.credited_paise ?? 0) - (inv.tds_paise ?? 0), 0));
     const interest = elig.applies
       ? msmedInterest({ principal: balance, dueDate: due, asOf: i.today }).interest_paise
       : paise(0);
