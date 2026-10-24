@@ -6,7 +6,10 @@ export const DATABASE_URL =
 
 /** True when the local Supabase database answers. CI sets REQUIRE_DB=1 so a missing DB fails. */
 export async function dbAvailable(): Promise<boolean> {
-  const c = new pg.Client({ connectionString: DATABASE_URL, connectionTimeoutMillis: 2000 });
+  const c = new pg.Client({
+    connectionString: DATABASE_URL,
+    connectionTimeoutMillis: process.env.REMOTE_DB ? 10000 : 2000,
+  });
   try {
     await c.connect();
     await c.query('select 1');

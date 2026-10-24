@@ -16,8 +16,8 @@
   - [x] 1 Business profile form  - [x] 2 Customers  - [x] 3 New invoice  - [x] 4 Print page /doc/invoice/:id
   - [x] 5 Credit/debit notes  - [x] 6 Import (CSV, Excel, Tally XML)  - [x] 7 Invoices list + detail timeline
   - [x] 8 Typed service layer + optimistic concurrency  - [x] 9 Tests
-- [~] S3 Collections and documents (code tasks 1-7 done; Step 0 remote DB + prod migration + browser smoke BLOCKED, see Needs owner 0)
-  - [ ] 0 Remote DB check / prod migrate / smoke  - [x] 1 lib/legal  - [x] 2 Ladder  - [x] 3 Templates + send rules
+- [x] S3 Collections and documents (code tasks 1-7 and Step 0 done; authenticated screens not smoke-tested, see Needs owner 0)
+  - [x] 0 Remote DB check / migrate / public-screen smoke  - [x] 1 lib/legal  - [x] 2 Ladder  - [x] 3 Templates + send rules
   - [x] 4 Collect > Today  - [x] 5 /doc/letter/:id  - [x] 6 /doc/case/:customerId  - [x] 7 Tests
 - S4 Buyer portal payments reconciliation: not started
 - S5 Forecast and prioritisation: not started
@@ -39,7 +39,7 @@
 | WHATSAPP_TOKEN, WHATSAPP_PHONE_ID | WhatsApp | Supabase secrets | missing |
 | N8N_WEBHOOK_URL, N8N_SHARED_SECRET | n8n | Supabase secrets | missing |
 | APP_BASE_URL | links in messages | Supabase secrets / Render | missing |
-| TEST_DATABASE_URL, PROD_DATABASE_URL | hosted test / prod Postgres, used only by scripts/db-remote.mjs | .env.local (git-ignored via `.env.*`; file is currently named `.env.local.txt`, copied to `.env.local`) | present but IDENTICAL and password rejected, see Needs owner 0 |
+| TEST_DATABASE_URL, PROD_DATABASE_URL, ALLOW_SINGLE_DB | same Supabase session-pooler URL (single project); ALLOW_SINGLE_DB=true lets scripts/db-remote.mjs run with equal URLs | .env.local (git-ignored) | working |
 | DATABASE_URL (tests only, optional) | DB tests; defaults to local `postgresql://postgres:postgres@127.0.0.1:54322/postgres` | shell | default |
 | REQUIRE_DB (tests only) | `1` makes db tests fail instead of skip when DB is down | CI | set in CI |
 
@@ -140,6 +140,7 @@ Demo org: id `00000000-0000-4000-8000-00000000de60` ("Demo Traders", state 27, r
 | CI / deploy | .github/workflows/ci.yml, render.yaml |
 
 ## Tests
+- Remote (Tokyo, session pooler): `npm run test:db:remote` = 135 isolation tests (~157s) + tests/db/remote-numbering.test.ts (20 real connections via transaction pooler 6543, session pooler caps at 15 clients) all pass. PGlite tests (invoicing, collections) run in-process only. Final state: reset once more, 0 users, only the demo org, migrations 0001-0004 recorded in receivia_meta.migrations.
 - S3: `npm test` now 169 unit tests (legal 18+, ladder/templates 16, today 6, letter/case 6). `npm run test:db`: 15 pass on PGlite (incl. tests/db/collections.test.ts: record_send, daily limit, dispute flag); 135 isolation tests still skipped, NOT run on any real Postgres. Fixed a flaky S2 audit test (ordered by random uuid; now by created_at).
 - `npm test`: 125 unit/property tests (S1 libs + S2 service layer, document fields for all 3 invoice types, import validation incl. bad GSTIN rows, 40-invoice CSV commit, Tally XML, Section 34, forms) — all pass.
 - `npm run test:db`: tests/db/invoicing.test.ts (9, run on PGlite with the real migrations: consecutive numbering under 20 parallel issues, stale-update conflict, per-series note numbers, save_invoice, audit rows) pass. The 135 isolation tests skip without Docker; they were NOT re-run after migration 0003.
@@ -180,7 +181,7 @@ Demo org: id `00000000-0000-4000-8000-00000000de60` ("Demo Traders", state 27, r
 - 2026-10-24 (S2): Business state for unregistered businesses is picked manually (no GSTIN to derive it from); with a GSTIN it is always derived.
 
 ## Needs owner
-0. (S3, blocks Step 0) `.env.local` TEST_DATABASE_URL and PROD_DATABASE_URL are the SAME value and Postgres rejects the password ("password authentication failed for user postgres"). scripts/db-remote.mjs refuses to run when they are equal, because `reset-test` drops schemas and would wipe prod. Please create a separate Supabase test project, put its connection string in TEST_DATABASE_URL, and fix the password in both (Supabase > Project Settings > Database > reset password; use the pooler/direct string with sslmode=require). Then run `node scripts/db-remote.mjs reset-test`, `$env:DATABASE_URL=$env:TEST_DATABASE_URL; npm run test:db` (REQUIRE_DB=1), `node scripts/db-remote.mjs migrate-prod`. Also: `npm run test:db:remote` was not added until this works. Also verify VITE_SUPABASE_URL/ANON_KEY belong to prod before the browser smoke test (not run). Migration status: test NOT migrated, prod NOT migrated (0001-0004 pending).
+0. (S3) Authenticated screens (all S1-S3 pages behind sign-in) were NOT browser-smoke-tested: email OTP cannot be read here and demo-login is not deployed. Please sign in once and click through /, /invoices, /customers, /import, /collect, /settings, /doc/*, or deploy demo-login (Needs owner 5) so the next session can do it at 360/1280px. Database is migrated (0001-0004) and clean; do not run `reset-test` once real data exists (it drops everything).
 1. Docker Desktop (S2: `docker ps` returned no table within 20 s, so real Supabase run pending; skipped per instructions): it is installed but its engine did not start (it was applying an update / may be waiting on a prompt). Open Docker Desktop, accept any prompt, wait until it says running. Then run `npm run db:start`, `npm run db:reset`, `npm run test:db` and confirm the 135 isolation tests pass (and that tests/db/invoicing.test.ts still passes against real Postgres) after migration 0003; tell the next session if any fail.
 2. Create the Supabase project in region ap-south-1 (Mumbai). Then: `npx supabase login`, `npx supabase link --project-ref <ref>`, `npx supabase db push`.
 3. In Supabase Auth, edit the "Magic link" / "Confirm signup" email template to show the code: include `{{ .Token }}` (6 digits). Set the email OTP length to 6.
@@ -194,7 +195,7 @@ Demo org: id `00000000-0000-4000-8000-00000000de60` ("Demo Traders", state 27, r
 - 2026-10-23, S1 Foundation: scaffold, money/gst/gstin/dates libs, migrations 0001-0002, auth + demo-login, plain app shell with shared UI, render.yaml + CI, isolation tests. Commits 1467292..HEAD on feat/foundation.
 - 2026-10-24, S2 Invoicing and import: migration 0003, business profile, customers, invoice form/list/detail, A4 print pages, credit/debit notes, CSV/Excel/Tally import, service layer with optimistic concurrency, tests. Branch feat/invoicing (foundation merged into main first).
 
-- 2026-10-24, S3 Collections and documents: feat/invoicing merged into main; branch feat/collections. lib/legal, ladder, templates, Today page, letter, case pack, migration 0004, settings editor, tests. Step 0 (remote DB, prod migration, browser smoke) blocked, see Needs owner 0.
+- 2026-10-24, S3 Collections and documents: feat/invoicing merged into main; branch feat/collections. lib/legal, ladder, templates, Today page, letter, case pack, migration 0004, settings editor, tests. Step 0 done 2026-10-24 on the single Supabase project: all migrations applied, 135 isolation + 20-connection numbering pass on real Postgres, public screens smoke-tested (no console errors), authenticated screens not.
 
 ## Next session
-S3 leftovers first: resolve Needs owner 0, then run Step 0 (remote reset + 135 isolation + S2/S3 DB tests incl. 20 real parallel connections, prod migrate 0001-0004, add `test:db:remote` npm script, browser smoke at 360/1280px). Then S4 Buyer portal, payments, reconciliation. Open: demo seed data, payments import, code-split xlsx/qrcode, hi/mr copy review by a native speaker (all hi/mr text in lib/legal and templates is machine-written), inline English UI copy to i18n, accepted_on has no form field yet, credit/debit notes do not reduce balances.
+Resolve Needs owner 0 (authenticated smoke test at 360/1280px), then S4 Buyer portal, payments, reconciliation. Run DB suites with `npm run test:db` (PGlite + local) and `npm run test:db:remote` (real Postgres; 135 isolation + 20-connection numbering; DESTRUCTIVE only via reset-test, which the tests do not call). Open: demo seed data, payments import, code-split xlsx/qrcode, hi/mr copy review by a native speaker, inline English UI copy to i18n, accepted_on has no form field yet, credit/debit notes do not reduce balances, split test/prod projects after the hackathon.

@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "test": "vitest run --exclude tests/db/**",
     "test:db": "vitest run --config vitest.db.config.ts",
+    "test:db:remote": "node scripts/test-db-remote.mjs",
     "e2e": "playwright test",
     "lint": "eslint . && prettier --check .",
     "format": "prettier --write .",
