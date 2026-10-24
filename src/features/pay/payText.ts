@@ -7,6 +7,7 @@ export interface PayStrings {
   fullyPaid: string;
   upiTitle: string;
   upiButton: string;
+  payNow: string;
   upiQrAlt: string;
   online: string;
   onlineNotConfigured: string;
@@ -42,6 +43,7 @@ export const PAY_TEXT: Record<PayLang, PayStrings> = {
     fullyPaid: 'This invoice is fully paid. Thank you.',
     upiTitle: 'Pay by UPI',
     upiButton: 'Open UPI app',
+    payNow: 'Pay now',
     upiQrAlt: 'UPI QR code for the amount due',
     online: 'Pay online',
     onlineNotConfigured: 'Online payment not configured',
@@ -81,6 +83,7 @@ export const PAY_TEXT: Record<PayLang, PayStrings> = {
     fullyPaid: 'यह चालान पूरा चुकाया जा चुका है। धन्यवाद।',
     upiTitle: 'यूपीआई से भुगतान करें',
     upiButton: 'यूपीआई ऐप खोलें',
+    payNow: 'अभी भुगतान करें',
     upiQrAlt: 'देय राशि के लिए यूपीआई क्यूआर कोड',
     online: 'ऑनलाइन भुगतान करें',
     onlineNotConfigured: 'ऑनलाइन भुगतान चालू नहीं है',
@@ -120,6 +123,7 @@ export const PAY_TEXT: Record<PayLang, PayStrings> = {
     fullyPaid: 'हे बिल पूर्ण भरले आहे. धन्यवाद.',
     upiTitle: 'यूपीआयने पैसे भरा',
     upiButton: 'यूपीआय अॅप उघडा',
+    payNow: 'आता पैसे भरा',
     upiQrAlt: 'देय रकमेसाठी यूपीआय क्यूआर कोड',
     online: 'ऑनलाइन पैसे भरा',
     onlineNotConfigured: 'ऑनलाइन पेमेंट सुरू केलेले नाही',

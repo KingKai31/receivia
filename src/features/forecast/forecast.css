@@ -1,4 +1,4 @@
-/* Functional layout only; visual design comes in the design pass. */
+/* Forecast layout and chart motion. */
 .tnum {
   font-variant-numeric: tabular-nums;
 }
@@ -16,24 +16,70 @@
   margin: 0.5rem 0 0;
   padding: 0;
 }
-.tiles {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 0.5rem;
-}
-.tile {
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  padding: 0.5rem 0.75rem;
-}
-.tile-label {
-  font-size: 0.8125rem;
-  color: var(--color-text-muted);
-}
-.tile-value {
-  font-size: 1.125rem;
-  font-weight: 600;
-}
 .table-scroll {
   overflow-x: auto;
+}
+
+.fc-band {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.fc-line {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+}
+.fc-mark {
+  transform-box: view-box;
+}
+.js .fc-band {
+  opacity: 0;
+  transform: scaleY(0.6);
+  transition:
+    opacity 1.6s var(--ease) 0.6s,
+    transform 1.6s var(--ease) 0.6s;
+}
+.js .fc-line {
+  stroke-dashoffset: 1;
+  transition: stroke-dashoffset 2.2s var(--ease) 0.3s;
+}
+.js .fc-mark {
+  opacity: 0;
+  transform: scale(0);
+  transition:
+    opacity 0.8s var(--ease) 1.6s,
+    transform 0.8s var(--ease) 1.6s;
+}
+.js .in .fc-band,
+.js .in .fc-mark {
+  opacity: 1;
+  transform: none;
+}
+.js .in .fc-line {
+  stroke-dashoffset: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .js .fc-band,
+  .js .fc-mark {
+    opacity: 1;
+    transform: none;
+  }
+  .js .fc-line {
+    stroke-dashoffset: 0;
+  }
+}
+.fc-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 8px;
+}
+.fc-legend i {
+  display: inline-block;
+  width: 10px;
+  height: 3px;
+  border-radius: 2px;
+  margin-right: 6px;
+  vertical-align: middle;
 }

@@ -27,30 +27,32 @@ export function ResponsiveTable<T>({
   if (rows.length === 0 && emptyText) return <p className="ui-hint">{t(emptyText)}</p>;
   return (
     <>
-      <table className="ui-table hidden sm:table">
-        <caption className="sr-only">{t(caption)}</caption>
-        <thead>
-          <tr>
-            {columns.map((c) => (
-              <th key={c.key} scope="col">
-                {t(c.header)}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row) => (
-            <tr key={rowKey(row)}>
+      <div className="glass glass-solid ui-table-wrap hidden sm:block">
+        <table className="ui-table">
+          <caption className="sr-only">{t(caption)}</caption>
+          <thead>
+            <tr>
               {columns.map((c) => (
-                <td key={c.key}>{c.render(row)}</td>
+                <th key={c.key} scope="col">
+                  {t(c.header)}
+                </th>
               ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
-      <ul className="m-0 flex list-none flex-col gap-3 p-0 sm:hidden" aria-label={t(caption)}>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr key={rowKey(row)}>
+                {columns.map((c) => (
+                  <td key={c.key}>{c.render(row)}</td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <ul className="seq m-0 flex list-none flex-col gap-3 p-0 sm:hidden" aria-label={t(caption)}>
         {rows.map((row) => (
-          <li key={rowKey(row)} className="ui-card">
+          <li key={rowKey(row)} className="ui-row-card">
             <dl className="m-0 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
               {columns.map((c) => (
                 <div key={c.key} className="contents">

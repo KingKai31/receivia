@@ -205,3 +205,28 @@ export async function approveByToken(token: string, confirm: boolean) {
     approved?: number;
   };
 }
+
+export interface RunRow {
+  id: string;
+  status: string;
+  trigger: string;
+  started_at: string;
+  finished_at: string | null;
+  steps: { step: string; ok: boolean; attempts: number; error?: string }[] | null;
+}
+
+/** Most recent agent / owner-brief runs, newest first. */
+export async function loadRecentRuns(
+  orgId: string,
+  limit = 6,
+  client: SupabaseClient = supabase,
+): Promise<RunRow[]> {
+  const r = await client
+    .from('agent_runs')
+    .select('id, status, trigger, started_at, finished_at, steps')
+    .eq('org_id', orgId)
+    .order('started_at', { ascending: false })
+    .limit(limit);
+  if (r.error) throw fromPgError(r.error);
+  return (r.data ?? []) as RunRow[];
+}

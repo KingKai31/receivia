@@ -3,35 +3,310 @@
 @tailwind components;
 @tailwind utilities;
 
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto;
+}
 body {
   margin: 0;
-  background: var(--color-bg);
-  color: var(--color-text);
-  font-family: var(--font-sans);
+  background: var(--field-base);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+h1 {
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 4px 4px 14px;
+  line-height: 1.2;
+}
+h2 {
+  font-size: 17px;
+  font-weight: 600;
+  margin: 0 0 10px;
+}
+h3 {
+  font-size: 15px;
+  font-weight: 600;
+}
+a {
+  color: var(--link);
+}
+table,
+.num,
+.tnum,
+time,
+input[type='number'] {
+  font-variant-numeric: tabular-nums;
+}
+.num {
+  letter-spacing: -0.01em;
 }
 :focus-visible {
-  outline: 2px solid var(--focus-ring);
+  outline: 3px solid var(--focus-ring);
   outline-offset: 2px;
+  border-radius: 6px;
 }
 
-/* Plain navigation: colours from tokens only; 48px minimum targets. */
-.app-sidebar {
-  background: var(--color-surface);
-  border-right: 1px solid var(--color-border);
+/* Colour field, rendered once behind everything. */
+.field {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  background: var(--field);
+  pointer-events: none;
 }
-.app-bottom-nav {
-  background: var(--color-surface);
-  border-top: 1px solid var(--color-border);
+.blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  will-change: transform;
+}
+.blob-1 {
+  width: 380px;
+  height: 380px;
+  background: var(--blob-1);
+  top: -80px;
+  right: -120px;
+  opacity: 0.7;
+}
+.blob-2 {
+  width: 340px;
+  height: 340px;
+  background: var(--blob-2);
+  top: 30%;
+  left: -140px;
+  opacity: 0.55;
+}
+.blob-3 {
+  width: 420px;
+  height: 420px;
+  background: var(--blob-3);
+  bottom: -120px;
+  right: -80px;
+  opacity: 0.75;
+}
+
+/* App shell */
+.app-shell {
+  min-height: 100vh;
+}
+.app-main {
+  min-width: 0;
+  flex: 1;
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 18px 16px 112px;
+}
+.app-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.brand {
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: -0.01em;
+}
+.app-sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  margin: 0;
+  padding: 18px 14px;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  width: 232px;
+  flex: none;
 }
 .nav-link {
   min-height: var(--tap-target);
-  padding: 0 8px;
-  color: var(--color-text);
-  font-size: 0.875rem;
+  padding: 0 14px;
+  border-radius: var(--radius-pill);
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 500;
   text-decoration: none;
+  transition:
+    background 0.5s var(--ease),
+    transform 0.5s var(--ease);
+}
+.nav-link:hover {
+  background: var(--soft-blue);
 }
 .nav-link-active {
-  background: var(--color-primary);
-  color: var(--color-primary-text);
-  font-weight: 700;
+  background: linear-gradient(180deg, #4a4550, #35323b);
+  color: #fff;
+  font-weight: 600;
+}
+.app-bottom-nav {
+  position: fixed;
+  left: 10px;
+  right: 10px;
+  bottom: calc(10px + env(safe-area-inset-bottom));
+  z-index: 30;
+  padding: 4px;
+  border-radius: var(--radius-pill);
+  gap: 2px;
+}
+.app-bottom-nav .nav-link {
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 2px;
+  font-size: 12px;
+  min-width: 0;
+}
+.app-bottom-nav button.nav-link:not(.nav-link-active) {
+  border: 0;
+  background: transparent;
+  font-family: inherit;
+  cursor: pointer;
+}
+.more-sheet {
+  position: fixed;
+  left: 10px;
+  right: 10px;
+  bottom: calc(76px + env(safe-area-inset-bottom));
+  z-index: 31;
+  padding: 8px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+}
+.more-sheet .nav-link {
+  display: flex;
+  align-items: center;
+}
+
+/* Route enter: soft-focus settle */
+.page-enter {
+  animation: intro 1.4s var(--ease) both;
+}
+@keyframes intro {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.96);
+    filter: blur(10px);
+  }
+}
+.skip-link:focus {
+  background: #fff;
+  color: #000;
+}
+
+@media (min-width: 1024px) {
+  .app-main {
+    padding: 28px 32px 48px;
+  }
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    align-items: start;
+  }
+}
+
+/* Motion: states only apply when JS is running, so content is visible without it. */
+.js .rv {
+  opacity: 0;
+  transform: translateY(46px) scale(0.985);
+  filter: blur(10px);
+  clip-path: inset(12% 0 0 0 round 24px);
+  transition:
+    opacity 1.2s var(--ease),
+    transform 1.2s var(--ease),
+    filter 1.2s var(--ease),
+    clip-path 1.2s var(--ease);
+}
+.js .rv.in {
+  opacity: 1;
+  transform: none;
+  filter: none;
+  clip-path: inset(0 0 0 0 round 24px);
+}
+.words .w {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: bottom;
+  padding-bottom: 0.12em;
+}
+.words .w > span {
+  display: inline-block;
+}
+.js .words .w > span {
+  transform: translateY(105%);
+  transition: transform 1s var(--ease);
+}
+.js .words.in .w > span {
+  transform: none;
+}
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+}
+.seq > *,
+.ui-table tbody tr,
+.ui-list > * {
+  animation: fadeUp 1s var(--ease) both;
+}
+.seq > :nth-child(2),
+.ui-table tbody tr:nth-child(2),
+.ui-list > :nth-child(2) {
+  animation-delay: 110ms;
+}
+.seq > :nth-child(3),
+.ui-table tbody tr:nth-child(3),
+.ui-list > :nth-child(3) {
+  animation-delay: 220ms;
+}
+.seq > :nth-child(4),
+.ui-table tbody tr:nth-child(4),
+.ui-list > :nth-child(4) {
+  animation-delay: 330ms;
+}
+.seq > :nth-child(5),
+.ui-table tbody tr:nth-child(5),
+.ui-list > :nth-child(5) {
+  animation-delay: 440ms;
+}
+.seq > :nth-child(6),
+.ui-table tbody tr:nth-child(6),
+.ui-list > :nth-child(6) {
+  animation-delay: 550ms;
+}
+.seq > :nth-child(n + 7),
+.ui-table tbody tr:nth-child(n + 7),
+.ui-list > :nth-child(n + 7) {
+  animation-delay: 660ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+  .js .rv {
+    opacity: 1;
+    transform: none;
+    filter: none;
+    clip-path: none;
+  }
+  .js .words .w > span {
+    transform: none;
+  }
 }

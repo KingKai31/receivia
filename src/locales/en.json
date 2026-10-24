@@ -37,5 +37,19 @@
   "common.loading": "Loading",
   "common.close": "Close",
   "common.role": "Your role",
-  "common.noOrg": "No business found for this account."
+  "common.noOrg": "No business found for this account.",
+  "nav.more": "More",
+  "Theme": "Theme",
+  "theme.system": "System",
+  "theme.light": "Light",
+  "theme.dark": "Dark",
+  "pipe.Plan": "Plan",
+  "pipe.Draft": "Draft",
+  "pipe.Check": "Check",
+  "pipe.Approve": "Approve",
+  "pipe.Send": "Send",
+  "pipe.Log": "Log",
+  "pipe.state.done": "done",
+  "pipe.state.active": "in progress",
+  "pipe.state.pending": "waiting"
 }

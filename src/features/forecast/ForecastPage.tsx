@@ -4,7 +4,16 @@ import { tr } from '@/app/i18n';
 import { useTranslation } from 'react-i18next';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Card, Input, Loading, ResponsiveTable, Select } from '@/components/ui';
+import {
+  Card,
+  GlassCard,
+  HeroCard,
+  Input,
+  Loading,
+  ResponsiveTable,
+  Select,
+  Title,
+} from '@/components/ui';
 import {
   backtest,
   describeWhatIf,
@@ -181,7 +190,21 @@ export function ForecastPage() {
 
   return (
     <>
-      <h1>{t('Forecast')}</h1>
+      <h1 className="sr-only">{t('Forecast')}</h1>
+      <HeroCard
+        label={t('Forecast')}
+        headline={
+          sf && plan
+            ? t('You may be short {{money}} around {{date}}', {
+                money: formatINRShort(paise(Math.round(plan.gapPaise))),
+                date: prettyDate(sf.start),
+              })
+            : t('Cash stays above your {{money}} safety buffer for the next {{safeWeeks}} weeks.', {
+                money: money(forecast.bufferPaise),
+                safeWeeks: safeWeeks(forecast),
+              })
+        }
+      />
       <Freshness updatedAt={updatedAt} offline={offline} />
       <p className="tnum">
         {sf
@@ -214,8 +237,8 @@ export function ForecastPage() {
         />{' '}
         {t('Include disputed invoices (assumed 30 days later)')}
       </label>
-      <Card>
-        <h2>{t('Next 13 weeks')}</h2>
+      <Title>{t('Next 13 weeks')}</Title>
+      <GlassCard variant="solid" style={{ padding: 18, marginBottom: 16 }}>
         <BandChart forecast={forecast} shortfallWeek={sf?.week ?? null} />
         <ResponsiveTable
           caption={t('Next 13 weeks')}
@@ -269,7 +292,7 @@ export function ForecastPage() {
         <p>
           {forecast.runs} {t('simulated runs, always the same for the same data.')}
         </p>
-      </Card>
+      </GlassCard>
 
       <Card>
         <h2>

@@ -8,6 +8,8 @@ export default defineConfig({
   testDir: 'tests/e2e',
   use: {
     baseURL: live ?? base ?? 'http://localhost:5173',
+    // Count-ups and reveals are covered by unit tests; e2e asserts on settled text.
+    reducedMotion: 'reduce',
     ...(process.env.PW_CHANNEL ? { channel: process.env.PW_CHANNEL } : {}),
   },
   webServer:

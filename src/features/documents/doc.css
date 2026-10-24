@@ -107,3 +107,11 @@
     zoom: 1;
   }
 }
+
+/* Print pages stay plain: no colour field, white page, Figtree only for type. */
+body:has(.doc-page) {
+  background: #fff;
+}
+body:has(.doc-page) .field {
+  display: none;
+}

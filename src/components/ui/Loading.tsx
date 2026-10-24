@@ -1,11 +1,14 @@
 import { useTranslation } from 'react-i18next';
 
-/** The one loading state: announced to screen readers, never blank. */
+/** The one loading state: glass skeleton, announced to screen readers, never blank. */
 export function Loading() {
   const { t } = useTranslation();
   return (
-    <p role="status" aria-busy="true" className="ui-hint">
-      {t('Loading…')}
-    </p>
+    <div role="status" aria-busy="true">
+      <p className="sr-only">{t('Loading…')}</p>
+      <div className="skeleton" style={{ minHeight: 160 }} aria-hidden="true" />
+      <div className="skeleton" aria-hidden="true" />
+      <div className="skeleton" aria-hidden="true" />
+    </div>
   );
 }
