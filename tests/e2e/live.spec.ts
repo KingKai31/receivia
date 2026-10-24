@@ -9,7 +9,9 @@ const noOverflow = async (page: import('@playwright/test').Page) => {
   expect(w[0]).toBeLessThanOrEqual(w[1]!);
 };
 
-test('open live demo, Today and /forecast load at 360px with no console errors', async ({ page }) => {
+test('open live demo, Today and /forecast load at 360px with no console errors', async ({
+  page,
+}) => {
   const errors: string[] = [];
   page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
   page.on('pageerror', (e) => errors.push(String(e)));
