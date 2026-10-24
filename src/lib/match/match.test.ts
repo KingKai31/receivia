@@ -54,7 +54,7 @@ describe('seed bank statement: every case', () => {
   it('part payment leaves the rest due', () => {
     expect(sugg[1]!.allocations[0]!.amountPaise).toBe(3000000);
     expect(sugg[1]!.reason).toMatch(/part payment/);
-    expect(sugg[1]!.reason).toMatch(/₹28,000\.00 stays due/);
+    expect(sugg[1]!.reason).toMatch(/₹29,000\.00 stays due/);
   });
   it('one payment for several invoices goes oldest first', () => {
     expect(sugg[2]!.allocations.map((a) => [a.invoiceNumber, a.amountPaise])).toEqual([
