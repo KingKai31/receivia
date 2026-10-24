@@ -275,6 +275,8 @@ export async function seedOrg(admin: pg.Client, org: string): Promise<Refs> {
     'ims_status',
     'agent_actions',
     'agent_runs',
+    'customer_consents',
+    'app_errors',
     'pay_tokens',
   ]) {
     await one(t, refs, fx);

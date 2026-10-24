@@ -72,6 +72,16 @@ describe('consent records and client errors', () => {
   });
 });
 
+describe('organisation rename', () => {
+  it('the owner can rename the organisation (org_id is generated, so the immutability check skips orgs)', async () => {
+    const u = await newUser(db);
+    await actAs(db, u.userId);
+    await q(`update orgs set name = 'Renamed Co' where id = $1`, [u.orgId]);
+    const r = await q<{ name: string }>(`select name from orgs where id = $1`, [u.orgId]);
+    expect(r.rows[0]!.name).toBe('Renamed Co');
+  });
+});
+
 describe('delete_org', () => {
   it('refuses the demo organisation, even for its owner', async () => {
     const demo = '00000000-0000-4000-8000-00000000de60';

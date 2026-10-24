@@ -292,12 +292,14 @@ function forecastInput() {
     runs: 200,
   };
 }
+let cachedSim: ReturnType<typeof simulate> | null = null;
+const sim = () => (cachedSim ??= simulate(forecastInput()));
 add(
   'Forecast',
   'In every run each week closes at opening + money in - money out',
   '0 breaks in 200 runs × 13 weeks',
   () => {
-    const f = simulate(forecastInput());
+    const f = sim();
     let bad = 0;
     for (let r = 0; r < f.runs; r++)
       for (let w = 0; w < 13; w++)
@@ -314,7 +316,7 @@ add(
   'Each week opens where the previous week closed',
   '0 breaks in 200 runs × 12 joins',
   () => {
-    const f = simulate(forecastInput());
+    const f = sim();
     let bad = 0;
     for (let r = 0; r < f.runs; r++)
       for (let w = 0; w < 12; w++) if (f.paths.opening[r]![w + 1] !== f.paths.closing[r]![w]) bad++;
@@ -331,7 +333,7 @@ add(
   'The 10th, 50th and 90th percentile lines never cross',
   'ordered in all 13 weeks',
   () => {
-    const f = simulate(forecastInput());
+    const f = sim();
     const ok = f.weeks.every(
       (w) => w.closing.p10 <= w.closing.p50 && w.closing.p50 <= w.closing.p90,
     );
@@ -343,11 +345,28 @@ add(
   'Known bills leave the bank in the week they fall due',
   '₹3,000.00 out in week 2',
   () => {
-    const f = simulate(forecastInput());
+    const f = sim();
     return `${rupees(f.weeks[1]!.outflow.p50)} out in week 2`;
   },
 );
 
 export function runTrustCases(): TrustCase[] {
+  cachedSim = null;
   return cases.map((c) => c());
 }
+
+/** Same checks, one at a time with a pause between, so the page stays responsive while they run. */
+export async function runTrustCasesGradually(
+  onProgress: (done: TrustCase[]) => void,
+): Promise<TrustCase[]> {
+  cachedSim = null;
+  const done: TrustCase[] = [];
+  for (const c of cases) {
+    await new Promise((r) => setTimeout(r, 0));
+    done.push(c());
+    onProgress([...done]);
+  }
+  return done;
+}
+
+export const TRUST_CASE_COUNT = cases.length;

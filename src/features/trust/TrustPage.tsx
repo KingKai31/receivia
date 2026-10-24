@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { Badge, Button, Card, LanguagePicker, ResponsiveTable } from '@/components/ui';
-import { runTrustCases, type TrustCase } from './trustCases';
+import { runTrustCasesGradually, TRUST_CASE_COUNT, type TrustCase } from './trustCases';
 
 export type Status = 'Real' | 'Simulated' | 'Not connected' | 'Manual' | 'Partly real';
 export const REAL_VS_SIMULATED: { what: string; status: Status; note: string }[] = [
@@ -66,11 +66,11 @@ export function TrustPage() {
   const [results, setResults] = useState<TrustCase[] | null>(null);
   const run = () => {
     setResults(null);
-    // Let the page paint first: the forecast cases take a moment.
-    window.setTimeout(() => setResults(runTrustCases()), 30);
+    void runTrustCasesGradually(setResults);
   };
   useEffect(run, []);
   const passed = results?.filter((r) => r.pass).length ?? 0;
+  const finished = results !== null && results.length === TRUST_CASE_COUNT;
 
   return (
     <main id="main" className="mx-auto flex max-w-3xl flex-col gap-4 p-4">
@@ -83,7 +83,7 @@ export function TrustPage() {
       </p>
       <Card title="Checks running in your browser">
         <p role="status" aria-live="polite">
-          {results === null
+          {!finished
             ? t('Running…')
             : results.length === passed
               ? t('All {{n}} checks passed.', { n: results.length })

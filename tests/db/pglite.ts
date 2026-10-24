@@ -3,6 +3,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { PGlite } from '@electric-sql/pglite';
 import { pgcrypto } from '@electric-sql/pglite/contrib/pgcrypto';
+import { pg_trgm } from '@electric-sql/pglite/contrib/pg_trgm';
 
 const MIGRATIONS = join(process.cwd(), 'supabase', 'migrations');
 
@@ -11,7 +12,7 @@ const MIGRATIONS = join(process.cwd(), 'supabase', 'migrations');
  * Used when Docker/local Supabase is unavailable; the SQL under test is the production SQL.
  */
 export async function pgliteWithMigrations(): Promise<PGlite> {
-  const db = await PGlite.create({ extensions: { pgcrypto } });
+  const db = await PGlite.create({ extensions: { pgcrypto, pg_trgm } });
   await db.exec(`
     create role anon nologin; create role authenticated nologin; create role service_role nologin;
     create schema auth;

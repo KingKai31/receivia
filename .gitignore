@@ -11,5 +11,9 @@ test-results
 .DS_Store
 .claude/
 !.env.production
-dev.log
 scan-*.txt
+dev.log
+preview.log
+scale-result.json
+remote-test.log
+test-results/
