@@ -26,3 +26,12 @@ await build({
   },
 });
 console.log('built supabase/functions/_shared/agent.bundle.js');
+
+// Forecast engine alone, used by scripts/seed-demo.mjs to calibrate the demo's opening balance.
+await build({
+  input: path.join(root, 'src/lib/forecast/index.ts'),
+  platform: 'neutral',
+  resolve: { alias: { '@': path.join(root, 'src') } },
+  output: { file: path.join(root, 'supabase/seed/forecast.bundle.js'), format: 'esm', minify: false },
+});
+console.log('built supabase/seed/forecast.bundle.js');
