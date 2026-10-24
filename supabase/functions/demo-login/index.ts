@@ -34,7 +34,9 @@ Deno.serve(async (req) => {
   const admin = createClient(url, service, { auth: { persistSession: false } });
 
   // Idempotent setup: demo org, demo user, accountant membership.
-  await admin.from('orgs').upsert({ id: DEMO_ORG_ID, name: 'Shree Ganesh Corrugators' }, { onConflict: 'id' });
+  await admin
+    .from('orgs')
+    .upsert({ id: DEMO_ORG_ID, name: 'Shree Ganesh Corrugators' }, { onConflict: 'id' });
 
   const client = createClient(url, anon, { auth: { persistSession: false } });
   let signIn = await client.auth.signInWithPassword({ email, password });
