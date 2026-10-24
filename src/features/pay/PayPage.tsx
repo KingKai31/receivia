@@ -155,6 +155,7 @@ function PayBody({ token, v, onChanged }: { token: string; v: PayView; onChanged
           {t.dueOn}: {v.due_date}
         </p>
         {paid ? <p role="status">{t.fullyPaid}</p> : null}
+        {done ? <p role="status">{t.thanks}</p> : null}
         {v.pending_claim ? <p role="status">{t.claimPending}</p> : null}
         {v.open_dispute ? <p role="status">{t.disputeOpen}</p> : null}
         {paused && !v.pending_claim && !v.open_dispute ? <p role="status">{t.paused}</p> : null}

@@ -92,6 +92,17 @@ describe('ladder', () => {
     }
   });
 
+  it('an unresolved "already paid" claim pauses the ladder', () => {
+    for (const day of [-3, 0, 7, 15, 30, 45]) {
+      expect(nextAction(base({ today: addDays(DUE, day), hasPendingClaim: true })).action).toBe(
+        'paused',
+      );
+    }
+    expect(nextAction(base({ today: addDays(DUE, 7), hasPendingClaim: false })).action).toBe(
+      'send',
+    );
+  });
+
   it('an active promise pauses until the promised date, then resumes', () => {
     const promisedFor = addDays(DUE, 9);
     expect(

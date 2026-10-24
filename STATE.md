@@ -19,7 +19,9 @@
 - [x] S3 Collections and documents (code tasks 1-7 and Step 0 done; authenticated screens not smoke-tested, see Needs owner 0)
   - [x] 0 Remote DB check / migrate / public-screen smoke  - [x] 1 lib/legal  - [x] 2 Ladder  - [x] 3 Templates + send rules
   - [x] 4 Collect > Today  - [x] 5 /doc/letter/:id  - [x] 6 /doc/case/:customerId  - [x] 7 Tests
-- S4 Buyer portal payments reconciliation: not started
+- [x] S4 Buyer portal, payments, reconciliation (all tasks done; Razorpay keys missing, payment path verified with a signed mock webhook, see Needs owner 1)
+  - [x] 0 Deploy + signed-in smoke  - [x] 1 create-pay-link / get-pay-view  - [x] 2 /pay/:token  - [x] 3 Razorpay link + webhook (mock-tested)
+  - [x] 4 Inbox + credit notes reduce balance  - [x] 5 lib/match  - [x] 6 TDS map  - [x] 7 TDS certificates page  - [x] 8 seed bank statement  - [x] 9 Tests
 - S5 Forecast and prioritisation: not started
 - S6 Agent and automation: not started
 - S7 Quality and trust: not started
@@ -32,13 +34,15 @@
 | VITE_SUPABASE_URL | Supabase API URL | local .env / Render | missing |
 | VITE_SUPABASE_ANON_KEY | public anon key | local .env / Render | missing |
 | SUPABASE_SERVICE_ROLE_KEY | edge functions / tests | local .env / Supabase secrets (auto in edge runtime) | missing |
-| DEMO_EMAIL, DEMO_PASSWORD | shared demo user (used by demo-login) | local .env / Supabase secrets | missing |
+| DEMO_EMAIL, DEMO_PASSWORD | shared demo user (used by demo-login) | .env.local + Supabase secrets | set; demo user created on first demo-login |
 | ANTHROPIC_API_KEY | agent (edge only) | Supabase secrets | missing |
-| RAZORPAY_KEY_ID / _KEY_SECRET / _WEBHOOK_SECRET | payments test mode | Supabase secrets | missing |
+| RAZORPAY_KEY_ID / _KEY_SECRET | payments test mode (payment links) | Supabase secrets | missing: pay page says "Online payment not configured" |
+| RAZORPAY_WEBHOOK_SECRET | verifies the webhook signature | Supabase secrets + .env.local | a random TEST value is set (used by scripts/smoke-pay.mjs); replace with the real one from the Razorpay dashboard |
+| SUPABASE_ACCESS_TOKEN, SUPABASE_PROJECT_REF | Supabase CLI (scripts/sb.mjs) | .env.local | working |
 | RESEND_API_KEY | email | Supabase secrets | missing |
 | WHATSAPP_TOKEN, WHATSAPP_PHONE_ID | WhatsApp | Supabase secrets | missing |
 | N8N_WEBHOOK_URL, N8N_SHARED_SECRET | n8n | Supabase secrets | missing |
-| APP_BASE_URL | links in messages | Supabase secrets / Render | missing |
+| APP_BASE_URL | links in messages | Supabase secrets / Render | set to http://localhost:5173 (browser replaces the origin with its own); change when deployed |
 | TEST_DATABASE_URL, PROD_DATABASE_URL, ALLOW_SINGLE_DB | same Supabase session-pooler URL (single project); ALLOW_SINGLE_DB=true lets scripts/db-remote.mjs run with equal URLs | .env.local (git-ignored) | working |
 | DATABASE_URL (tests only, optional) | DB tests; defaults to local `postgresql://postgres:postgres@127.0.0.1:54322/postgres` | shell | default |
 | REQUIRE_DB (tests only) | `1` makes db tests fail instead of skip when DB is down | CI | set in CI |
@@ -51,7 +55,7 @@
 - n8n, Resend, WhatsApp, Anthropic: not set up
 
 ## Database
-Migrations: `0001_foundation.sql`, `0002_demo_org.sql`, `0003_invoicing.sql`, `0004_collections.sql`. Every table has id uuid pk, org_id, created_at, updated_at (audit_log included; orgs.org_id = id generated). RLS enabled on all. Child tables use composite FKs `(parent_id, org_id)` so a row can never reference another org's parent. `org_id` is immutable (trigger).
+Migrations: `0001_foundation.sql`, `0002_demo_org.sql`, `0003_invoicing.sql`, `0004_collections.sql`, `0005_payments.sql`, `0006_inbox.sql` (all applied to the one Supabase project). Every table has id uuid pk, org_id, created_at, updated_at (audit_log included; orgs.org_id = id generated). RLS enabled on all. Child tables use composite FKs `(parent_id, org_id)` so a row can never reference another org's parent. `org_id` is immutable (trigger).
 
 Standard RLS (member read; owner/accountant write): customers, invoices, invoice_lines, notes, payments, allocations, bank_txns, disputes, promises, reminders, messages, expenses, tds_entries, ims_status, agent_actions.
 
@@ -85,18 +89,25 @@ S2 (0003): `invoices.number` and `notes.number` are nullable (drafts unnumbered;
 
 S3 (0004): reminders.stage adds `next_steps`; `invoices.accepted_on` (MSME acceptance date, null = invoice date assumed) and `approved_stages text[]` (key-tier owner approvals); `business_profile.ladder_config jsonb` (null = defaults) and `demand_letter_days` (1-60, default 7); `customers.snoozed_until`; trigger `app.sync_disputed` keeps `invoices.disputed` = has open dispute; `public.record_send(org, invoice, stage, channel, body)` (security invoker, idempotent per invoice/stage/channel, inserts reminder + message atomically, rejects a 2nd outbound message per customer per IST day with 23514). Audit rows come from the existing triggers.
 
+S4 (0005, 0006): `invoices.credited_paise` (issued credit notes), `tds_paise` (tds_entries linked to the invoice), `balance_paise` (generated, stored: greatest(total - paid - credited - tds, 0); use it everywhere), `razorpay_link_id/url`. `app.refresh_invoice` derives paid/credited/tds/status in one place; triggers on allocations, notes and tds_entries call it (credit note issue/void and TDS confirm now move the balance and status). New `payment_claims` (buyer "I have paid": pending/accepted/rejected, owner_reply, standard RLS), `disputes.owner_reply`, `promises.note`, `tds_entries` sections add GST_TDS/GST_TCS plus `claimed_in_26as`, `claimed_at`, `taxable_paise`, `rate_limits` (RLS on, no policies: service role only). Functions (all service-role only unless noted): `rate_limit_hit(key, max, seconds)`, `pay_view(token)` (public fields of that token's invoice + lens facts + owner replies), `pay_action(token, kind, payload)` (paid|dispute|promise, validated, bound to the token's invoice), `record_gateway_payment(invoice, amount, gateway_payment_id, date)` (idempotent on payment id, allocates min(amount, balance)). Authenticated (security invoker, RLS applies): `confirm_bank_match(org, txn, customer, allocations, tds)` (payment + allocations + optional TDS entry + bank line matched, idempotent per txn), `record_manual_payment`, `resolve_claim(org, claim, accept, reply, amount)`, `resolve_dispute(org, dispute, credit_note|paid|rejected, reply)`.
+
 Demo org: id `00000000-0000-4000-8000-00000000de60` ("Demo Traders", state 27, regular), created in migration 0002.
 
 ## Edge functions and APIs
 | Name | Route | Auth | Purpose |
 |---|---|---|---|
-| demo-login | POST /functions/v1/demo-login | none (verify_jwt=false) | Ensures demo org/user/accountant membership, signs in with DEMO_EMAIL/DEMO_PASSWORD, returns {access_token, refresh_token}. Not yet deployed or run against real Supabase. |
+| demo-login | POST /functions/v1/demo-login | none (verify_jwt=false) | Ensures demo org/user/accountant membership, signs in with DEMO_EMAIL/DEMO_PASSWORD, returns {access_token, refresh_token}. Deployed, working. |
+| create-pay-link | POST /functions/v1/create-pay-link {invoice_id} | user JWT (owner/accountant via RLS) | New pay token (sha256 stored, 60 days) + Razorpay Payment Link (reference_id = invoice id) when keys exist; returns {url, razorpay: ok|not_configured|failed}. |
+| get-pay-view | POST /functions/v1/get-pay-view {token} | none (verify_jwt=false), 60 req/min/IP | Public fields of that token's invoice only. |
+| pay-action | POST /functions/v1/pay-action {token, kind, payload} | none, 10 req/10 min/IP | Buyer claim / dispute / promise; lands in the Inbox and pauses the ladder. |
+| razorpay-webhook | POST https://nxohumijpbwfxomvkckk.supabase.co/functions/v1/razorpay-webhook | none (verify_jwt=false), HMAC-SHA256 signature | payment_link.paid / payment.captured: records payment + allocation idempotently. |
+
+All deployed with `node scripts/sb.mjs functions deploy <name> --project-ref '$REF' --use-api [--no-verify-jwt]` (`--use-api` because the Docker bundler hangs here). Shared pure code in supabase/functions/_shared/.
 
 ## Frontend routes
 | Path | Purpose | Access |
 |---|---|---|
 | /sign-in | email OTP + Open live demo | public |
-| /pay/:token | buyer pay page (stub, S4) | public |
 | /trust | trust page (stub, S7) | public |
 | / | Today (stub) | auth |
 | /invoices, /invoices/new, /invoices/:id, /invoices/:id/edit, /invoices/:id/notes/new | list+filters, form, detail+timeline, draft edit, credit/debit note | auth |
@@ -105,11 +116,14 @@ Demo org: id `00000000-0000-4000-8000-00000000de60` ("Demo Traders", state 27, r
 | /doc/invoice/:id, /doc/note/:id | print-ready A4 documents (outside the app layout) | auth |
 | /collect | Collect > Today: due actions grouped by customer, WhatsApp/Email/SMS/Mark sent/Snooze/Promise | auth |
 | /doc/letter/:id (invoice id), /doc/case/:customerId | Payment Demand Letter (customer's overdue invoices), Samadhaan case pack | auth |
-| /payments, /forecast | stubs | auth |
+| /inbox | open disputes, "already paid" claims, promises; accept (credit note / mark paid) or reject with reply | auth |
+| /payments, /payments/tds | bank CSV import + suggested matches with reasons + confirm; TDS certificates per customer per quarter + 26AS/AIS CSV | auth |
+| /pay/:token | public buyer page, phone first, customer language (en/hi/mr), UPI QR, Razorpay link, claim/dispute/promise, lens lines | public |
+| /forecast | stub | auth |
 | /settings | org name, role, sign out, business profile form (owner edits) | auth |
 
 ## Data
-- supabase/seed/seed.sql is a no-op placeholder; demo org comes from migration 0002. Demo data (customers, invoices) arrives in S2.
+- supabase/seed/seed.sql is a no-op placeholder; demo org comes from migration 0002. Demo customers + 8 open invoices: `node scripts/seed-demo.mjs` (idempotent, data in supabase/seed/demo-data.json, already run). `node scripts/reset-demo.mjs` clears payments/bank/TDS/claims/etc. and re-seeds (audit_log stays). supabase/seed/bank-statement.csv matches those invoices: exact, part, multi-invoice, 194C short, overpayment, unknown, GST TDS 2% (government), 194Q 0.1%, plus a debit.
 - Demo login: edge function `demo-login`; demo user role is accountant. Demo date: not set (`setDemoDate()` in src/lib/dates).
 
 ## Where to find things
@@ -130,7 +144,12 @@ Demo org: id `00000000-0000-4000-8000-00000000de60` ("Demo Traders", state 27, r
 | Legal rules (itc180, MSME eligibility/due/43B(h)/Form I/interest, lens), config | src/lib/legal/ (config.ts holds RBI bank rate) |
 | Ladder, templates, send rules, Today builder, service, page, settings | src/features/collect/ (ladder.ts, templates.ts, today.ts, collectService.ts, CollectTodayPage.tsx, LadderSettings.tsx) |
 | Letter + case pack models/components, pages | src/features/documents/collectionDocs.tsx, CollectionDocPages.tsx |
-| Remote DB runner (reset-test, migrate-prod, status) | scripts/db-remote.mjs |
+| Remote DB runner (ping, reset-test, migrate-prod, status) | scripts/db-remote.mjs (reset-test is DESTRUCTIVE: never run it now that the demo seed exists) |
+| Supabase CLI wrapper, demo seed/reset, deployed-pay smoke | scripts/sb.mjs, scripts/seed-demo.mjs, scripts/reset-demo.mjs, scripts/smoke-pay.mjs |
+| Bank CSV, matching, TDS rules, TDS ledger/26AS | src/lib/match/ (bankCsv.ts, match.ts, tds.ts, tdsLedger.ts) |
+| Pay page, Inbox, Payments + bank, TDS page | src/features/pay/, src/features/inbox/, src/features/payments/ |
+| Edge functions + shared | supabase/functions/{create-pay-link,get-pay-view,pay-action,razorpay-webhook,_shared} |
+| DB test harness (PGlite locally, real Postgres with REMOTE_DB=1) | tests/db/harness.ts |
 | Section 34 warning | src/lib/legal/section34.ts |
 | Business profile / customers / invoices / notes services | src/features/{settings,customers,invoices,notes}/*Service.ts |
 | Invoice maths from form, display status | src/features/invoices/invoiceModel.ts |
@@ -140,6 +159,8 @@ Demo org: id `00000000-0000-4000-8000-00000000de60` ("Demo Traders", state 27, r
 | CI / deploy | .github/workflows/ci.yml, render.yaml |
 
 ## Tests
+- S4 (2026-10-24): `npm test` 205 unit tests pass (incl. match 34: seed bank statement table for every line with kind, confidence, reason; Razorpay HMAC/event parsing 5; TDS ledger/26AS 5; ladder pause on claims). `npm run test:db:remote` (real Postgres, ~230 s): 174 pass = 135 isolation (now incl. payment_claims) + 20-connection numbering + S2 invoicing 9 + S3 collections 6 + S4 payments 17 (token cannot read another invoice, claim/dispute/promise actions, rate limit, gateway payment idempotency, credit notes reduce balance, bank match + TDS settle, inbox resolution). `node scripts/smoke-pay.mjs` (deployed functions, 21 checks incl. signed mock webhook + replay + 429) all pass. After the runs the project holds 0 test users and only the demo org (seeded with 8 invoices).
+- Signed-in smoke (demo login, 360px and 1280px, no horizontal overflow, no console errors beyond Vite's "Outdated Optimize Dep" cold-start noise): /, /invoices, /customers, /customers/new + create, /invoices/new + issue (INV/26-27/0001 created through the UI, then deleted), /import, /collect, /settings, /doc/invoice/:id, /doc/letter/:id, /doc/case/:id, /inbox, /payments (imported the seed CSV, confirmed an exact and a 194Q line, invoices went paid), /payments/tds, /pay/:token (promise from the page landed in the Inbox and removed the invoice from Collect). Test records deleted; demo data reset with scripts/reset-demo.mjs.
 - Remote (Tokyo, session pooler): `npm run test:db:remote` = 135 isolation tests (~157s) + tests/db/remote-numbering.test.ts (20 real connections via transaction pooler 6543, session pooler caps at 15 clients) all pass. PGlite tests (invoicing, collections) run in-process only. Final state: reset once more, 0 users, only the demo org, migrations 0001-0004 recorded in receivia_meta.migrations.
 - S3: `npm test` now 169 unit tests (legal 18+, ladder/templates 16, today 6, letter/case 6). `npm run test:db`: 15 pass on PGlite (incl. tests/db/collections.test.ts: record_send, daily limit, dispute flag); 135 isolation tests still skipped, NOT run on any real Postgres. Fixed a flaky S2 audit test (ordered by random uuid; now by created_at).
 - `npm test`: 125 unit/property tests (S1 libs + S2 service layer, document fields for all 3 invoice types, import validation incl. bad GSTIN rows, 40-invoice CSV commit, Tally XML, Section 34, forms) — all pass.
@@ -178,18 +199,25 @@ Demo org: id `00000000-0000-4000-8000-00000000de60` ("Demo Traders", state 27, r
 - 2026-10-24 (S3): Letter lists all of the customer's overdue unpaid invoices (route id is one invoice). CLAUDE.md requires the sentence "not a legal notice from a lawyer"; the no-"legal notice" test strips that mandated sentence first.
 - 2026-10-24 (S3): scripts/db-remote.mjs uses the sslmode in the connection string (no cert verification override); refuses to run if TEST == PROD.
 - 2026-10-24 (S3): One Supabase project (ref nxohumijpbwfxomvkckk, region ap-northeast-1 Tokyo, accepted for the hackathon; CLAUDE.md updated from ap-south-1) is both test and live DB. scripts/db-remote.mjs runs with equal URLs only when ALLOW_SINGLE_DB=true is set in .env.local. Plan: split into separate test and prod projects (and consider Mumbai) after the hackathon.
+- 2026-10-24 (S4): Demo user stays an accountant (S1 decision) although the S4 brief said owner: demo-login re-asserts the membership on every login and an owner demo could edit the business profile. Ladder days are editable only by the owner; the demo shows them read-only.
+- 2026-10-24 (S4): Balance = `invoices.balance_paise` (generated). Credit notes (issued, credit type) and TDS entries linked to an invoice reduce it exactly like payments; status becomes paid when paid + credited + tds >= total. Debit notes still do not change the balance.
+- 2026-10-24 (S4): The pay token is the only credential on /pay/:token. Public reads/writes go through service-role-only SQL functions (`pay_view`, `pay_action`) that are bound to that token's invoice and return no org id; edge functions only rate-limit (per IP, table `rate_limits`) and call them.
+- 2026-10-24 (S4): A buyer "I have already paid" claim, an open dispute or an open promise pauses the ladder for that invoice; a rejected/resolved dispute, a rejected claim or a broken/cancelled promise resumes it; payment closes it. Promise date must be within 120 days; paid date cannot be in the future.
+- 2026-10-24 (S4): Accepting a claim records a manual payment for the whole balance dated the claimed date (owner can only accept or reject; partial acceptance goes through Payments). Accepting a dispute: "credit note" resolves it and opens the credit note form, "mark paid" records payment of the balance. Editing an issued invoice is not supported (drafts only), so "edit invoice" is a link to the invoice.
+- 2026-10-24 (S4): Razorpay: one Payment Link per invoice for the balance at creation, reference_id = invoice id, stored on the invoice; webhook is idempotent on the Razorpay payment id (unique per org) and allocates only up to the balance (rest stays unallocated). Without keys the pay page says "Online payment not configured". A random test webhook secret is set so the signed mock in scripts/smoke-pay.mjs exercises the deployed function end to end.
+- 2026-10-24 (S4): Bank matching never auto-applies. Evidence: invoice number named (any spacing/separator, boundary-checked), customer name (M/s, Pvt, Ltd etc. ignored, 3+ word names match on the first two words), amount. Customer fallback applies oldest first; an amount equal to one invoice beats oldest-first; a short payment is explained as TDS only if shortfall = rate x taxable value within Rs 1 for that buyer type; deposits cannot claim the same balance twice in one run. Dedupe key = date + amount + reference (+ nth identical line in the file), hashed with SHA-256, unique per org.
+- 2026-10-24 (S4): TDS rates (config in src/lib/match/tds.ts, "verify rates"): GST TDS 2% (government), 194C 2% company/firm/government and 1% individual/proprietor, 194J 10% and 2%, 194H 2%, 194Q 0.1%, GST TCS 0.5%. 194Q threshold (Rs 50 lakh) and GST TDS threshold are not modelled. Confirmed TDS settles the invoice (tds_paise) with certificate_status pending.
+- 2026-10-24 (S4): Pay page strings exist in en/hi/mr inline (payText.ts); hi/mr are machine-written, review needed. Pay page uses the customer's language.
+- 2026-10-24 (S4): DB test harness runs the S2/S3/S4 service suites on PGlite locally and on the real project with REMOTE_DB=1 (own user/org per run, deleted after; only audit_log rows remain). The session pooler caps clients at 15, so the 20-connection numbering test uses the transaction pooler (port 6543).
+- 2026-10-24 (S4): Supabase functions are deployed with `--use-api` (the default Docker bundler hangs on this machine). `.claude/` is git-ignored.
 - 2026-10-24 (S2): Business state for unregistered businesses is picked manually (no GSTIN to derive it from); with a GSTIN it is always derived.
 
 ## Needs owner
-0. (S3) Authenticated screens (all S1-S3 pages behind sign-in) were NOT browser-smoke-tested: email OTP cannot be read here and demo-login is not deployed. Please sign in once and click through /, /invoices, /customers, /import, /collect, /settings, /doc/*, or deploy demo-login (Needs owner 5) so the next session can do it at 360/1280px. Database is migrated (0001-0004) and clean; do not run `reset-test` once real data exists (it drops everything).
-1. Docker Desktop (S2: `docker ps` returned no table within 20 s, so real Supabase run pending; skipped per instructions): it is installed but its engine did not start (it was applying an update / may be waiting on a prompt). Open Docker Desktop, accept any prompt, wait until it says running. Then run `npm run db:start`, `npm run db:reset`, `npm run test:db` and confirm the 135 isolation tests pass (and that tests/db/invoicing.test.ts still passes against real Postgres) after migration 0003; tell the next session if any fail.
-2. Create the Supabase project in region ap-south-1 (Mumbai). Then: `npx supabase login`, `npx supabase link --project-ref <ref>`, `npx supabase db push`.
-3. In Supabase Auth, edit the "Magic link" / "Confirm signup" email template to show the code: include `{{ .Token }}` (6 digits). Set the email OTP length to 6.
-4. Put `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in a local `.env` (copy .env.example) and in Render.
-5. Set Supabase function secrets: `npx supabase secrets set DEMO_EMAIL=... DEMO_PASSWORD=...` (any address/password you choose for the shared demo user), then `npx supabase functions deploy demo-login`.
-6. Create a GitHub repo and push `main` and `feat/foundation`; CI runs on push/PR. Merge feat/foundation into main when happy.
-7. Render: New Blueprint from the repo (render.yaml), set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`.
-8. For later sessions (not needed to deploy S1): Anthropic key, Razorpay test keys, Resend key, WhatsApp Cloud API token and phone id, n8n instance and shared secret.
+1. Razorpay test mode (S4 uses a signed mock payload until then): in the Razorpay test dashboard create an API key pair and a webhook. Webhook URL: `https://nxohumijpbwfxomvkckk.supabase.co/functions/v1/razorpay-webhook`, events `payment_link.paid` and `payment.captured`, choose a webhook secret. Then set `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET` in .env.local and run `node scripts/sb.mjs secrets set --env-file <file with those 3 lines> --project-ref '$REF'` (or paste them into Supabase > Edge Functions > Secrets). Until the keys exist the pay page shows "Online payment not configured"; everything else works. `scripts/smoke-pay.mjs` needs RAZORPAY_WEBHOOK_SECRET in .env.local to equal the function secret.
+2. In Supabase Auth, edit the "Magic link" / "Confirm signup" email template to show the code: include `{{ .Token }}` (6 digits). Set the email OTP length to 6. (Real sign-in by email OTP is still untested; the demo login works.)
+3. Create a GitHub repo and push `main` and the feature branches; CI runs on push/PR. Render: New Blueprint from the repo (render.yaml), set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`, then set `APP_BASE_URL` (Supabase secret) to the Render URL.
+4. Later sessions: Anthropic key, Resend key, WhatsApp Cloud API token and phone id, n8n instance and shared secret.
+5. Decide after the hackathon: split into separate test and prod Supabase projects (the DB test suites currently create and delete their own orgs/users in the live project) and consider Mumbai.
 
 ## Session log
 - 2026-10-23, S1 Foundation: scaffold, money/gst/gstin/dates libs, migrations 0001-0002, auth + demo-login, plain app shell with shared UI, render.yaml + CI, isolation tests. Commits 1467292..HEAD on feat/foundation.
@@ -197,5 +225,7 @@ Demo org: id `00000000-0000-4000-8000-00000000de60` ("Demo Traders", state 27, r
 
 - 2026-10-24, S3 Collections and documents: feat/invoicing merged into main; branch feat/collections. lib/legal, ladder, templates, Today page, letter, case pack, migration 0004, settings editor, tests. Step 0 done 2026-10-24 on the single Supabase project: all migrations applied, 135 isolation + 20-connection numbering pass on real Postgres, public screens smoke-tested (no console errors), authenticated screens not.
 
+- 2026-10-24, S4 Buyer portal, payments, reconciliation: feat/collections merged into main; branch feat/payments. Migrations 0005-0006, 4 edge functions deployed (+ demo-login), pay page, Inbox, bank import + matching + TDS, TDS certificates page, demo seed, remote DB harness. Razorpay keys missing (mock-signed webhook verified).
+
 ## Next session
-Resolve Needs owner 0 (authenticated smoke test at 360/1280px), then S4 Buyer portal, payments, reconciliation. Run DB suites with `npm run test:db` (PGlite + local) and `npm run test:db:remote` (real Postgres; 135 isolation + 20-connection numbering; DESTRUCTIVE only via reset-test, which the tests do not call). Open: demo seed data, payments import, code-split xlsx/qrcode, hi/mr copy review by a native speaker, inline English UI copy to i18n, accepted_on has no form field yet, credit/debit notes do not reduce balances, split test/prod projects after the hackathon.
+S5 Forecast and prioritisation. Before it: nothing blocks. Open items: Razorpay keys (Needs owner 1), authenticated email OTP sign-in untested, hi/mr copy (pay page, templates, legal lines) needs a native-speaker review, inline English UI copy to move to i18n in the design pass, `accepted_on` has no form field yet, mobile bottom nav has 8 items (design pass), customer Today page still a stub (S5/S6), real-data caution: never run `db-remote.mjs reset-test` (drops everything).

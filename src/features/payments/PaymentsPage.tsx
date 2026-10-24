@@ -67,7 +67,8 @@ function SuggestionCard({
           ))}
           {s.tds ? (
             <li>
-              TDS {s.tds.section} ({s.tds.ratePct}%): {formatINR(s.tds.amountPaise)}
+              TDS {s.tds.section.replace('_', ' ')} ({s.tds.ratePct}%):{' '}
+              {formatINR(s.tds.amountPaise)}
             </li>
           ) : null}
           {s.creditBalancePaise > 0 ? (

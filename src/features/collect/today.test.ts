@@ -94,6 +94,10 @@ describe('buildToday', () => {
       ),
     ).toHaveLength(0);
   });
+  it('a pending claim removes the invoice from today', () => {
+    expect(buildToday(input('2026-06-08', { pendingClaims: ['i1'] }))).toHaveLength(0);
+    expect(buildToday(input('2026-06-08', { pendingClaims: ['other'] }))).toHaveLength(1);
+  });
   it('key tier at final needs approval and has no message until approved', () => {
     const sent = (['pre_due', 'due_today', 'overdue_firm'] as const).map((stage) => ({
       invoice_id: 'i1',

@@ -1,6 +1,6 @@
 import type { PGlite } from '@electric-sql/pglite';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { actAs, pgliteUser, pgliteWithMigrations } from './pglite';
+import { actAs, newUser, openDb } from './harness';
 
 let db: PGlite;
 let orgId: string;
@@ -42,8 +42,8 @@ async function row(inv: string) {
 }
 
 beforeAll(async () => {
-  db = await pgliteWithMigrations();
-  const u = await pgliteUser(db);
+  db = await openDb();
+  const u = await newUser(db);
   orgId = u.orgId;
   await actAs(db, u.userId);
   customerId = (
