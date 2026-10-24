@@ -5,3 +5,5 @@ supabase/.temp
 playwright-report
 test-results
 *.md
+supabase/functions/_shared/agent.bundle.js
+automation/render/node_modules

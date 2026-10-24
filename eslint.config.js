@@ -8,6 +8,8 @@ export default tseslint.config(
     ignores: [
       'dist',
       'scripts',
+      'automation/render',
+      'supabase/functions/_shared/agent.bundle.js',
       'node_modules',
       'supabase/.temp',
       'playwright-report',
