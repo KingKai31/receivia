@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Button, Input, Select, useToast } from '@/components/ui';
+import { Button, Input, Loading, Select, useToast } from '@/components/ui';
 import { useOrg } from '@/features/auth/useOrg';
 import { getInvoice } from '@/features/invoices/invoiceService';
 import { todayIST } from '@/lib/dates';
@@ -47,7 +47,7 @@ export function NoteFormPage() {
     onError: (e) => toast.show(errorMessage(e)),
   });
 
-  if (inv.isLoading) return <p>{t('Loading…')}</p>;
+  if (inv.isLoading) return <Loading />;
   if (inv.error) return <p role="alert">{errorMessage(inv.error)}</p>;
   if (!inv.data) return null;
   const warning = type === 'credit' ? section34Warning(inv.data.invoice.issue_date, date) : null;

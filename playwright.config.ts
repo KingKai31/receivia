@@ -10,7 +10,8 @@ export default defineConfig({
     baseURL: live ?? base ?? 'http://localhost:5173',
     ...(process.env.PW_CHANNEL ? { channel: process.env.PW_CHANNEL } : {}),
   },
-  webServer: live || base
-    ? undefined
-    : { command: 'npm run dev', url: 'http://localhost:5173', reuseExistingServer: true },
+  webServer:
+    live || base
+      ? undefined
+      : { command: 'npm run dev', url: 'http://localhost:5173', reuseExistingServer: true },
 });

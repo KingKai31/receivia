@@ -1,6 +1,9 @@
 import { useTranslation } from 'react-i18next';
 import { NavLink, Outlet } from 'react-router-dom';
+import { useEffect } from 'react';
 import { LanguagePicker } from '@/components/ui';
+import { useOrg } from '@/features/auth/useOrg';
+import { setErrorContext } from '@/lib/errorLog';
 
 export const NAV_ITEMS = [
   { to: '/', key: 'today', end: true },
@@ -19,6 +22,9 @@ const linkClass = ({ isActive }: { isActive: boolean }) =>
 
 export function Layout() {
   const { t } = useTranslation();
+  const org = useOrg();
+  const orgId = org.data?.orgId ?? null;
+  useEffect(() => setErrorContext(orgId), [orgId]);
   return (
     <div className="min-h-screen md:flex">
       <a

@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { Button, Card, useToast } from '@/components/ui';
+import { Button, Card, Loading, useToast } from '@/components/ui';
 import { useOrg } from '@/features/auth/useOrg';
 import { mailtoUrl, whatsappUrl } from '@/features/collect/templates';
 import {
@@ -150,7 +150,7 @@ export function TdsPage() {
         />
         {report ? <p role="status">{report}</p> : null}
       </Card>
-      {q.isLoading ? <p>{t('Loading…')}</p> : null}
+      {q.isLoading ? <Loading /> : null}
       {q.error ? <p role="alert">{errorMessage(q.error)}</p> : null}
       {q.data && summary.length === 0 ? (
         <p>{t('No TDS recorded yet. It appears here when you confirm a short payment as TDS.')}</p>

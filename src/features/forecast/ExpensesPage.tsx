@@ -2,7 +2,7 @@ import { tr } from '@/app/i18n';
 import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Button, Card, Input, Pager, Select, useToast } from '@/components/ui';
+import { Button, Card, Input, Loading, Pager, Select, useToast } from '@/components/ui';
 import { useOrg } from '@/features/auth/useOrg';
 import { formatINR, paise } from '@/lib/money';
 import { can } from '@/lib/permissions';
@@ -161,7 +161,7 @@ export function ExpensesPage() {
           />
         </Card>
       ) : null}
-      {q.isLoading ? <p>{t('Loading…')}</p> : null}
+      {q.isLoading ? <Loading /> : null}
       {q.error ? <p role="alert">{errorMessage(q.error)}</p> : null}
       {q.data?.rows.length === 0 ? (
         <p>

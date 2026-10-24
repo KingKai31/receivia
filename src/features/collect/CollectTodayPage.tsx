@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { Button, Card, Input, Select, useToast } from '@/components/ui';
+import { Button, Card, Input, Loading, Select, useToast } from '@/components/ui';
 import { useOrg } from '@/features/auth/useOrg';
 import { addDays, todayIST } from '@/lib/dates';
 import { formatINR, paise } from '@/lib/money';
@@ -281,7 +281,7 @@ export function CollectTodayPage() {
         )}
       </p>
       <AgentPanel />
-      {q.isLoading || org.isLoading ? <p>{t('Loading…')}</p> : null}
+      {q.isLoading || org.isLoading ? <Loading /> : null}
       {q.error ? <p role="alert">{errorMessage(q.error)}</p> : null}
       {q.data?.truncated ? (
         <p role="status">{t('Showing the first 1000 live invoices only.')}</p>

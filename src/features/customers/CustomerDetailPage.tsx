@@ -2,9 +2,10 @@ import { tr } from '@/app/i18n';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router-dom';
-import { Card, ResponsiveTable } from '@/components/ui';
+import { Card, Loading, ResponsiveTable } from '@/components/ui';
 import { formatINR, paise } from '@/lib/money';
 import { errorMessage } from '@/lib/service/errors';
+import { ConsentCard } from '@/features/privacy/ConsentCard';
 import { customerSummary, getCustomer, type CustomerPayment } from './customerService';
 
 export function CustomerDetailPage() {
@@ -15,7 +16,7 @@ export function CustomerDetailPage() {
     queryKey: ['customer-summary', id],
     queryFn: () => customerSummary(id!),
   });
-  if (customer.isLoading) return <p>{t('Loading…')}</p>;
+  if (customer.isLoading) return <Loading />;
   if (customer.error) return <p role="alert">{errorMessage(customer.error)}</p>;
   const c = customer.data;
   if (!c) return null;
@@ -44,6 +45,7 @@ export function CustomerDetailPage() {
           <dd>{c.opt_in_whatsapp ? t('Agreed') : t('Not agreed')}</dd>
         </dl>
       </Card>
+      <ConsentCard customerId={c.id} />
       <Card>
         <h2>{t('Total owed')}</h2>
         {summary.data ? (
@@ -52,7 +54,7 @@ export function CustomerDetailPage() {
             {t('{{openInvoices}} open invoice(s)', { openInvoices: summary.data.openInvoices })}
           </p>
         ) : (
-          <p>{t('Loading…')}</p>
+          <Loading />
         )}
       </Card>
       <h2>{t('Payment record')}</h2>

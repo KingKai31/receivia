@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import QRCode from 'qrcode';
 import { Link, useParams } from 'react-router-dom';
-import { Button } from '@/components/ui';
+import { Button, Loading } from '@/components/ui';
 import { useOrg } from '@/features/auth/useOrg';
 import { getCustomer } from '@/features/customers/customerService';
 import { getInvoice } from '@/features/invoices/invoiceService';
@@ -28,7 +28,6 @@ function Toolbar({ back }: { back: string }) {
 }
 
 export function InvoiceDocPage() {
-  const { t } = useTranslation();
   const { id } = useParams();
   const org = useOrg();
   const orgId = org.data?.orgId;
@@ -48,7 +47,7 @@ export function InvoiceDocPage() {
       return { model, qr };
     },
   });
-  if (q.isLoading || org.isLoading) return <p>{t('Loading…')}</p>;
+  if (q.isLoading || org.isLoading) return <Loading />;
   if (q.error) return <p role="alert">{errorMessage(q.error)}</p>;
   if (!q.data) return null;
   return (
@@ -60,7 +59,6 @@ export function InvoiceDocPage() {
 }
 
 export function NoteDocPage() {
-  const { t } = useTranslation();
   const { id } = useParams();
   const org = useOrg();
   const orgId = org.data?.orgId;
@@ -77,7 +75,7 @@ export function NoteDocPage() {
       return buildNoteDocument({ note, invoice, supplier, buyer, today: todayIST() });
     },
   });
-  if (q.isLoading || org.isLoading) return <p>{t('Loading…')}</p>;
+  if (q.isLoading || org.isLoading) return <Loading />;
   if (q.error) return <p role="alert">{errorMessage(q.error)}</p>;
   if (!q.data) return null;
   return (

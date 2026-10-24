@@ -20,7 +20,10 @@ function open(): Promise<IDBDatabase> {
   });
 }
 
-async function run<R>(mode: IDBTransactionMode, fn: (s: IDBObjectStore) => IDBRequest<R>): Promise<R> {
+async function run<R>(
+  mode: IDBTransactionMode,
+  fn: (s: IDBObjectStore) => IDBRequest<R>,
+): Promise<R> {
   const db = await open();
   try {
     return await new Promise<R>((resolve, reject) => {

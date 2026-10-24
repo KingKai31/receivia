@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
-import { Button, Card, Input, useToast } from '@/components/ui';
+import { Button, Card, Input, Loading, useToast } from '@/components/ui';
 import { useOrg } from '@/features/auth/useOrg';
 import { formatINR, paise } from '@/lib/money';
 import { errorMessage } from '@/lib/service/errors';
@@ -198,7 +198,7 @@ export function InboxPage() {
     <>
       <h1>{t('Inbox')}</h1>
       <p>{t('What buyers have told you through the pay page or that you have logged.')}</p>
-      {q.isLoading ? <p>{t('Loading…')}</p> : null}
+      {q.isLoading ? <Loading /> : null}
       {q.error ? <p role="alert">{errorMessage(q.error)}</p> : null}
       {d ? (
         <>

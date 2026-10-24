@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Badge, Input, Pager, ResponsiveTable } from '@/components/ui';
+import { Badge, Input, Loading, Pager, ResponsiveTable } from '@/components/ui';
 import { useOrg } from '@/features/auth/useOrg';
 import { can } from '@/lib/permissions';
 import { PAGE_SIZE, errorMessage } from '@/lib/service/errors';
@@ -59,7 +59,7 @@ export function CustomersPage() {
           <Pager page={page} pageSize={PAGE_SIZE} total={q.data.total} onPage={setPage} />
         </>
       ) : q.isLoading ? (
-        <p>{t('Loading…')}</p>
+        <Loading />
       ) : null}
     </>
   );

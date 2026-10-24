@@ -6,6 +6,10 @@ import en from '@/locales/en.json';
 import hi from '@/locales/hi.json';
 import mr from '@/locales/mr.json';
 import { amountInWordsFor } from '@/lib/money';
+import { BASES, CHANNELS } from '@/features/privacy/ConsentCard';
+import { PRIVACY_SECTIONS } from '@/features/privacy/PrivacyPage';
+import { REAL_VS_SIMULATED, SECURITY } from '@/features/trust/TrustPage';
+import { runTrustCases } from '@/features/trust/trustCases';
 import i18n, { LANGUAGES, tr } from './i18n';
 
 function sourceFiles(dir: string): string[] {
@@ -14,6 +18,21 @@ function sourceFiles(dir: string): string[] {
     if (d.isDirectory()) return sourceFiles(p);
     return /\.tsx?$/.test(d.name) && !/\.test\./.test(d.name) ? [p] : [];
   });
+}
+
+/** Texts that live in data tables and are translated at render time with t(variable). */
+function tableKeys(): string[] {
+  const trust = runTrustCases();
+  return [
+    ...PRIVACY_SECTIONS.flatMap((x) => [x.title, ...x.body]),
+    ...REAL_VS_SIMULATED.flatMap((x) => [x.what, x.status, x.note]),
+    ...SECURITY,
+    ...trust.flatMap((x) => [x.group, x.name]),
+    ...CHANNELS.map((x) => x.label),
+    ...BASES.map((x) => x.label),
+    'Pass',
+    'FAIL',
+  ];
 }
 
 /** Every literal key passed to t() / tr() in the app. */
@@ -30,7 +49,7 @@ function keysInCode(): string[] {
       ts.forEachChild(n, walk);
     })(sf);
   }
-  return [...keys].filter((k) => /[A-Za-z]{2}/.test(k));
+  return [...keys, ...tableKeys()].filter((k) => /[A-Za-z]{2}/.test(k));
 }
 
 const slots = (s: string) => (s.match(/\{\{\w+\}\}/g) ?? []).sort().join(',');

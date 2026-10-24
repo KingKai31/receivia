@@ -3,7 +3,7 @@ import { tr } from '@/app/i18n';
 import { useTranslation } from 'react-i18next';
 import { AgentPanel } from '@/features/agent/AgentPanel';
 import { Link } from 'react-router-dom';
-import { Card } from '@/components/ui';
+import { Card, Loading } from '@/components/ui';
 import { AgeingBar } from '@/features/forecast/charts';
 import { useForecast } from '@/features/forecast/useForecast';
 import { dashboardTiles, firstShortfall, safeWeeks } from '@/lib/forecast';
@@ -26,7 +26,7 @@ function Tile({ label, value, note }: { label: string; value: string; note?: str
 export function TodayPage() {
   const { t } = useTranslation();
   const { ctx, computed, isLoading, error, updatedAt, offline } = useForecast();
-  if (isLoading) return <p>{t('Loading…')}</p>;
+  if (isLoading) return <Loading />;
   if (error) return <p role="alert">{errorMessage(error)}</p>;
   if (!ctx || !computed) return null;
   const { forecast, plan } = computed;

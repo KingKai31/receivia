@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import QRCode from 'qrcode';
 import { Link, useParams } from 'react-router-dom';
-import { Button } from '@/components/ui';
+import { Button, Loading } from '@/components/ui';
 import { useOrg } from '@/features/auth/useOrg';
 import type { Stage } from '@/features/collect/ladder';
 import { getCustomer, type Customer } from '@/features/customers/customerService';
@@ -122,7 +122,7 @@ export function LetterDocPage() {
         { margin: 1, width: 240 },
       ),
   });
-  if (q.isLoading || org.isLoading) return <p>{t('Loading…')}</p>;
+  if (q.isLoading || org.isLoading) return <Loading />;
   if (q.error) return <p role="alert">{errorMessage(q.error)}</p>;
   if (!model) return null;
   return (
@@ -149,7 +149,6 @@ export function LetterDocPage() {
 }
 
 export function CaseDocPage() {
-  const { t } = useTranslation();
   const { customerId } = useParams();
   const org = useOrg();
   const orgId = org.data?.orgId;
@@ -197,7 +196,7 @@ export function CaseDocPage() {
       return buildCaseModel(input);
     },
   });
-  if (q.isLoading || org.isLoading) return <p>{t('Loading…')}</p>;
+  if (q.isLoading || org.isLoading) return <Loading />;
   if (q.error) return <p role="alert">{errorMessage(q.error)}</p>;
   if (!q.data) return null;
   return (

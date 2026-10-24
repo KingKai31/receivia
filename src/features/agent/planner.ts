@@ -61,14 +61,22 @@ export function autoDecision(a: {
 }
 
 export function pickChannel(
-  c: Pick<TodayCustomer, 'email' | 'phone'> & { opt_in_whatsapp?: boolean },
+  c: Pick<TodayCustomer, 'email' | 'phone' | 'consent_withdrawn'> & { opt_in_whatsapp?: boolean },
   channels: readonly Channel[],
 ): { channel: Channel | null; note: string } {
-  if (channels.includes('email') && c.email) return { channel: 'email', note: 'Email on file.' };
-  if (channels.includes('whatsapp') && c.phone && c.opt_in_whatsapp)
-    return { channel: 'whatsapp', note: 'WhatsApp opted in.' };
-  if (channels.includes('whatsapp') && c.phone && !c.opt_in_whatsapp)
+  const out = c.consent_withdrawn ?? [];
+  if (out.includes('any'))
+    return { channel: null, note: 'The customer has withdrawn consent to be contacted.' };
+  const emailOk = channels.includes('email') && c.email && !out.includes('email');
+  if (emailOk) return { channel: 'email', note: 'Email on file.' };
+  const waEnabled = channels.includes('whatsapp') && c.phone;
+  if (waEnabled && out.includes('whatsapp'))
+    return { channel: null, note: 'The customer has withdrawn consent for WhatsApp.' };
+  if (waEnabled && c.opt_in_whatsapp) return { channel: 'whatsapp', note: 'WhatsApp opted in.' };
+  if (waEnabled && !c.opt_in_whatsapp)
     return { channel: null, note: 'Customer has not opted in to WhatsApp and has no email.' };
+  if (channels.includes('email') && c.email && out.includes('email'))
+    return { channel: null, note: 'The customer has withdrawn consent for email.' };
   return { channel: null, note: 'No enabled channel with contact details.' };
 }
 

@@ -4,7 +4,7 @@ import { tr } from '@/app/i18n';
 import { useTranslation } from 'react-i18next';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Card, Input, ResponsiveTable, Select } from '@/components/ui';
+import { Card, Input, Loading, ResponsiveTable, Select } from '@/components/ui';
 import {
   backtest,
   describeWhatIf,
@@ -168,7 +168,7 @@ export function ForecastPage() {
       ctx ? backtest({ history: ctx.history, customers: ctx.customers, today: ctx.today }) : null,
     [ctx],
   );
-  if (isLoading) return <p>{t('Loading…')}</p>;
+  if (isLoading) return <Loading />;
   if (error) return <p role="alert">{errorMessage(error)}</p>;
   if (!ctx || !computed) return null;
   const { forecast, plan, chase } = computed;

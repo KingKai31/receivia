@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { Badge, Button, Card, Select, useToast } from '@/components/ui';
+import { Badge, Button, Card, Loading, Select, useToast } from '@/components/ui';
 import { useOrg } from '@/features/auth/useOrg';
 import {
   guessMapping,
@@ -220,7 +220,7 @@ export function PaymentsPage() {
       {orgId ? <ImportCard orgId={orgId} done={refresh} /> : null}
       <h2>{t('Deposits to match')}</h2>
       <p>{t('Nothing is marked paid until you confirm.')}</p>
-      {sugg.isLoading ? <p>{t('Loading…')}</p> : null}
+      {sugg.isLoading ? <Loading /> : null}
       {sugg.error ? <p role="alert">{errorMessage(sugg.error)}</p> : null}
       {sugg.data?.length === 0 ? <p>{t('No unmatched deposits.')}</p> : null}
       {sugg.data?.map((s) => (

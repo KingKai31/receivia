@@ -79,6 +79,7 @@ export async function loadToday(
     Array.from({ length: Math.ceil(a.length / 100) }, (_, i) => a.slice(i * 100, i * 100 + 100));
 
   const customers: Customer[] = [];
+  const withdrawn: Record<string, string[]> = {};
   const sent: { invoice_id: string; stage: Stage }[] = [];
   const promises: { invoice_id: string; promised_for: string }[] = [];
   const pendingClaims: string[] = [];
@@ -90,6 +91,25 @@ export async function loadToday(
       const r = await client.from('customers').select('*').eq('org_id', orgId).in('id', c);
       if (r.error) throw fromPgError(r.error);
       customers.push(...((r.data ?? []) as Customer[]));
+      // The latest consent record per customer and channel decides; "withdrawn" blocks that channel.
+      const cc = await client
+        .from('customer_consents')
+        .select('customer_id, channel, status, created_at')
+        .eq('org_id', orgId)
+        .in('customer_id', c)
+        .order('created_at', { ascending: false });
+      if (cc.error) throw fromPgError(cc.error);
+      const seen = new Set<string>();
+      for (const row of (cc.data ?? []) as {
+        customer_id: string;
+        channel: string;
+        status: string;
+      }[]) {
+        const key = `${row.customer_id}:${row.channel}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        if (row.status === 'withdrawn') (withdrawn[row.customer_id] ??= []).push(row.channel);
+      }
       const m = await client
         .from('messages')
         .select('customer_id')
@@ -139,7 +159,10 @@ export async function loadToday(
       accepted_on: i.accepted_on,
       approved_stages: i.approved_stages ?? [],
     })),
-    customers: customers as unknown as TodayCustomer[],
+    customers: customers.map((c) => ({
+      ...c,
+      consent_withdrawn: withdrawn[c.id] ?? [],
+    })) as unknown as TodayCustomer[],
     sent,
     promises,
     pendingClaims,

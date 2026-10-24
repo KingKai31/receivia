@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { Button, Card, Input, Select, useToast } from '@/components/ui';
+import { Button, Card, Input, Loading, Select, useToast } from '@/components/ui';
 import { useOrg } from '@/features/auth/useOrg';
 import { validateGstin } from '@/lib/gstin';
 import { GST_STATES } from '@/lib/gst';
@@ -78,7 +78,7 @@ export function BusinessProfileForm() {
   const derivedState = g && g.valid ? GST_STATES[g.stateCode] : null;
   const editable = can.manageBusiness(role);
 
-  if (profile.isLoading) return <p>{t('Loading…')}</p>;
+  if (profile.isLoading) return <Loading />;
   if (profile.error) return <p role="alert">{errorMessage(profile.error)}</p>;
   if (!profile.data) return null;
 

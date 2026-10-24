@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Badge, Input, Pager, ResponsiveTable, Select } from '@/components/ui';
+import { Badge, Input, Loading, Pager, ResponsiveTable, Select } from '@/components/ui';
 import { useOrg } from '@/features/auth/useOrg';
 import { listCustomers } from '@/features/customers/customerService';
 import { formatINR, paise } from '@/lib/money';
@@ -158,7 +158,7 @@ export function InvoicesPage() {
           <Pager page={page} pageSize={PAGE_SIZE} total={q.data.total} onPage={setPage} />
         </>
       ) : q.isLoading ? (
-        <p>{t('Loading…')}</p>
+        <Loading />
       ) : null}
     </>
   );

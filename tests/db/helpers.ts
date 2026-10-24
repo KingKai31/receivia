@@ -183,6 +183,14 @@ export const INSERTS: Record<string, Builder> = {
     `insert into agent_actions (org_id, action_type) values ($1, 'send_reminder')`,
     [o],
   ],
+  customer_consents: (o, r) => [
+    `insert into customer_consents (org_id, customer_id, channel, status, basis) values ($1, $2, 'email', 'granted', 'written')`,
+    [o, r.customer],
+  ],
+  app_errors: (o) => [
+    `insert into app_errors (org_id, route, message) values ($1, '/x', 'boom')`,
+    [o],
+  ],
   agent_runs: (o) => [`insert into agent_runs (org_id, run_date) values ($1, '2026-10-24')`, [o]],
   pay_tokens: (o, r, t) => [
     `insert into pay_tokens (org_id, invoice_id, token_hash, expires_at)
@@ -219,6 +227,7 @@ export const STANDARD_TABLES = [
   'payment_claims',
   'ims_status',
   'agent_actions',
+  'customer_consents',
 ] as const;
 
 export const ALL_ORG_TABLES = [
@@ -228,6 +237,7 @@ export const ALL_ORG_TABLES = [
   ...STANDARD_TABLES,
   'invoice_counters',
   'agent_runs',
+  'app_errors',
   'pay_tokens',
   'audit_log',
 ] as const;

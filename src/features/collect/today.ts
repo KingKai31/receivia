@@ -37,6 +37,8 @@ export interface TodayCustomer extends BuyerFacts {
   email: string | null;
   snoozed_until: ISODate | null;
   updated_at: string;
+  /** Channels the customer has withdrawn consent for ('any' blocks all). */
+  consent_withdrawn?: string[];
 }
 
 export interface TodayInput {

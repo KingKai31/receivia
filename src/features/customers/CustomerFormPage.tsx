@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Button, Input, Select, useToast } from '@/components/ui';
+import { Button, Input, Loading, Select, useToast } from '@/components/ui';
 import { useOrg } from '@/features/auth/useOrg';
 import { GST_STATES } from '@/lib/gst';
 import { validateGstin } from '@/lib/gstin';
@@ -93,7 +93,7 @@ export function CustomerFormPage() {
   const g = gstin.trim() ? validateGstin(gstin) : null;
   const derived = g && g.valid ? GST_STATES[g.stateCode] : null;
 
-  if (id && existing.isLoading) return <p>{t('Loading…')}</p>;
+  if (id && existing.isLoading) return <Loading />;
   if (id && existing.error) return <p role="alert">{errorMessage(existing.error)}</p>;
 
   return (

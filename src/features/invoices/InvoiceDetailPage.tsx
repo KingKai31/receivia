@@ -2,7 +2,7 @@ import { tr } from '@/app/i18n';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router-dom';
-import { Badge, Button, Card, ResponsiveTable, useToast } from '@/components/ui';
+import { Badge, Button, Card, Loading, ResponsiveTable, useToast } from '@/components/ui';
 import { useOrg } from '@/features/auth/useOrg';
 import { getCustomer } from '@/features/customers/customerService';
 import { listNotesForInvoice, type Note } from '@/features/notes/noteService';
@@ -44,7 +44,7 @@ export function InvoiceDetailPage() {
     onError: (e) => toast.show(errorMessage(e)),
   });
 
-  if (inv.isLoading) return <p>{t('Loading…')}</p>;
+  if (inv.isLoading) return <Loading />;
   if (inv.error) return <p role="alert">{errorMessage(inv.error)}</p>;
   if (!inv.data) return null;
   const { invoice: i, lines } = inv.data;
