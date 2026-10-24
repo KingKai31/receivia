@@ -17,6 +17,21 @@ function scale(min: number, max: number) {
   return (v: number) => PAD.t + (1 - (v - min) / span) * (H - PAD.t - PAD.b);
 }
 
+type Pt = [number, number];
+
+/** Smooth cubic path through points (Catmull-Rom → Bézier), flat ends. */
+function curve(pts: Pt[], move = true): string {
+  let d = move ? `M${pts[0]![0]},${pts[0]![1]}` : `L${pts[0]![0]},${pts[0]![1]}`;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[i - 1] ?? pts[i]!;
+    const p1 = pts[i]!;
+    const p2 = pts[i + 1]!;
+    const p3 = pts[i + 2] ?? p2;
+    d += `C${p1[0] + (p2[0] - p0[0]) / 6},${p1[1] + (p2[1] - p0[1]) / 6} ${p2[0] - (p3[0] - p1[0]) / 6},${p2[1] - (p3[1] - p1[1]) / 6} ${p2[0]},${p2[1]}`;
+  }
+  return d;
+}
+
 function short(n: number): string {
   return formatINRShort(paise(Math.round(n)));
 }
@@ -35,11 +50,10 @@ export function BandChart({
   const max = Math.max(...all);
   const y = scale(min, max);
   const x = (i: number) => PAD.l + (i + 0.5) * ((W - PAD.l - PAD.r) / weeks.length);
-  const band = [
-    ...weeks.map((w, i) => `${x(i)},${y(w.closing.p90)}`),
-    ...[...weeks].reverse().map((w, i) => `${x(weeks.length - 1 - i)},${y(w.closing.p10)}`),
-  ].join(' ');
-  const line = weeks.map((w, i) => `${x(i)},${y(w.closing.p50)}`).join(' ');
+  const top: Pt[] = weeks.map((w, i) => [x(i), y(w.closing.p90)]);
+  const bottom: Pt[] = weeks.map((w, i) => [x(i), y(w.closing.p10)]).reverse() as Pt[];
+  const band = `${curve(top)}${curve(bottom, false)}Z`;
+  const line = curve(weeks.map((w, i) => [x(i), y(w.closing.p50)] as Pt));
   const ticks = [min, (min + max) / 2, max];
   const sx = shortfallWeek ? x(shortfallWeek - 1) : 0;
   const sy = shortfallWeek ? y(weeks[shortfallWeek - 1]!.closing.p50) : 0;
@@ -81,10 +95,10 @@ export function BandChart({
         {min < 0 ? (
           <line x1={PAD.l} x2={W - PAD.r} y1={y(0)} y2={y(0)} stroke="var(--muted)" opacity={0.5} />
         ) : null}
-        <polygon className="fc-band" points={band} fill="url(#fc-band)" />
-        <polyline
+        <path className="fc-band" d={band} fill="url(#fc-band)" />
+        <path
           className="fc-line"
-          points={line}
+          d={line}
           pathLength={1}
           fill="none"
           stroke="url(#fc-line)"

@@ -1,4 +1,12 @@
+// Screenshots of signed-in screens. Usage: node scripts/shot.mjs <base> <outDir> <width> <light|dark> <paths...>
+// A path of PAYLINK resolves to a fresh /pay/<token> for the first open demo invoice.
+import fs from 'node:fs';
 import { chromium } from '@playwright/test';
+
+for (const line of fs.readFileSync('.env.local', 'utf8').split(/\r?\n/)) {
+  const m = line.match(/^([A-Z0-9_]+)=(.*)$/);
+  if (m && !(m[1] in process.env)) process.env[m[1]] = m[2].trim();
+}
 const [, , base, out, w = '360', scheme = 'light', ...paths] = process.argv;
 const browser = await chromium.launch({ channel: process.env.PW_CHANNEL || undefined });
 const ctx = await browser.newContext({
@@ -13,14 +21,50 @@ page.on('pageerror', (e) => errs.push(String(e)));
 await page.goto(base + '/sign-in');
 await page.getByRole('button', { name: /live demo|लाइव/i }).click();
 await page.getByRole('heading', { name: /^(Today|आज)$/ }).waitFor({ timeout: 60000 });
-for (const p of paths.length ? paths : ['/']) {
+
+async function payPath() {
+  const { VITE_SUPABASE_URL: U, VITE_SUPABASE_ANON_KEY: K } = process.env;
+  return page.evaluate(
+    async ({ U, K }) => {
+      const key = Object.keys(localStorage).find((k) => /^sb-.*-auth-token$/.test(k));
+      const jwt = JSON.parse(localStorage[key]).access_token;
+      const h = { apikey: K, authorization: `Bearer ${jwt}`, 'content-type': 'application/json' };
+      const inv = await fetch(
+        `${U}/rest/v1/invoices?select=id&status=in.(issued,partially_paid)&order=due_date.asc&limit=1`,
+        { headers: h },
+      ).then((r) => r.json());
+      const r = await fetch(`${U}/functions/v1/create-pay-link`, {
+        method: 'POST',
+        headers: h,
+        body: JSON.stringify({ invoice_id: inv[0].id }),
+      }).then((r) => r.json());
+      return new URL(r.url).pathname;
+    },
+    { U, K },
+  );
+}
+
+for (let p of paths.length ? paths : ['/']) {
+  if (p === 'PAYLINK') p = await payPath();
   await page.goto(base + p);
-  await page.waitForTimeout(3500);
-  const name = (p === '/' ? 'today' : p.replace(/\W+/g, '-').replace(/^-|-$/g, '')) + `-${w}-${scheme}`;
-  await page.evaluate(() => document.querySelectorAll('.rv,.words').forEach((e) => e.classList.add('in')));
-  await page.waitForTimeout(1800);
-  await page.screenshot({ path: `${out}/${name}.png`, fullPage: false });
-  console.log(name, 'hscroll', await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1));
+  await page.waitForTimeout(2500);
+  const name =
+    (p === '/'
+      ? 'today'
+      : p
+          .replace(/\/pay\/.*/, '/pay')
+          .replace(/\W+/g, '-')
+          .replace(/^-|-$/g, '')) + `-${w}-${scheme}`;
+  await page.evaluate(() =>
+    document.querySelectorAll('.rv,.words').forEach((e) => e.classList.add('in')),
+  );
+  await page.waitForTimeout(1500);
+  await page.screenshot({ path: `${out}/${name}.png` });
+  console.log(
+    name,
+    'hscroll',
+    await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1),
+  );
 }
 console.log('errors', errs.slice(0, 5));
 await browser.close();

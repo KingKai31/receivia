@@ -14,6 +14,7 @@ const TONES: Record<string, PillTone> = {
   paid: 'paid',
   sent: 'paid',
   pass: 'paid',
+  fail: 'overdue',
 };
 
 /** Status is always conveyed with words; colour only reinforces them. Changes crossfade. */

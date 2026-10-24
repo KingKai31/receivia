@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Badge, Input, Loading, Pager, ResponsiveTable, Select } from '@/components/ui';
+import { Badge, ButtonLink, Input, Loading, Pager, ResponsiveTable, Select } from '@/components/ui';
 import { useOrg } from '@/features/auth/useOrg';
 import { listCustomers } from '@/features/customers/customerService';
 import { formatINR, paise } from '@/lib/money';
@@ -68,12 +68,16 @@ export function InvoicesPage() {
     <>
       <h1>{t('Invoices')}</h1>
       {can.writeData(org.data?.role ?? null) ? (
-        <p>
-          <Link to="/invoices/new">{t('New invoice')}</Link> {t('·')}{' '}
-          <Link to="/import">{t('Import')}</Link>
+        <p className="flex flex-wrap gap-2">
+          <ButtonLink to="/invoices/new" variant="dark">
+            {t('New invoice')}
+          </ButtonLink>
+          <ButtonLink to="/import" variant="light">
+            {t('Import')}
+          </ButtonLink>
         </p>
       ) : null}
-      <div className="grid gap-3 md:grid-cols-3">
+      <div className="ui-card rv grid grid-cols-2 gap-3 lg:grid-cols-3">
         <Input
           label={t('Search number or customer')}
           type="search"

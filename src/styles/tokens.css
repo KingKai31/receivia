@@ -1,12 +1,12 @@
 /* Single source of truth for design tokens (approved reference: docs/design/receivia-final.html). */
 :root {
   --ink: #1c2230;
-  --muted: #5a6170;
+  --muted: #3d4454;
   --blue: #7e98b2;
-  --blue-deep: #4a6684;
+  --blue-deep: #3f5a77;
   --blue-mist: #b4c4d4;
   --peach: #e09a84;
-  --peach-deep: #b3573b;
+  --peach-deep: #9f4b30;
   --rose: #d3aaa2;
   --glass: rgba(255, 255, 255, 0.5);
   --glass-hi: rgba(255, 255, 255, 0.8);

@@ -166,7 +166,7 @@ input[type='number'] {
   font-size: 12px;
   min-width: 0;
 }
-.app-bottom-nav button.nav-link {
+.app-bottom-nav button.nav-link:not(.nav-link-active) {
   border: 0;
   background: transparent;
   font-family: inherit;

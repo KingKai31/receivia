@@ -38,9 +38,20 @@ export function SignInPage() {
   }
 
   return (
-    <main className="mx-auto flex max-w-md flex-col gap-4 p-4">
-      <h1>{t('brand')}</h1>
-      <LanguagePicker />
+    <main
+      id="main"
+      className="app-main flex flex-col gap-4"
+      style={{ maxWidth: 460, paddingTop: 48 }}
+    >
+      <div className="app-top">
+        <span className="brand" aria-hidden="true">
+          {t('brand')}
+        </span>
+        <LanguagePicker />
+      </div>
+      <h1 className="hero-big" style={{ color: 'var(--ink)', textAlign: 'left', fontSize: 40 }}>
+        {t('brand')}
+      </h1>
       <Card title={t('auth.title')}>
         {email === null ? (
           <form

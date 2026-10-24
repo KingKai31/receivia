@@ -58,8 +58,11 @@ export const PRIVACY_SECTIONS: { title: string; body: string[] }[] = [
 export function PrivacyPage() {
   const { t } = useTranslation();
   return (
-    <main id="main" className="mx-auto flex max-w-2xl flex-col gap-4 p-4">
-      <LanguagePicker />
+    <main id="main" className="app-main flex flex-col gap-4" style={{ maxWidth: 760 }}>
+      <div className="app-top">
+        <span className="brand">{t('brand')}</span>
+        <LanguagePicker />
+      </div>
       <h1>{t('Privacy notice')}</h1>
       <p>
         {t(
