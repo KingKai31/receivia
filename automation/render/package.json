@@ -1,0 +1,10 @@
+{
+  "name": "receivia-agent-workflow",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Render Workflow: daily collections agent run (planner, sender, owner brief, run log).",
+  "dependencies": {
+    "@renderinc/sdk": "^1.4.0"
+  }
+}

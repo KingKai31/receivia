@@ -17,9 +17,33 @@ services:
         name: Referrer-Policy
         value: no-referrer
     envVars:
-      - key: VITE_SUPABASE_URL
-        sync: false
-      - key: VITE_SUPABASE_ANON_KEY
-        sync: false
+      - fromGroup: receivia-groupname
       - key: NODE_VERSION
         value: 22
+
+  # Daily collections agent (Render Workflows). Needs the env vars below; see STATE.md > Needs owner.
+  - type: workflow
+    name: receivia-agent
+    runtime: node
+    region: singapore
+    buildCommand: cd automation/render && npm ci
+    startCommand: cd automation/render && node index.mjs
+    envVars:
+      - key: SUPABASE_FUNCTIONS_URL
+        value: https://nxohumijpbwfxomvkckk.supabase.co/functions/v1
+      - key: AGENT_CRON_SECRET
+        sync: false
+
+  # 10:00 IST every day (04:30 UTC): starts the workflow's `daily` task through the Render API.
+  - type: cron
+    name: receivia-agent-daily
+    runtime: node
+    region: singapore
+    schedule: '30 4 * * *'
+    buildCommand: cd automation/render && npm ci
+    startCommand: cd automation/render && node trigger.mjs
+    envVars:
+      - key: RENDER_API_KEY
+        sync: false
+      - key: WORKFLOW_SLUG
+        value: receivia-agent

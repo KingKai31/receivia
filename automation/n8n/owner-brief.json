@@ -1,0 +1,39 @@
+{
+  "name": "Receivia owner brief (optional connector)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": { "interval": [{ "field": "cronExpression", "expression": "0 10 * * *" }] }
+      },
+      "name": "Every day 10:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_FUNCTIONS_URL }}/agent-run",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [{ "name": "x-agent-secret", "value": "={{ $env.AGENT_CRON_SECRET }}" }]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "{ \"step\": \"all\", \"trigger\": \"local\" }",
+        "options": { "timeout": 120000 }
+      },
+      "name": "Run agent for all businesses",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [480, 300]
+    }
+  ],
+  "connections": {
+    "Every day 10:00": {
+      "main": [[{ "node": "Run agent for all businesses", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": { "executionOrder": "v1", "timezone": "Asia/Kolkata" }
+}
