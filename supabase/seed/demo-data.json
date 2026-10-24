@@ -1,20 +1,110 @@
 {
   "customers": [
-    { "key": "alpha", "name": "M/s Alpha Engineering Pvt Ltd", "entity_type": "company", "tier": "key", "phone": "9820000001", "email": "accounts@alpha.example.test" },
-    { "key": "beta", "name": "Beta Traders", "entity_type": "firm", "tier": "standard", "phone": "9820000002", "email": "beta@example.test" },
-    { "key": "epsilon", "name": "Epsilon Retail", "entity_type": "proprietor", "tier": "standard", "phone": "9820000003", "email": "epsilon@example.test" },
-    { "key": "delta", "name": "Delta Services LLP", "entity_type": "firm", "tier": "standard", "phone": "9820000004", "email": "delta@example.test" },
-    { "key": "state", "name": "State Transport Corporation", "entity_type": "government", "tier": "standard", "phone": "9820000005", "email": "stc@example.test" },
-    { "key": "gamma", "name": "Gamma Steel Ltd", "entity_type": "company", "tier": "standard", "phone": "9820000006", "email": "gamma@example.test" }
+    {
+      "key": "alpha",
+      "name": "M/s Alpha Engineering Pvt Ltd",
+      "entity_type": "company",
+      "tier": "key",
+      "phone": "9820000001",
+      "email": "accounts@alpha.example.test"
+    },
+    {
+      "key": "beta",
+      "name": "Beta Traders",
+      "entity_type": "firm",
+      "tier": "standard",
+      "phone": "9820000002",
+      "email": "beta@example.test"
+    },
+    {
+      "key": "epsilon",
+      "name": "Epsilon Retail",
+      "entity_type": "proprietor",
+      "tier": "standard",
+      "phone": "9820000003",
+      "email": "epsilon@example.test"
+    },
+    {
+      "key": "delta",
+      "name": "Delta Services LLP",
+      "entity_type": "firm",
+      "tier": "standard",
+      "phone": "9820000004",
+      "email": "delta@example.test"
+    },
+    {
+      "key": "state",
+      "name": "State Transport Corporation",
+      "entity_type": "government",
+      "tier": "standard",
+      "phone": "9820000005",
+      "email": "stc@example.test"
+    },
+    {
+      "key": "gamma",
+      "name": "Gamma Steel Ltd",
+      "entity_type": "company",
+      "tier": "standard",
+      "phone": "9820000006",
+      "email": "gamma@example.test"
+    }
   ],
   "invoices": [
-    { "number": "INV/26-27/0001", "customer": "alpha", "taxable_paise": 10000000, "issue_date": "2026-08-20", "due_date": "2026-09-19" },
-    { "number": "INV/26-27/0002", "customer": "beta", "taxable_paise": 5000000, "issue_date": "2026-08-22", "due_date": "2026-09-21" },
-    { "number": "INV/26-27/0003", "customer": "epsilon", "taxable_paise": 1000000, "issue_date": "2026-08-25", "due_date": "2026-09-24" },
-    { "number": "INV/26-27/0004", "customer": "epsilon", "taxable_paise": 2000000, "issue_date": "2026-09-01", "due_date": "2026-10-01" },
-    { "number": "INV/26-27/0005", "customer": "delta", "taxable_paise": 20000000, "issue_date": "2026-08-28", "due_date": "2026-09-27" },
-    { "number": "INV/26-27/0006", "customer": "alpha", "taxable_paise": 1000000, "issue_date": "2026-09-02", "due_date": "2026-10-02" },
-    { "number": "INV/26-27/0007", "customer": "state", "taxable_paise": 50000000, "issue_date": "2026-08-30", "due_date": "2026-09-29" },
-    { "number": "INV/26-27/0008", "customer": "gamma", "taxable_paise": 100000000, "issue_date": "2026-09-03", "due_date": "2026-10-03" }
+    {
+      "number": "INV/26-27/0001",
+      "customer": "alpha",
+      "taxable_paise": 10000000,
+      "issue_date": "2026-08-20",
+      "due_date": "2026-09-19"
+    },
+    {
+      "number": "INV/26-27/0002",
+      "customer": "beta",
+      "taxable_paise": 5000000,
+      "issue_date": "2026-08-22",
+      "due_date": "2026-09-21"
+    },
+    {
+      "number": "INV/26-27/0003",
+      "customer": "epsilon",
+      "taxable_paise": 1000000,
+      "issue_date": "2026-08-25",
+      "due_date": "2026-09-24"
+    },
+    {
+      "number": "INV/26-27/0004",
+      "customer": "epsilon",
+      "taxable_paise": 2000000,
+      "issue_date": "2026-09-01",
+      "due_date": "2026-10-01"
+    },
+    {
+      "number": "INV/26-27/0005",
+      "customer": "delta",
+      "taxable_paise": 20000000,
+      "issue_date": "2026-08-28",
+      "due_date": "2026-09-27"
+    },
+    {
+      "number": "INV/26-27/0006",
+      "customer": "alpha",
+      "taxable_paise": 1000000,
+      "issue_date": "2026-09-02",
+      "due_date": "2026-10-02"
+    },
+    {
+      "number": "INV/26-27/0007",
+      "customer": "state",
+      "taxable_paise": 50000000,
+      "issue_date": "2026-08-30",
+      "due_date": "2026-09-29"
+    },
+    {
+      "number": "INV/26-27/0008",
+      "customer": "gamma",
+      "taxable_paise": 100000000,
+      "issue_date": "2026-09-03",
+      "due_date": "2026-10-03"
+    }
   ]
 }
