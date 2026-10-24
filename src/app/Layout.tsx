@@ -21,6 +21,12 @@ export function Layout() {
   const { t } = useTranslation();
   return (
     <div className="min-h-screen md:flex">
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-2 focus:top-2 focus:z-50 focus:bg-white focus:p-3"
+      >
+        {t('Skip to content')}
+      </a>
       <aside className="app-sidebar hidden md:flex md:w-56 md:flex-col md:gap-2 md:p-4">
         <strong className="mb-2 block">{t('brand')}</strong>
         <nav aria-label={t('nav.main')} className="flex flex-col gap-1">
@@ -34,7 +40,7 @@ export function Layout() {
           <LanguagePicker />
         </div>
       </aside>
-      <main id="main" className="min-w-0 flex-1 p-4 pb-24 md:pb-6">
+      <main id="main" tabIndex={-1} className="min-w-0 flex-1 p-4 pb-24 md:pb-6">
         <div className="mb-3 md:hidden">
           <LanguagePicker />
         </div>

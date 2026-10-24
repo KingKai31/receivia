@@ -16,6 +16,10 @@ services:
       - path: /*
         name: Referrer-Policy
         value: no-referrer
+      # The service worker must always be revalidated so a new deploy reaches installed apps.
+      - path: /sw.js
+        name: Cache-Control
+        value: no-cache
     envVars:
       - fromGroup: receivia-groupname
       - key: NODE_VERSION

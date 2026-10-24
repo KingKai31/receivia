@@ -15,7 +15,7 @@ export interface ResponsiveTableProps<T> {
   emptyText?: string;
 }
 
-/** Table from 768px up; stacked cards with labelled fields on phones. */
+/** Table from 640px up; stacked cards with labelled fields on phones. */
 export function ResponsiveTable<T>({
   caption,
   columns,
@@ -27,7 +27,7 @@ export function ResponsiveTable<T>({
   if (rows.length === 0 && emptyText) return <p className="ui-hint">{t(emptyText)}</p>;
   return (
     <>
-      <table className="ui-table hidden md:table">
+      <table className="ui-table hidden sm:table">
         <caption className="sr-only">{t(caption)}</caption>
         <thead>
           <tr>
@@ -48,7 +48,7 @@ export function ResponsiveTable<T>({
           ))}
         </tbody>
       </table>
-      <ul className="m-0 flex list-none flex-col gap-3 p-0 md:hidden" aria-label={t(caption)}>
+      <ul className="m-0 flex list-none flex-col gap-3 p-0 sm:hidden" aria-label={t(caption)}>
         {rows.map((row) => (
           <li key={rowKey(row)} className="ui-card">
             <dl className="m-0 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">

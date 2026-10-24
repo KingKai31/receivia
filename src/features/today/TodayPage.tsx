@@ -1,3 +1,4 @@
+import { Freshness } from '@/features/forecast/Freshness';
 import { tr } from '@/app/i18n';
 import { useTranslation } from 'react-i18next';
 import { AgentPanel } from '@/features/agent/AgentPanel';
@@ -24,7 +25,7 @@ function Tile({ label, value, note }: { label: string; value: string; note?: str
 
 export function TodayPage() {
   const { t } = useTranslation();
-  const { ctx, computed, isLoading, error } = useForecast();
+  const { ctx, computed, isLoading, error, updatedAt, offline } = useForecast();
   if (isLoading) return <p>{t('Loading…')}</p>;
   if (error) return <p role="alert">{errorMessage(error)}</p>;
   if (!ctx || !computed) return null;
@@ -42,6 +43,7 @@ export function TodayPage() {
   return (
     <>
       <h1>{t('Today')}</h1>
+      <Freshness updatedAt={updatedAt} offline={offline} />
       <AgentPanel compact />
       <Card>
         {sf && plan ? (

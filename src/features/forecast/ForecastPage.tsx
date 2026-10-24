@@ -1,8 +1,10 @@
+import { Freshness } from '@/features/forecast/Freshness';
+import { prettyDate } from '@/features/collect/today';
 import { tr } from '@/app/i18n';
 import { useTranslation } from 'react-i18next';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Card, Input, Select } from '@/components/ui';
+import { Card, Input, ResponsiveTable, Select } from '@/components/ui';
 import {
   backtest,
   describeWhatIf,
@@ -160,7 +162,7 @@ function WhatIfCard({ f }: { f: NonNullable<ReturnType<typeof useForecast>['ctx'
 export function ForecastPage() {
   const { t } = useTranslation();
   const [includeDisputed, setIncludeDisputed] = useState(false);
-  const { ctx, computed, isLoading, error } = useForecast(includeDisputed);
+  const { ctx, computed, isLoading, error, updatedAt, offline } = useForecast(includeDisputed);
   const bt = useMemo(
     () =>
       ctx ? backtest({ history: ctx.history, customers: ctx.customers, today: ctx.today }) : null,
@@ -180,6 +182,7 @@ export function ForecastPage() {
   return (
     <>
       <h1>{t('Forecast')}</h1>
+      <Freshness updatedAt={updatedAt} offline={offline} />
       <p className="tnum">
         {sf
           ? t(
@@ -214,44 +217,55 @@ export function ForecastPage() {
       <Card>
         <h2>{t('Next 13 weeks')}</h2>
         <BandChart forecast={forecast} shortfallWeek={sf?.week ?? null} />
-        <div className="table-scroll">
-          <table className="tnum">
-            <thead>
-              <tr>
-                <th>{t('Week')}</th>
-                <th>{t('Starts')}</th>
-                <th>{t('Opening (median)')}</th>
-                <th>{t('In (median)')}</th>
-                <th>{t('Out')}</th>
-                <th>{t('Closing P10')}</th>
-                <th>{t('Closing P50')}</th>
-                <th>{t('Closing P90')}</th>
-                <th>{t('Chance below buffer')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {forecast.weeks.map((w) => (
-                <tr key={w.week}>
-                  <td>
-                    {w.week}
-                    {sf?.week === w.week ? ' ◄' : ''}
-                  </td>
-                  <td>{w.start}</td>
-                  <td>{formatINRShort(paise(w.opening.p50))}</td>
-                  <td>{formatINRShort(paise(w.inflow.p50))}</td>
-                  <td>{formatINRShort(paise(w.outflow.p50))}</td>
-                  <td>{formatINRShort(paise(w.closing.p10))}</td>
-                  <td>{formatINRShort(paise(w.closing.p50))}</td>
-                  <td>{formatINRShort(paise(w.closing.p90))}</td>
-                  <td>
-                    {Math.round(w.probBelowBuffer * 100)}
-                    {t('%')}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <ResponsiveTable
+          caption={t('Next 13 weeks')}
+          rows={forecast.weeks}
+          rowKey={(w) => String(w.week)}
+          columns={[
+            {
+              key: 'week',
+              header: 'Week',
+              render: (w) => (
+                <>
+                  {w.week}
+                  {sf?.week === w.week ? ` ◄ ${t('shortfall')}` : ''}
+                </>
+              ),
+            },
+            { key: 'start', header: 'Starts', render: (w) => prettyDate(w.start) },
+            {
+              key: 'open',
+              header: 'Opening (median)',
+              render: (w) => formatINRShort(paise(w.opening.p50)),
+            },
+            {
+              key: 'in',
+              header: 'In (median)',
+              render: (w) => formatINRShort(paise(w.inflow.p50)),
+            },
+            { key: 'out', header: 'Out', render: (w) => formatINRShort(paise(w.outflow.p50)) },
+            {
+              key: 'p10',
+              header: 'Closing P10',
+              render: (w) => formatINRShort(paise(w.closing.p10)),
+            },
+            {
+              key: 'p50',
+              header: 'Closing P50',
+              render: (w) => formatINRShort(paise(w.closing.p50)),
+            },
+            {
+              key: 'p90',
+              header: 'Closing P90',
+              render: (w) => formatINRShort(paise(w.closing.p90)),
+            },
+            {
+              key: 'prob',
+              header: 'Chance below buffer',
+              render: (w) => `${Math.round(w.probBelowBuffer * 100)}%`,
+            },
+          ]}
+        />
         <p>
           {forecast.runs} {t('simulated runs, always the same for the same data.')}
         </p>

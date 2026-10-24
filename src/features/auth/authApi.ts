@@ -1,3 +1,4 @@
+import { clearSnapshot } from '@/lib/offline';
 import { z } from 'zod';
 import { supabase } from '@/lib/supabase';
 
@@ -54,5 +55,6 @@ export async function openLiveDemo(): Promise<void> {
 }
 
 export async function signOut(): Promise<void> {
+  await clearSnapshot();
   await supabase.auth.signOut();
 }
