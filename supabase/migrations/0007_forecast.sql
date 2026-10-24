@@ -8,7 +8,7 @@ alter table public.business_profile
 alter table public.expenses
   add column kind text not null default 'other'
     check (kind in ('salary', 'rent', 'tax', 'supplier', 'utility', 'other')),
-  add column deferrable boolean not null default false;
+  add column can_defer boolean not null default false;
 
 create index expenses_org_active_idx on public.expenses (org_id, active) where active;
 
