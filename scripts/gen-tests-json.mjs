@@ -15,12 +15,21 @@ const sh = (cmd, args, timeout) =>
 
 function vitestCount(args) {
   const file = path.join(os.tmpdir(), `vitest-${Date.now()}-${Math.random()}.json`);
-  const r = sh('npx', ['vitest', 'run', ...args, '--reporter=json', `--outputFile="${file}"`], 600000);
+  const r = sh(
+    'npx',
+    ['vitest', 'run', ...args, '--reporter=json', `--outputFile="${file}"`],
+    600000,
+  );
   if (!fs.existsSync(file)) return null;
   const j = JSON.parse(fs.readFileSync(file, 'utf8'));
   fs.rmSync(file, { force: true });
   void r;
-  return { passed: j.numPassedTests, failed: j.numFailedTests, total: j.numTotalTests, files: j.numTotalTestSuites };
+  return {
+    passed: j.numPassedTests,
+    failed: j.numFailedTests,
+    total: j.numTotalTests,
+    files: j.numTotalTestSuites,
+  };
 }
 
 if (process.env.TESTS_JSON !== 'skip') {
@@ -42,11 +51,27 @@ try {
   const d = story.forecastInput(lib, today, opening);
   const bt = lib.backtest({ history: d.hist, customers: d.customers, today });
   const f = lib.simulate(d.input);
-  out.backtest = { wape: bt.wape, weeks: bt.weeks.length, asOf: bt.asOf, today };
+  // Monthly = blocks of 4 weeks (same rule as backtest.ts wapeMonthly; the committed bundle may be older).
+  let errM = 0;
+  for (let i = 0; i < bt.weeks.length; i += 4)
+    errM += Math.abs(bt.weeks.slice(i, i + 4).reduce((a, r) => a + r.actual - r.forecast, 0));
+  const actual = bt.weeks.reduce((a, r) => a + r.actual, 0);
+  out.backtest = {
+    wape: bt.wape,
+    wapeMonthly: actual > 0 ? errM / actual : null,
+    weeks: bt.weeks.length,
+    asOf: bt.asOf,
+    today,
+  };
   out.demoBand = {
     runs: f.runs,
     bufferPaise: f.bufferPaise,
-    weeks: f.weeks.map((w) => ({ week: w.week, p10: w.closing.p10, p50: w.closing.p50, p90: w.closing.p90 })),
+    weeks: f.weeks.map((w) => ({
+      week: w.week,
+      p10: w.closing.p10,
+      p50: w.closing.p50,
+      p90: w.closing.p90,
+    })),
   };
 } catch (e) {
   console.warn('gen-tests-json: backtest skipped:', e.message);
@@ -54,4 +79,8 @@ try {
 
 fs.mkdirSync(path.dirname(OUT), { recursive: true });
 fs.writeFileSync(OUT, JSON.stringify(out, null, 2) + '\n');
-console.log('wrote', OUT, JSON.stringify({ unit: out.unit, dbLocal: out.dbLocal, e2e: out.e2e, wape: out.backtest?.wape }));
+console.log(
+  'wrote',
+  OUT,
+  JSON.stringify({ unit: out.unit, dbLocal: out.dbLocal, e2e: out.e2e, wape: out.backtest?.wape }),
+);

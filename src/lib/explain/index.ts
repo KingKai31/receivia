@@ -2,6 +2,7 @@ import { addDays, daysBetween, type ISODate } from '@/lib/dates';
 import { calcInvoice, calcLine, type InvoiceInput, type LineInput } from '@/lib/gst';
 import { LEGAL_CONFIG, msmeDueDate, msmedInterest } from '@/lib/legal';
 import { formatINR, paise } from '@/lib/money';
+import { payabilityEngine } from './payabilityAdapter';
 import {
   FORECAST_CONFIG,
   firstShortfall,
@@ -285,14 +286,16 @@ export function explainSolverCost(plan: GapPlan, sources: ExplainSource[] = []) 
   });
 }
 
-/** 0 to 100: 100 for a customer who pays on the due date, falling to 0 at 60 days late (shrunk P80). */
+// TODO-merge: call src/lib/payability from feat/payability (see payabilityAdapter.ts).
+const PENDING = 'Computed by the payability engine; shown here once that engine is merged.';
+
 export function explainPayability(d: CustomerDelay, sources: ExplainSource[] = []) {
-  const score = Math.max(0, Math.min(100, Math.round(100 - (d.p80 * 100) / 60)));
+  const score = payabilityEngine.score(d);
   return make({
-    value: score,
-    display: `${score} / 100`,
+    value: score ?? 'pending',
+    display: score === null ? 'pending' : `${score} / 100`,
     title: 'Payability score',
-    formula: `Score = 100 - (P80 days late x 100 / 60), kept between 0 and 100. The P80 blends the customer's own history with all customers using weight n / (n + ${FORECAST_CONFIG.shrinkK}).`,
+    formula: PENDING,
     inputs: [
       { label: 'Paid invoices (n)', value: String(d.n) },
       { label: 'Weight on own history', value: pct(d.weight) },
@@ -303,19 +306,16 @@ export function explainPayability(d: CustomerDelay, sources: ExplainSource[] = [
   });
 }
 
-/** Suggested limit = average monthly billing x (credit days + P80 days late) / 30, rounded down to Rs 1,000. */
 export function explainCreditLimit(
   args: { monthlyBilledPaise: number; creditDays: number; p80Late: number },
   sources: ExplainSource[] = [],
 ) {
-  const months = (args.creditDays + Math.max(0, args.p80Late)) / 30;
-  const limit = Math.floor((args.monthlyBilledPaise * months) / 100_000) * 100_000;
+  const limit = payabilityEngine.creditLimit(args);
   return make({
-    value: limit,
-    display: inr(limit),
+    value: limit ?? 'pending',
+    display: limit === null ? 'pending' : inr(limit),
     title: 'Suggested credit limit',
-    formula:
-      'Limit = average monthly billing x (credit days + P80 days late) / 30, rounded down to Rs 1,000. It is roughly the most this customer will owe at one time if they keep paying as they have.',
+    formula: PENDING,
     inputs: [
       { label: 'Average monthly billing', value: inr(args.monthlyBilledPaise) },
       { label: 'Credit days', value: String(args.creditDays) },
@@ -324,7 +324,6 @@ export function explainCreditLimit(
     sources,
   });
 }
-
 /** The total stored on an issued invoice: taxable + tax + round-off, as saved when it was issued. */
 export function explainStoredInvoiceTotal(
   row: {

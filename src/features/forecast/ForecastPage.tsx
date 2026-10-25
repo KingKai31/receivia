@@ -402,13 +402,11 @@ export function ForecastPage() {
               <strong>{names.get(m.customerId)}</strong>{' '}
               {t('(grade {{grade}}): {{reason}}', { grade: m.grade, reason: tr(m.reason) })}
               <Why
-                label="Why this score"
                 explain={() =>
                   explainPayability(m, [{ label: 'Customer', href: `/customers/${m.customerId}` }])
                 }
               />
               <Why
-                label="Why this credit limit"
                 explain={() => {
                   const c = ctx.customers.find((x) => x.id === m.customerId);
                   const billed = ctx.history

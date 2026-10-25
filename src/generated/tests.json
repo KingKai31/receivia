@@ -3,7 +3,7 @@
     "passed": 207,
     "note": "npm run test:db:remote on the live Postgres, recorded 2026-10-24 (S7)"
   },
-  "generatedAt": "2026-10-24T22:11:54.513Z",
+  "generatedAt": "2026-10-25T06:48:23.520Z",
   "unit": {
     "passed": 391,
     "failed": 0,
@@ -22,6 +22,7 @@
   },
   "backtest": {
     "wape": 0.5242662721893491,
+    "wapeMonthly": 0.13407692307692307,
     "weeks": 8,
     "asOf": "2026-08-30",
     "today": "2026-10-25"

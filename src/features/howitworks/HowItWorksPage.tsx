@@ -3,14 +3,13 @@ import { Link } from 'react-router-dom';
 import { GlassCard, Title } from '@/components/ui';
 import { REAL_VS_SIMULATED, SECURITY } from '@/features/trust/realVsSim';
 import { calcInvoice } from '@/lib/gst';
-import { explainChaseScore, explainPayability, explainInvoiceTotal } from '@/lib/explain';
+import { explainChaseScore, explainInvoiceTotal } from '@/lib/explain';
 import {
   FORECAST_CONFIG,
   selectActions,
   totals,
   type Candidate,
   type ChaseItem,
-  type CustomerDelay,
 } from '@/lib/forecast';
 import {
   itc180,
@@ -32,7 +31,13 @@ const T = testsJson as {
   dbLocal?: { passed: number; failed: number };
   dbRemote?: { passed: number; note: string };
   e2e?: { total: number; files: number };
-  backtest?: { wape: number | null; weeks: number; asOf: string; today: string };
+  backtest?: {
+    wape: number | null;
+    wapeMonthly?: number | null;
+    weeks: number;
+    asOf: string;
+    today: string;
+  };
   demoBand?: {
     runs: number;
     bufferPaise: number;
@@ -393,6 +398,9 @@ function ShrinkBars() {
   );
 }
 
+const pctOf = (x: number | null | undefined) =>
+  x === null || x === undefined ? 'not available' : `${Math.round(x * 100)}%`;
+
 function ForecastSection() {
   const wape = T.backtest?.wape;
   return (
@@ -438,13 +446,16 @@ function ForecastSection() {
       </p>
       <Formula>WAPE = sum |actual − forecast| ÷ sum actual (lower is better)</Formula>
       <p>
-        Live number from the build of {T.backtest?.today ?? 'this build'}:{' '}
-        <strong className="hw-live num">
-          {wape === null || wape === undefined ? 'not available' : `${Math.round(wape * 100)}%`}
-        </strong>{' '}
-        weekly WAPE on the demo story. Weekly collections are lumpy, so this is a rough guide; the
-        point of the P10 to P90 range is to show that.
+        Live numbers from the build of {T.backtest?.today ?? 'this build'}, demo story:{' '}
+        <strong className="hw-live num">{pctOf(wape)}</strong> week by week and{' '}
+        <strong className="hw-live num">{pctOf(T.backtest?.wapeMonthly)}</strong> month by month
+        (blocks of 4 weeks).
       </p>
+      <p>
+        Weekly is noisy for a small business because a few large invoices decide each week: one ₹4
+        lakh payment landing a week early or late moves that week’s total by half. Over a month the
+        early and late ones even out, which is the horizon to judge the forecast on.
+      </p>{' '}
     </Section>
   );
 }
@@ -502,13 +513,6 @@ function ChaseSection() {
   const gap = 10_000_000;
   const picked = selectActions(CAND, gap);
   const t = totals(picked);
-  const delay = {
-    n: 8,
-    weight: 8 / 13,
-    p80: 24,
-    grade: 'B',
-  } as CustomerDelay;
-  const pay = explainPayability(delay);
   return (
     <Section id="chase" title="Chase score and gap solver">
       <h3>Chase score</h3>
@@ -523,12 +527,6 @@ function ChaseSection() {
         days overdue, grade B. Expected = {money(CHASE_EX.expectedPaise)}; × 1.25 × 0.85 ={' '}
         <strong className="num">{Math.round(Number(ex.value))}</strong> (a ranking number, not
         rupees). The Collect page orders customers by their best score.
-      </p>
-      <h3>Payability score</h3>
-      <Formula>score = 100 − (shrunk P80 days late × 100 ÷ 60), kept between 0 and 100</Formula>
-      <p>
-        Example: 8 paid invoices (weight {Math.round(delay.weight * 100)}% on own history), P80 of
-        24 days late gives <strong className="num">{pay.display}</strong>.
       </p>
       <h3>Gap solver</h3>
       <p>

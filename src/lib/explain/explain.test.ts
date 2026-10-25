@@ -31,6 +31,7 @@ import {
   explainSolverCost,
   explainStoredInvoiceTotal,
 } from './index';
+import { payabilityEngine } from './payabilityAdapter';
 
 const TODAY = '2026-10-26';
 const lines = [{ qty: 1, rate: paise(1_000_000), gstRate: 18 }];
@@ -227,22 +228,17 @@ describe('forecast explanations', () => {
     expect(e.value).toBe(plan.totalCostPaise);
     expect(e.inputs.length).toBe(plan.steps.length + 2);
   });
-  it('payability and shrinkage inputs match the delay model', () => {
+  it('payability and credit limit are adapters: raw inputs shown, value from the engine hook', () => {
     const d = modelFor(models, 'a');
     const e = explainPayability(d);
-    expect(e.value).toBe(Math.max(0, Math.min(100, Math.round(100 - (d.p80 * 100) / 60))));
     expect(e.inputs.find((i) => i.label === 'Paid invoices (n)')!.value).toBe('8');
-    expect(e.formula).toMatch(/n \/ \(n \+ 5\)/);
-    const none = explainPayability({ ...d, p80: 90 });
-    expect(none.value).toBe(0);
-  });
-  it('credit limit is monthly billing x (credit + P80) / 30 rounded down to Rs 1,000', () => {
-    const e = explainCreditLimit({ monthlyBilledPaise: 10_000_000, creditDays: 30, p80Late: 15 });
-    expect(e.value).toBe(15_000_000);
-    expect(e.display).toBe('₹1,50,000.00');
-    expect(
-      explainCreditLimit({ monthlyBilledPaise: 333_333, creditDays: 30, p80Late: -5 }).value,
-    ).toBe(300_000);
+    expect(e.value).toBe('pending');
+    const c = explainCreditLimit({ monthlyBilledPaise: 10_000_000, creditDays: 30, p80Late: 15 });
+    expect(c.inputs.map((i) => i.label)).toContain('Credit days');
+    expect(c.value).toBe('pending');
+    payabilityEngine.score = () => 77;
+    expect(explainPayability(d).value).toBe(77);
+    payabilityEngine.score = () => null;
   });
 });
 
