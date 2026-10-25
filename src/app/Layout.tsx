@@ -87,7 +87,17 @@ export function Layout() {
           <div className="fab-menu glass glass-solid" id="fab-menu">
             <Link to="/invoices/new">{t('New invoice')}</Link>
             <Link to="/invoices/scan">{t('Scan invoice')}</Link>
-            <Link to="/#ask">{t('Ask')}</Link>
+            <Link
+              to="/"
+              onClick={() =>
+                setTimeout(
+                  () => document.getElementById('ask')?.scrollIntoView({ behavior: 'smooth' }),
+                  150,
+                )
+              }
+            >
+              {t('Ask')}
+            </Link>
           </div>
         ) : null}
         <button
