@@ -4,6 +4,7 @@ import { useParams } from 'react-router-dom';
 import { Badge, Button, Card, CountDown, CountUp, Input, Select, Skeleton } from '@/components/ui';
 import { upiUri } from '@/features/documents/invoiceDocument';
 import { addDays, todayIST } from '@/lib/dates';
+import { INSTALMENT_CONFIG, splitEvenly, validatePlan } from '@/lib/instalments';
 import { buyerLens } from '@/lib/legal';
 import type { BuyerFacts, InvoiceFacts, SellerFacts } from '@/lib/legal';
 import { formatINR, paise } from '@/lib/money';
@@ -21,6 +22,12 @@ export interface PayView {
   issue_date: string;
   due_date: string;
   accepted_on: string | null;
+  acceptance_source?: 'buyer_confirmed' | 'proof_uploaded' | 'assumed_delivery_date' | null;
+  plan?: {
+    status: 'requested' | 'approved';
+    owner_reply: string | null;
+    items: { seq: number; due_on: string; amount_paise: number }[];
+  } | null;
   total_paise: number;
   paid_paise: number;
   credited_paise: number;
@@ -73,6 +80,7 @@ export function lensFor(v: PayView) {
       invoice_type: v.invoice_type,
       issue_date: v.issue_date,
       accepted_on: v.accepted_on,
+      acceptance_source: v.acceptance_source,
       total_paise: v.total_paise,
       paid_paise: v.paid_paise,
       credited_paise: v.credited_paise,
@@ -307,6 +315,8 @@ function PayBody({ token, v, onChanged }: { token: string; v: PayView; onChanged
             )}
           </Card>
 
+          <ReceivedCard token={token} v={v} t={t} onDone={onChanged} />
+          <PartsCard token={token} v={v} t={t} onDone={onChanged} />
           <ActionForms
             token={token}
             t={t}
@@ -442,6 +452,166 @@ function ActionForms({
           </Button>
         </form>
       ) : null}
+    </Card>
+  );
+}
+
+type PayT = (typeof PAY_TEXT)['en'];
+
+/** "Goods/services received": the buyer's acceptance date, which MSMED and 43B(h) lines count from. */
+function ReceivedCard({
+  token,
+  v,
+  t,
+  onDone,
+}: {
+  token: string;
+  v: PayView;
+  t: PayT;
+  onDone: () => void;
+}) {
+  const [date, setDate] = useState('');
+  const [note, setNote] = useState('');
+  const send = useMutation({
+    mutationFn: () => call('pay-action', { token, kind: 'received', payload: { date, note } }),
+    onSuccess: onDone,
+  });
+  if (v.acceptance_source === 'buyer_confirmed' && v.accepted_on) {
+    return (
+      <Card>
+        <p role="status" style={{ margin: 0 }}>
+          {t.receivedThanks} {t.receivedDone} <span className="num">{v.accepted_on}</span>
+        </p>
+      </Card>
+    );
+  }
+  const err = send.error instanceof PayError ? send.error : null;
+  return (
+    <Card>
+      <details className="collapsible">
+        <summary>{t.receivedBtn}</summary>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (date) send.mutate();
+          }}
+        >
+          <Input
+            label={t.receivedOn}
+            type="date"
+            min={v.issue_date}
+            max={todayIST()}
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+          />
+          <Input label={t.receivedNote} value={note} onChange={(e) => setNote(e.target.value)} />
+          {err ? (
+            <p role="alert">{err.kind === 'invalid' && err.message ? err.message : t.error}</p>
+          ) : null}
+          <Button type="submit" disabled={!date || send.isPending}>
+            {t.send}
+          </Button>
+        </form>
+      </details>
+    </Card>
+  );
+}
+
+/** "Pay in parts": 2 to 4 instalments within the configured limits; the owner approves. */
+function PartsCard({
+  token,
+  v,
+  t,
+  onDone,
+}: {
+  token: string;
+  v: PayView;
+  t: PayT;
+  onDone: () => void;
+}) {
+  const today = todayIST();
+  const [count, setCount] = useState(2);
+  const [items, setItems] = useState(() => splitEvenly(v.balance_paise, 2, today));
+  const send = useMutation({
+    mutationFn: () => call('pay-action', { token, kind: 'instalments', payload: { items } }),
+    onSuccess: onDone,
+  });
+  if (v.plan) {
+    return (
+      <Card>
+        <p role="status" style={{ margin: 0 }}>
+          {v.plan.status === 'approved' ? t.partsApproved : t.partsPending}
+        </p>
+        <ul>
+          {v.plan.items.map((i) => (
+            <li key={i.seq} className="num">
+              {i.due_on}: {formatINR(paise(i.amount_paise))}
+            </li>
+          ))}
+        </ul>
+        {v.plan.owner_reply ? <p>{v.plan.owner_reply}</p> : null}
+      </Card>
+    );
+  }
+  const problems = validatePlan(items, v.balance_paise, today);
+  const err = send.error instanceof PayError ? send.error : null;
+  return (
+    <Card>
+      <details className="collapsible">
+        <summary>{t.partsBtn}</summary>
+        <p className="ui-hint">{t.partsHint}</p>
+        <Select
+          label={t.partsCount}
+          value={String(count)}
+          onChange={(e) => {
+            const n = Number(e.target.value);
+            setCount(n);
+            setItems(splitEvenly(v.balance_paise, n, today));
+          }}
+          options={Array.from(
+            { length: INSTALMENT_CONFIG.maxCount - INSTALMENT_CONFIG.minCount + 1 },
+            (_, i) => {
+              const n = i + INSTALMENT_CONFIG.minCount;
+              return { value: String(n), label: String(n) };
+            },
+          )}
+        />
+        {items.map((it, i) => (
+          <div key={i} className="flex gap-2">
+            <Input
+              label={`${t.partsDate} ${i + 1}`}
+              type="date"
+              min={today}
+              max={addDays(today, INSTALMENT_CONFIG.maxDaysAhead)}
+              value={it.date}
+              onChange={(e) =>
+                setItems(items.map((x, j) => (j === i ? { ...x, date: e.target.value } : x)))
+              }
+            />
+            <Input
+              label={`${t.partsAmount} ${i + 1}`}
+              inputMode="decimal"
+              value={String(it.amount_paise / 100)}
+              onChange={(e) => {
+                const n = Math.round(Number(e.target.value) * 100);
+                setItems(
+                  items.map((x, j) =>
+                    j === i ? { ...x, amount_paise: Number.isFinite(n) ? n : 0 } : x,
+                  ),
+                );
+              }}
+            />
+          </div>
+        ))}
+        {problems.length ? <p className="ui-hint">{problems[0]}</p> : null}
+        {err ? (
+          <p role="alert">{err.kind === 'invalid' && err.message ? err.message : t.error}</p>
+        ) : null}
+        <Button disabled={problems.length > 0 || send.isPending} onClick={() => send.mutate()}>
+          {t.send}
+        </Button>
+        {send.isSuccess ? <p role="status">{t.partsSent}</p> : null}
+      </details>
     </Card>
   );
 }

@@ -8,6 +8,7 @@ import { listCustomers } from '@/features/customers/customerService';
 import { formatINR, paise } from '@/lib/money';
 import { can } from '@/lib/permissions';
 import { PAGE_SIZE, errorMessage } from '@/lib/service/errors';
+import { isReadyToGetPaid } from '@/lib/payability';
 import { displayStatus, type DisplayStatus } from './invoiceModel';
 import { listInvoices, type InvoiceListRow } from './invoiceService';
 
@@ -153,6 +154,11 @@ export function InvoicesPage() {
                 render: (r) => (
                   <>
                     <Badge>{displayStatus(r)}</Badge>
+                    {r.status !== 'draft' &&
+                    r.status !== 'void' &&
+                    isReadyToGetPaid(r.payability_score)
+                      ? ` ${t('Ready to get paid')}`
+                      : ''}
                     {r.source === 'import' ? ` ${t('imported')}` : ''}
                   </>
                 ),

@@ -41,6 +41,15 @@ export interface Invoice {
   reverse_charge: boolean;
   delivery_address: string | null;
   disputed: boolean;
+  po_number?: string | null;
+  eway_bill_no?: string | null;
+  delivery_ref?: string | null;
+  payability_score?: number | null;
+  payability_override?: boolean;
+  payability_override_reason?: string | null;
+  accepted_on?: string | null;
+  acceptance_source?: 'buyer_confirmed' | 'proof_uploaded' | 'assumed_delivery_date' | null;
+  acceptance_note?: string | null;
   updated_at: string;
   created_at: string;
 }
@@ -94,6 +103,16 @@ export async function issueInvoice(
     p_invoice: invoice.id,
     p_expected: invoice.updated_at,
   });
+  return unwrap(res) as Invoice;
+}
+
+/** Owner-only: lets a draft below the payability threshold be issued; the reason is stored and audited. */
+export async function overridePayability(
+  invoiceId: string,
+  reason: string,
+  client: SupabaseClient = supabase,
+): Promise<Invoice> {
+  const res = await client.rpc('override_payability', { p_invoice: invoiceId, p_reason: reason });
   return unwrap(res) as Invoice;
 }
 

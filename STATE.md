@@ -36,6 +36,12 @@
 
 - [ ] S11 Explainability (branch feat/explain, NOT merged; see Decisions 2026-10-25 S11 and Session log)
 
+- [ ] S10 Payability and acceptance (branch feat/payability, worktree C:/Projects/receivia-s10; PARTIAL)
+  - [x] 1 lib/payability + tests  - [x] migration 0012 (not yet applied to live DB)  - [x] 2 customer fields + AP-first/preferred channel/cc owner in planner and sender  - [x] 3 pay page received + pay in parts, acceptance helper in lens/docs  - [x] 4 /pay/statement/:token + statement edge function  - [x] 7 DB tests (payability.test.ts)
+  - [x] New invoice checklist + gate/override + credit warning; Ready badge on list; acceptance source on detail; demo seed S10 rows (guarded until 0012 is applied; untested against a DB); statement page hi/mr
+  - [ ] STILL TO DO (old line follows, done items included): UI: New invoice checklist + issue gate/override, Ready badge, PO/e-way/delivery fields in invoice form and save payload, proof upload + assumed delivery on invoice detail, instalment approval and statement send/response on customer page, monthly statement in ladder, credit-limit warning on New invoice, seed demo (failing invoice + confirmed acceptance), e2e, apply 0012 + deploy pay-action/get-pay-view/statement, merge+push
+  - NOTE: another session shares C:/Projects/receivia on feat/impact (migration 0013, customers.is_psu); my first two commits landed there by mistake (888444e, 8a4aca7) and are re-done on feat/payability. Expect merge conflicts in customerService, CustomerFormPage, InvoiceDetailPage, planner/server/today.
+
 ## Environment
 | Var | Purpose | Where set | Status |
 |---|---|---|---|

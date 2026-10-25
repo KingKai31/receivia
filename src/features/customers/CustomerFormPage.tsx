@@ -42,6 +42,12 @@ const ENTITY = [
   { value: 'government', label: 'Government' },
   { value: 'individual', label: 'Individual' },
 ];
+const CHANNEL = [
+  { value: '', label: 'No preference' },
+  { value: 'email', label: 'Email' },
+  { value: 'whatsapp', label: 'WhatsApp' },
+  { value: 'sms', label: 'SMS' },
+];
 const PRESUMPTIVE = [
   { value: 'unknown', label: 'Unknown' },
   { value: 'yes', label: 'Yes' },
@@ -152,6 +158,33 @@ export function CustomerFormPage() {
           />
           <Input label={t('Phone')} type="tel" {...register('phone')} />
           <Input label={t('Address')} {...register('address')} />
+          <Input label={t('Accounts payable contact name')} {...register('ap_name')} />
+          <Input
+            label={t('Accounts payable email')}
+            type="email"
+            error={errors.ap_email?.message}
+            hint={t('Reminders go here first.')}
+            {...register('ap_email')}
+          />
+          <Input label={t('Accounts payable phone')} type="tel" {...register('ap_phone')} />
+          <Select
+            label={t('Preferred channel')}
+            options={CHANNEL.map((o) => ({ ...o, label: t(o.label) }))}
+            {...register('preferred_channel')}
+          />
+          <label>
+            <input type="checkbox" {...register('po_required')} /> {t('Buyer requires a PO number')}
+          </label>
+          <label>
+            <input type="checkbox" {...register('cc_owner')} /> {t('Send me a copy of reminders')}
+          </label>
+          <Input
+            label={t('Credit limit (₹)')}
+            inputMode="decimal"
+            error={errors.credit_limit?.message}
+            hint={t('Leave empty to use the suggested limit from payment history.')}
+            {...register('credit_limit')}
+          />
           <label>
             <input type="checkbox" {...register('opt_in_whatsapp')} />{' '}
             {t('Agreed to receive WhatsApp messages')}

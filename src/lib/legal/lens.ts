@@ -1,4 +1,5 @@
 import type { ISODate } from '@/lib/dates';
+import { acceptanceOf } from './acceptance';
 import { itc180 } from './itc180';
 import { msmeDueDate, msmeForm1, sec43bh } from './msme';
 import type { BuyerFacts, InvoiceFacts, LegalResult, SellerFacts } from './common';
@@ -9,6 +10,8 @@ export interface Lens {
   line_hi: string;
   line_mr: string;
   msme_due: ISODate;
+  /** True when the acceptance date is not confirmed by the buyer or by proof. */
+  msme_due_assumed: boolean;
   form1: LegalResult<{ days_past: number }>;
 }
 
@@ -24,7 +27,7 @@ export function buyerLens(args: {
 }): Lens {
   const { seller, buyer, invoice, today } = args;
   const msme_due = msmeDueDate(
-    invoice.accepted_on ?? invoice.issue_date,
+    acceptanceOf(invoice).date,
     buyer.credit_days,
     buyer.has_written_agreement,
   );
@@ -38,6 +41,7 @@ export function buyerLens(args: {
     line_hi: pick?.sentence_hi ?? '',
     line_mr: pick?.sentence_mr ?? '',
     msme_due,
+    msme_due_assumed: acceptanceOf(invoice).assumed,
     form1,
   };
 }

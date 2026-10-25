@@ -27,7 +27,7 @@ import {
 } from './collectionDocs';
 
 const INVOICE_COLS =
-  'id, number, invoice_type, issue_date, accepted_on, due_date, total_paise, paid_paise, credited_paise, tds_paise, cgst_paise, sgst_paise, igst_paise, reverse_charge';
+  'id, number, invoice_type, issue_date, accepted_on, acceptance_source, due_date, total_paise, paid_paise, credited_paise, tds_paise, cgst_paise, sgst_paise, igst_paise, reverse_charge';
 
 async function openInvoices(
   customerId: string,

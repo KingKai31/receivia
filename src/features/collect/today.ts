@@ -41,6 +41,11 @@ export interface TodayCustomer extends BuyerFacts {
   updated_at: string;
   /** Channels the customer has withdrawn consent for ('any' blocks all). */
   consent_withdrawn?: string[];
+  /** Accounts-payable contact: reminders go here first. */
+  ap_email?: string | null;
+  ap_phone?: string | null;
+  preferred_channel?: 'email' | 'whatsapp' | 'sms' | null;
+  cc_owner?: boolean;
 }
 
 export interface TodayInput {

@@ -11,4 +11,5 @@ export {
 } from './msme';
 export { buyerLens, type Lens } from './lens';
 export * from './government';
+export { acceptanceOf, type Acceptance, type AcceptanceSource } from './acceptance';
 export { section34Deadline, section34Warning } from './section34';

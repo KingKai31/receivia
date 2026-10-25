@@ -1,7 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 import { validateGstin } from '@/lib/gstin';
-import { paise, type Paise } from '@/lib/money';
+import { paise, parseRupees, type Paise } from '@/lib/money';
 import {
   PAGE_SIZE,
   fromPgError,
@@ -36,6 +36,13 @@ export interface Customer {
   opt_in_whatsapp_at: string | null;
   archived_at: string | null;
   snoozed_until: string | null;
+  ap_name: string | null;
+  ap_email: string | null;
+  ap_phone: string | null;
+  po_required: boolean;
+  preferred_channel: 'email' | 'whatsapp' | 'sms' | null;
+  cc_owner: boolean;
+  credit_limit_paise: number | null;
   updated_at: string;
 }
 
@@ -66,6 +73,19 @@ export const customerSchema = z.object({
   address: z.string().trim(),
   opt_in_whatsapp: z.boolean(),
   is_psu: z.boolean(),
+  ap_name: z.string().trim(),
+  ap_email: z
+    .string()
+    .trim()
+    .refine((v) => v === '' || /^\S+@\S+\.\S+$/.test(v), 'Enter a valid email'),
+  ap_phone: z.string().trim(),
+  po_required: z.boolean(),
+  preferred_channel: z.enum(['', 'email', 'whatsapp', 'sms']),
+  cc_owner: z.boolean(),
+  credit_limit: z
+    .string()
+    .trim()
+    .refine((v) => v === '' || /^\d+(\.\d{1,2})?$/.test(v), 'Rupees, up to 2 decimals'),
 });
 export type CustomerForm = z.infer<typeof customerSchema>;
 
@@ -85,6 +105,13 @@ export const EMPTY_CUSTOMER: CustomerForm = {
   address: '',
   opt_in_whatsapp: false,
   is_psu: false,
+  ap_name: '',
+  ap_email: '',
+  ap_phone: '',
+  po_required: false,
+  preferred_channel: '',
+  cc_owner: false,
+  credit_limit: '',
 };
 
 const blank = (v: string) => (v.trim() ? v.trim() : null);
@@ -106,6 +133,13 @@ export function customerToForm(c: Customer): CustomerForm {
     address: c.address ?? '',
     opt_in_whatsapp: c.opt_in_whatsapp,
     is_psu: c.is_psu ?? false,
+    ap_name: c.ap_name ?? '',
+    ap_email: c.ap_email ?? '',
+    ap_phone: c.ap_phone ?? '',
+    po_required: c.po_required,
+    preferred_channel: c.preferred_channel ?? '',
+    cc_owner: c.cc_owner,
+    credit_limit: c.credit_limit_paise === null ? '' : String(c.credit_limit_paise / 100),
   };
 }
 
@@ -132,6 +166,13 @@ export function formToRow(
     phone: blank(f.phone),
     address: blank(f.address),
     opt_in_whatsapp: f.opt_in_whatsapp,
+    ap_name: blank(f.ap_name),
+    ap_email: blank(f.ap_email),
+    ap_phone: blank(f.ap_phone),
+    po_required: f.po_required,
+    preferred_channel: f.preferred_channel || null,
+    cc_owner: f.cc_owner,
+    credit_limit_paise: f.credit_limit ? parseRupees(f.credit_limit) : null,
     opt_in_whatsapp_at: f.opt_in_whatsapp
       ? optedInNow
         ? new Date().toISOString()

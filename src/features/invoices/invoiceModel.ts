@@ -30,6 +30,10 @@ export interface DraftInput {
   deliveryAddress: string;
   notes: string;
   lines: DraftLine[];
+  poNumber?: string;
+  ewayBillNo?: string;
+  deliveryRef?: string;
+  payabilityScore?: number;
 }
 
 export interface SupplierInfo {
@@ -138,6 +142,10 @@ export function headerPayload(input: DraftInput, c: ComputedDraft, supplierState
     notes: input.notes.trim() || null,
     reverse_charge: input.reverseCharge,
     delivery_address: input.deliveryAddress.trim() || null,
+    po_number: input.poNumber?.trim() || null,
+    eway_bill_no: input.ewayBillNo?.trim() || null,
+    delivery_ref: input.deliveryRef?.trim() || null,
+    payability_score: input.payabilityScore ?? null,
   };
 }
 

@@ -142,6 +142,19 @@ export function InvoiceDetailPage() {
                 </dd>
               </>
             ) : null}
+            {i.status !== 'draft' ? (
+              <>
+                <dt>{t('Acceptance')}</dt>
+                <dd>
+                  {i.acceptance_source === 'buyer_confirmed'
+                    ? t('Buyer confirmed')
+                    : i.acceptance_source === 'proof_uploaded'
+                      ? t('Proof uploaded')
+                      : t('Assumed')}{' '}
+                  <span className="num">{i.accepted_on ?? i.issue_date}</span>
+                </dd>
+              </>
+            ) : null}
           </dl>
         </Card>
         <MoneyTable
