@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { Navigate, useLocation } from 'react-router-dom';
+import { Link, Navigate, useLocation } from 'react-router-dom';
 import { z } from 'zod';
 import { Button, Card, Input, LanguagePicker } from '@/components/ui';
 import { useAuth } from './AuthProvider';
@@ -106,6 +106,11 @@ export function SignInPage() {
           </p>
         ) : null}
       </Card>
+      <p className="text-center">
+        <Link to="/how-it-works">{t('How it works')}</Link> {t('·')}{' '}
+        <Link to="/trust">{t('pages.trust')}</Link> {t('·')}{' '}
+        <Link to="/privacy">{t('Privacy notice')}</Link>
+      </p>
     </main>
   );
 }

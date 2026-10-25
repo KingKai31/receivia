@@ -40,3 +40,4 @@ export {
   type StatTileProps,
   type TimelineStep,
 } from './display';
+export { Why } from './WhyDrawer';

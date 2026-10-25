@@ -22,6 +22,8 @@ export interface BacktestResult {
   actualTotal: number;
   /** Weighted absolute percentage error: sum |actual - forecast| / sum actual. Null if nothing came in. */
   wape: number | null;
+  /** The same error measured on blocks of 4 weeks: lumps of a few large invoices even out. */
+  wapeMonthly: number | null;
   sentence: string;
 }
 
@@ -85,12 +87,19 @@ export function backtest(args: {
   const actualTotal = rows.reduce((s, r) => s + r.actual, 0);
   const err = rows.reduce((s, r) => s + Math.abs(r.actual - r.forecast), 0);
   const wape = actualTotal > 0 ? err / actualTotal : null;
+  let errM = 0;
+  for (let i = 0; i < rows.length; i += 4) {
+    const blk = rows.slice(i, i + 4);
+    errM += Math.abs(blk.reduce((s, r) => s + r.actual - r.forecast, 0));
+  }
+  const wapeMonthly = actualTotal > 0 ? errM / actualTotal : null;
   return {
     asOf,
     weeks: rows,
     forecastTotal,
     actualTotal,
     wape,
+    wapeMonthly,
     sentence: sentence(weeks, wape, forecastTotal, actualTotal),
   };
 }

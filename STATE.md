@@ -34,6 +34,8 @@
 - [x] S8 Ship (demo story seeded and calibrated, live walk passes, README + docs written; owner items: Render env for the demo-reset cron, video and team names)
 - [x] S12 AI features (branch feat/ai, not merged; code, tests and deploy done; live model path unverified: Anthropic credits still missing, rules fallbacks verified live)
 
+- [ ] S11 Explainability (branch feat/explain, NOT merged; see Decisions 2026-10-25 S11 and Session log)
+
 ## Environment
 | Var | Purpose | Where set | Status |
 |---|---|---|---|
@@ -298,6 +300,8 @@ All deployed with `node scripts/sb.mjs functions deploy <name> --project-ref '$R
 - 2026-10-25 (S12): Listen uses speechSynthesis with hi-IN/mr-IN/en-IN and is hidden unless the browser has a voice for the app language. Spoken text is built from the same chase list as Today.
 - 2026-10-25 (S12): No new tables. Rate limit 60 calls/hour/org per AI function via rate_limit_hit.
 
+- 2026-10-25 (S11): Explain functions in src/lib/explain (value, display, formula, inputs, sources, law); the "?" drawer is src/components/ui/WhyDrawer.tsx (portaled dialog). Payability score and credit limit entries are adapters only (payabilityEngine in src/lib/explain/payabilityAdapter.ts, "TODO-merge: call src/lib/payability from feat/payability"); until wired they show "pending". ForecastPage passes them the same args. The /how-it-works page body is English only (drawer labels have hi/mr keys); page data comes from src/generated/tests.json, written by scripts/gen-tests-json.mjs before every build (prebuild; TESTS_JSON=skip keeps the last test counts; the real-Postgres count is recorded by hand).
+- 2026-10-25 (S11): Demo backtest on 2026-10-25: 52% weekly WAPE, 13% monthly (blocks of 4 weeks), forecast total 1.93 cr vs actual 1.99 cr (no bias; error is timing). Cause is mostly few large invoices (30 paid, median 1.77 L, max 4.72 L; weekly actual 9.4 L in week 3 against 4.6 L forecast) plus a seed artefact for the merge session: supabase/seed/demo-story.mjs forecastInput puts only PAID invoices in `hist`, so invoices still open today are missing from the backtest actuals (right-censoring): weeks 6-8 show 0 collected against 0.9 L forecast, and slow payers look faster than they are. Each customer has only 2-4 paid invoices with near-constant delays. Seed NOT changed here. Possible fix later: include invoices open today in history (events empty) so they count as not yet paid, and seed 6+ invoices per customer with varied delays.
 ## Needs owner
 12. Render: on the cron job `receivia-demo-reset` set TEST_DATABASE_URL (the Supabase session-pooler URL from .env.local); until then reseed by hand with `node scripts/reset-demo.mjs`. Also: record the video and paste its link into README.md (VIDEO_LINK_PLACEHOLDER) and docs/deck.md; add team names (TEAM_NAMES_PLACEHOLDER); add a real owner quote to docs/demo-script.md; verify the competitor table in docs/deck.md before presenting; copy docs/submission.md into the HackCache form.
 8. Native-speaker review of Hindi and Marathi (all machine-written, hedged legal lines included): the Payment Demand Letter disclaimer ("This letter is from ... not a legal notice from a lawyer"), Section 34 / 43B(h) / ITC 180-day / MSME Form I sentences, privacy notice, trust page, consent wording, reminder templates, pay page, owner brief, amount-in-words tables (Marathi 100 is शंभर, 200 दोनशे ...; Hindi सौ/हज़ार/लाख/करोड़). Terms to check: चालान vs बिल for invoice, "भुगतान माँग पत्र" / "पेमेंट डिमांड लेटर", सुरक्षा बफर, पूर्वानुमान vs अंदाज, short month names (अक्टू॰, ऑक्टो).
@@ -328,6 +332,8 @@ All deployed with `node scripts/sb.mjs functions deploy <name> --project-ref '$R
 - 2026-10-24, S5 Forecast and prioritisation: feat/payments merged into main and pushed to origin; branch feat/forecast. src/lib/forecast, migration 0007, /forecast, Today dashboard, /expenses, cash settings, Collect order by chase priority, demo history seed.
 
 - 2026-10-24, S6 Agent, automation, live deploy: feat/forecast merged into main; branch feat/agent merged back and main pushed. Migration 0008, planner, draft validator, 3 edge functions, Resend sender, brief + approve link, Render workflow + cron + pg_cron, Settings/Collect/Today UI, live Playwright smoke.
+
+- 2026-10-25, S11 Explainability: branch feat/explain (not merged): explain functions + tests, Why drawer on invoice detail and forecast, /how-it-works, tests.json build step, monthly WAPE. Likely conflicts at merge: src/lib/explain (also on feat/impact), ForecastPage.tsx, InvoiceDetailPage.tsx, App.tsx, SignInPage.tsx, TrustPage.tsx (constants moved to features/trust/realVsSim.ts), Layout.tsx, ui/index.ts, ui.css, src/locales/hi.json and mr.json, package.json (prebuild).
 
 ## Next session
 After the hackathon: Needs owner 12 and the list above; Razorpay keys (1); split test and prod Supabase projects (7). Older notes follow.

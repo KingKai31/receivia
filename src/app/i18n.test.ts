@@ -8,7 +8,7 @@ import mr from '@/locales/mr.json';
 import { amountInWordsFor } from '@/lib/money';
 import { BASES, CHANNELS } from '@/features/privacy/ConsentCard';
 import { PRIVACY_SECTIONS } from '@/features/privacy/PrivacyPage';
-import { REAL_VS_SIMULATED, SECURITY } from '@/features/trust/TrustPage';
+import { REAL_VS_SIMULATED, SECURITY } from '@/features/trust/realVsSim';
 import { runTrustCases } from '@/features/trust/trustCases';
 import i18n, { LANGUAGES, tr } from './i18n';
 

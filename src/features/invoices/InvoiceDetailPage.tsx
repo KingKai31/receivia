@@ -13,8 +13,11 @@ import {
   ResponsiveTable,
   Timeline,
   Title,
+  Why,
   useToast,
 } from '@/components/ui';
+import { addDays, todayIST } from '@/lib/dates';
+import { explainDaysOverdue, explainItc180, explainStoredInvoiceTotal } from '@/lib/explain';
 import { useOrg } from '@/features/auth/useOrg';
 import { getCustomer } from '@/features/customers/customerService';
 import { isGovernmentPath } from '@/lib/legal/government';
@@ -33,6 +36,10 @@ import {
 } from './invoiceService';
 
 const money = (n: number) => formatINR(paise(n));
+const invoiceSource = (i: { id: string; number: string | null }) => ({
+  label: `Invoice ${i.number ?? 'draft'}`,
+  href: `/invoices/${i.id}`,
+});
 
 export function InvoiceDetailPage() {
   const { t } = useTranslation();
@@ -116,12 +123,38 @@ export function InvoiceDetailPage() {
             <dt>{t('Invoice date')}</dt>
             <dd className="num">{i.issue_date}</dd>
             <dt>{t('Due date')}</dt>
-            <dd className="num">{i.due_date}</dd>
+            <dd className="num">
+              {i.due_date}
+              {i.balance_paise > 0 && i.due_date < todayIST() ? (
+                <Why
+                  explain={() => explainDaysOverdue(i.due_date, todayIST(), [invoiceSource(i)])}
+                />
+              ) : null}
+            </dd>
+            {i.status !== 'draft' && i.balance_paise > 0 ? (
+              <>
+                <dt>{t('180-day ITC date')}</dt>
+                <dd className="num">
+                  {addDays(i.issue_date, 180)}
+                  <Why
+                    explain={() => explainItc180(i.issue_date, todayIST(), [invoiceSource(i)])}
+                  />
+                </dd>
+              </>
+            ) : null}
           </dl>
         </Card>
         <MoneyTable
           lines={[
-            { label: t('Total'), amount: money(i.total_paise) },
+            {
+              label: t('Total'),
+              amount: (
+                <>
+                  {money(i.total_paise)}
+                  <Why explain={() => explainStoredInvoiceTotal(i, [invoiceSource(i)])} />
+                </>
+              ),
+            },
             { label: t('Paid'), amount: money(i.paid_paise) },
             ...(i.credited_paise > 0
               ? [{ label: t('Credit notes'), amount: money(i.credited_paise) }]

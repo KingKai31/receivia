@@ -84,6 +84,9 @@ const StubPage = lazy(() =>
 const TrustPage = lazy(() =>
   import('@/features/trust/TrustPage').then((m) => ({ default: m.TrustPage })),
 );
+const HowItWorksPage = lazy(() =>
+  import('@/features/howitworks/HowItWorksPage').then((m) => ({ default: m.HowItWorksPage })),
+);
 const PrivacyPage = lazy(() =>
   import('@/features/privacy/PrivacyPage').then((m) => ({ default: m.PrivacyPage })),
 );
@@ -139,6 +142,14 @@ export function App() {
                 element={
                   <Guard>
                     <PrivacyPage />
+                  </Guard>
+                }
+              />
+              <Route
+                path="/how-it-works"
+                element={
+                  <Guard>
+                    <HowItWorksPage />
                   </Guard>
                 }
               />
