@@ -560,12 +560,18 @@ function backtest(args) {
 	const actualTotal = rows.reduce((s, r) => s + r.actual, 0);
 	const err = rows.reduce((s, r) => s + Math.abs(r.actual - r.forecast), 0);
 	const wape = actualTotal > 0 ? err / actualTotal : null;
+	let errM = 0;
+	for (let i = 0; i < rows.length; i += 4) {
+		const blk = rows.slice(i, i + 4);
+		errM += Math.abs(blk.reduce((s, r) => s + r.actual - r.forecast, 0));
+	}
 	return {
 		asOf,
 		weeks: rows,
 		forecastTotal,
 		actualTotal,
 		wape,
+		wapeMonthly: actualTotal > 0 ? errM / actualTotal : null,
 		sentence: sentence(weeks, wape, forecastTotal, actualTotal)
 	};
 }
