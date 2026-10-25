@@ -82,7 +82,8 @@ export function pickChannel(
     return { channel: 'whatsapp', note: 'Preferred channel: WhatsApp.' };
   if (c.preferred_channel === 'email' && emailOk)
     return { channel: 'email', note: 'Preferred channel: email.' };
-  if (emailOk) return { channel: 'email', note: c.ap_email ? 'Accounts payable email.' : 'Email on file.' };
+  if (emailOk)
+    return { channel: 'email', note: c.ap_email ? 'Accounts payable email.' : 'Email on file.' };
   const waEnabled = channels.includes('whatsapp') && phone;
   if (waEnabled && out.includes('whatsapp'))
     return { channel: null, note: 'The customer has withdrawn consent for WhatsApp.' };

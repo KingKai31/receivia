@@ -26,6 +26,8 @@ export interface BusinessProfile {
   bank_ifsc: string | null;
   upi_id: string | null;
   invoice_prefix: string;
+  payability_threshold?: number;
+  statement_monthly?: boolean;
   updated_at: string;
 }
 

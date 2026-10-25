@@ -12,7 +12,12 @@ Deno.serve(async (req) => {
   const admin = createClient(url, service, { auth: { persistSession: false } });
 
   const body = await req.json().catch(() => null);
-  if (!body || typeof body.token !== 'string' || body.token.length < 16 || body.token.length > 200) {
+  if (
+    !body ||
+    typeof body.token !== 'string' ||
+    body.token.length < 16 ||
+    body.token.length > 200
+  ) {
     return json({ error: 'not_found' }, 404);
   }
   const acting = typeof body.kind === 'string';
@@ -37,7 +42,8 @@ Deno.serve(async (req) => {
   });
   if (res.error) {
     if (res.error.code === '42501') return json({ error: 'not_found' }, 404);
-    if (res.error.code === '22023') return json({ error: 'invalid', message: res.error.message }, 400);
+    if (res.error.code === '22023')
+      return json({ error: 'invalid', message: res.error.message }, 400);
     return json({ error: 'failed' }, 500);
   }
   return json({ ok: true });

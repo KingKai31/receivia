@@ -32,14 +32,18 @@ export function splitEvenly(balance: number, count: number, today: ISODate): Ins
 export function validatePlan(items: Instalment[], balance: number, today: ISODate): string[] {
   const c = INSTALMENT_CONFIG;
   const errs: string[] = [];
-  if (items.length < c.minCount || items.length > c.maxCount) errs.push(`Choose ${c.minCount} to ${c.maxCount} instalments.`);
+  if (items.length < c.minCount || items.length > c.maxCount)
+    errs.push(`Choose ${c.minCount} to ${c.maxCount} instalments.`);
   let sum = 0;
   items.forEach((it, i) => {
     sum += it.amount_paise;
-    if (!Number.isSafeInteger(it.amount_paise) || it.amount_paise <= 0) errs.push(`Instalment ${i + 1}: amount must be above zero.`);
+    if (!Number.isSafeInteger(it.amount_paise) || it.amount_paise <= 0)
+      errs.push(`Instalment ${i + 1}: amount must be above zero.`);
     const d = daysBetween(today, it.date);
-    if (d < 0 || d > c.maxDaysAhead) errs.push(`Instalment ${i + 1}: date must be within ${c.maxDaysAhead} days.`);
-    if (i > 0 && daysBetween(items[i - 1]!.date, it.date) < c.minGapDays) errs.push(`Instalment ${i + 1}: at least ${c.minGapDays} days after the previous one.`);
+    if (d < 0 || d > c.maxDaysAhead)
+      errs.push(`Instalment ${i + 1}: date must be within ${c.maxDaysAhead} days.`);
+    if (i > 0 && daysBetween(items[i - 1]!.date, it.date) < c.minGapDays)
+      errs.push(`Instalment ${i + 1}: at least ${c.minGapDays} days after the previous one.`);
   });
   if (sum !== balance) errs.push('Instalments must add up to the balance.');
   return errs;

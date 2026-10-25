@@ -9,7 +9,7 @@ import { getCustomer, listCustomers } from '@/features/customers/customerService
 import { getBusinessProfile } from '@/features/settings/businessProfileService';
 import { todayIST } from '@/lib/dates';
 import { GST_RATES } from '@/lib/gst';
-import { formatINR, formatINRShort } from '@/lib/money';
+import { formatINR, formatINRShort, paise } from '@/lib/money';
 import { can } from '@/lib/permissions';
 import { errorMessage } from '@/lib/service/errors';
 import {
@@ -20,9 +20,16 @@ import {
   type DraftInput,
   type DraftLine,
 } from './invoiceModel';
-import { getInvoice, issueInvoice, saveDraft } from './invoiceService';
+import { getInvoice, issueInvoice, overridePayability, saveDraft } from './invoiceService';
+import { PayabilityChecklist } from './PayabilityChecklist';
+import { creditWarning, loadCreditContext, scoreDraft } from './payabilityService';
+import { PAYABILITY_CONFIG } from '@/lib/payability';
+import { ServiceError } from '@/lib/service/errors';
 
 interface FormValues {
+  poNumber: string;
+  ewayBillNo: string;
+  deliveryRef: string;
   customerId: string;
   issueDate: string;
   creditDays: string;
@@ -67,6 +74,9 @@ export function InvoiceFormPage() {
     useForm<FormValues>({
       defaultValues: {
         customerId: params.get('customer') ?? '',
+        poNumber: '',
+        ewayBillNo: '',
+        deliveryRef: '',
         issueDate: todayIST(),
         creditDays: '30',
         dueDate: dueDateFor(todayIST(), 30),
@@ -83,6 +93,9 @@ export function InvoiceFormPage() {
     if (!e) return;
     reset({
       customerId: e.invoice.customer_id,
+      poNumber: e.invoice.po_number ?? '',
+      ewayBillNo: e.invoice.eway_bill_no ?? '',
+      deliveryRef: e.invoice.delivery_ref ?? '',
       issueDate: e.invoice.issue_date,
       creditDays: '30',
       dueDate: e.invoice.due_date,
@@ -129,6 +142,9 @@ export function InvoiceFormPage() {
     deliveryAddress: v.deliveryAddress,
     notes: v.notes,
     lines: v.lines.map((l) => ({ ...l, gst_rate: Number(l.gst_rate) })),
+    poNumber: v.poNumber,
+    ewayBillNo: v.ewayBillNo,
+    deliveryRef: v.deliveryRef,
   });
 
   const supplier = profile.data?.state_code
@@ -145,17 +161,57 @@ export function InvoiceFormPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [JSON.stringify(values), supplier?.stateCode, supplier?.registrationType, customer.data]);
 
+  const threshold = profile.data?.payability_threshold ?? PAYABILITY_CONFIG.defaultThreshold;
+  const payability = useMemo(
+    () =>
+      live.computed && customer.data && profile.data
+        ? scoreDraft(toInput(values), live.computed, customer.data, profile.data)
+        : null,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [live.computed, customer.data, profile.data, JSON.stringify(values)],
+  );
+  const belowThreshold = payability !== null && payability.score < threshold;
+  const isOwner = org.data?.role === 'owner';
+  const [overrideReason, setOverrideReason] = useState('');
+  const creditCtx = useQuery({
+    queryKey: ['credit-context', orgId, customerId],
+    enabled: Boolean(orgId && customerId),
+    queryFn: () => loadCreditContext(orgId!, customerId),
+  });
+  const credit =
+    creditCtx.data && customer.data && live.computed
+      ? creditWarning(creditCtx.data, customer.data, live.computed.calc.grandTotal)
+      : null;
+
   const save = useMutation({
-    mutationFn: async (args: { v: FormValues; issue: boolean }) => {
-      if (!supplier || !customer.data || !orgId) throw new Error('Choose a customer first.');
+    mutationFn: async (args: { v: FormValues; issue: boolean; override?: string }) => {
+      if (!supplier || !customer.data || !orgId || !profile.data)
+        throw new Error('Choose a customer first.');
+      const input = toInput(args.v);
+      const score = scoreDraft(
+        input,
+        computeDraft(input, supplier, customer.data),
+        customer.data,
+        profile.data,
+      ).score;
       let inv = await saveDraft({
         orgId,
         invoice: existing.data?.invoice,
-        input: toInput(args.v),
+        input: { ...input, payabilityScore: score },
         supplier,
         buyer: customer.data,
       });
-      if (args.issue) inv = await issueInvoice(inv);
+      if (args.issue) {
+        if (score < threshold) {
+          if (!args.override?.trim())
+            throw new ServiceError(
+              'VALIDATION',
+              `Payability score ${score} is below ${threshold}. The owner can override with a reason.`,
+            );
+          inv = await overridePayability(inv.id, args.override);
+        }
+        inv = await issueInvoice(inv);
+      }
       return inv;
     },
     onSuccess: (inv) => {
@@ -222,6 +278,13 @@ export function InvoiceFormPage() {
             <input type="checkbox" {...register('reverseCharge')} /> {t('Reverse charge applies')}
           </label>
           <Input label={t('Delivery address')} {...register('deliveryAddress')} />
+          <Input label={t('PO or reference number')} {...register('poNumber')} />
+          <Input label={t('E-way bill number')} {...register('ewayBillNo')} />
+          <Input
+            label={t('GRN or challan number')}
+            hint={t('Proof of delivery can be uploaded after the invoice is issued.')}
+            {...register('deliveryRef')}
+          />
 
           <h2>{t('Lines')}</h2>
           {fields.map((f, i) => (
@@ -298,13 +361,44 @@ export function InvoiceFormPage() {
             )}
           </Card>
 
+          {credit?.exceeded ? (
+            <p role="alert">
+              {t('{{over}} over the credit limit; usually pays {{days}} days late.', {
+                over: formatINRShort(paise(credit.overPaise)),
+                days: credit.usualDelayDays,
+              })}
+            </p>
+          ) : null}
+          {payability ? <PayabilityChecklist p={payability} threshold={threshold} /> : null}
+          {belowThreshold ? (
+            <Card>
+              <p role="alert">
+                {isOwner
+                  ? t(
+                      'Below the payability threshold. Give a reason to issue anyway; it is logged.',
+                    )
+                  : t('Below the payability threshold. Only the owner can override.')}
+              </p>
+              {isOwner ? (
+                <Input
+                  label={t('Reason for override')}
+                  value={overrideReason}
+                  onChange={(e) => setOverrideReason(e.target.value)}
+                />
+              ) : null}
+            </Card>
+          ) : null}
           {writable ? (
             <div className="flex flex-wrap gap-3">
               <Button type="submit" variant="secondary">
                 {t('Save draft')}
               </Button>
               <Button
-                onClick={() => void handleSubmit((v) => save.mutateAsync({ v, issue: true }))()}
+                onClick={() =>
+                  void handleSubmit((v) =>
+                    save.mutateAsync({ v, issue: true, override: overrideReason }),
+                  )()
+                }
               >
                 {t('Save and issue')}
               </Button>

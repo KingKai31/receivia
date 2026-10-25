@@ -97,7 +97,8 @@ export const PAY_TEXT: Record<PayLang, PayStrings> = {
     partsCount: 'Number of instalments',
     partsDate: 'Date',
     partsAmount: 'Amount (₹)',
-    partsHint: '2 to 4 instalments, within 90 days, at least 7 days apart, adding up to the balance.',
+    partsHint:
+      '2 to 4 instalments, within 90 days, at least 7 days apart, adding up to the balance.',
     partsSent: 'Sent. The business will approve the plan or reply.',
     partsPending: 'Your instalment plan is waiting for the business to approve it.',
     partsApproved: 'Instalment plan approved:',

@@ -459,7 +459,17 @@ function ActionForms({
 type PayT = (typeof PAY_TEXT)['en'];
 
 /** "Goods/services received": the buyer's acceptance date, which MSMED and 43B(h) lines count from. */
-function ReceivedCard({ token, v, t, onDone }: { token: string; v: PayView; t: PayT; onDone: () => void }) {
+function ReceivedCard({
+  token,
+  v,
+  t,
+  onDone,
+}: {
+  token: string;
+  v: PayView;
+  t: PayT;
+  onDone: () => void;
+}) {
   const [date, setDate] = useState('');
   const [note, setNote] = useState('');
   const send = useMutation({
@@ -486,9 +496,18 @@ function ReceivedCard({ token, v, t, onDone }: { token: string; v: PayView; t: P
             if (date) send.mutate();
           }}
         >
-          <Input label={t.receivedOn} type="date" min={v.issue_date} max={todayIST()} value={date} onChange={(e) => setDate(e.target.value)} />
+          <Input
+            label={t.receivedOn}
+            type="date"
+            min={v.issue_date}
+            max={todayIST()}
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+          />
           <Input label={t.receivedNote} value={note} onChange={(e) => setNote(e.target.value)} />
-          {err ? <p role="alert">{err.kind === 'invalid' && err.message ? err.message : t.error}</p> : null}
+          {err ? (
+            <p role="alert">{err.kind === 'invalid' && err.message ? err.message : t.error}</p>
+          ) : null}
           <Button type="submit" disabled={!date || send.isPending}>
             {t.send}
           </Button>
@@ -499,7 +518,17 @@ function ReceivedCard({ token, v, t, onDone }: { token: string; v: PayView; t: P
 }
 
 /** "Pay in parts": 2 to 4 instalments within the configured limits; the owner approves. */
-function PartsCard({ token, v, t, onDone }: { token: string; v: PayView; t: PayT; onDone: () => void }) {
+function PartsCard({
+  token,
+  v,
+  t,
+  onDone,
+}: {
+  token: string;
+  v: PayView;
+  t: PayT;
+  onDone: () => void;
+}) {
   const today = todayIST();
   const [count, setCount] = useState(2);
   const [items, setItems] = useState(() => splitEvenly(v.balance_paise, 2, today));
@@ -539,10 +568,13 @@ function PartsCard({ token, v, t, onDone }: { token: string; v: PayView; t: PayT
             setCount(n);
             setItems(splitEvenly(v.balance_paise, n, today));
           }}
-          options={Array.from({ length: INSTALMENT_CONFIG.maxCount - INSTALMENT_CONFIG.minCount + 1 }, (_, i) => {
-            const n = i + INSTALMENT_CONFIG.minCount;
-            return { value: String(n), label: String(n) };
-          })}
+          options={Array.from(
+            { length: INSTALMENT_CONFIG.maxCount - INSTALMENT_CONFIG.minCount + 1 },
+            (_, i) => {
+              const n = i + INSTALMENT_CONFIG.minCount;
+              return { value: String(n), label: String(n) };
+            },
+          )}
         />
         {items.map((it, i) => (
           <div key={i} className="flex gap-2">
@@ -552,7 +584,9 @@ function PartsCard({ token, v, t, onDone }: { token: string; v: PayView; t: PayT
               min={today}
               max={addDays(today, INSTALMENT_CONFIG.maxDaysAhead)}
               value={it.date}
-              onChange={(e) => setItems(items.map((x, j) => (j === i ? { ...x, date: e.target.value } : x)))}
+              onChange={(e) =>
+                setItems(items.map((x, j) => (j === i ? { ...x, date: e.target.value } : x)))
+              }
             />
             <Input
               label={`${t.partsAmount} ${i + 1}`}
@@ -560,13 +594,19 @@ function PartsCard({ token, v, t, onDone }: { token: string; v: PayView; t: PayT
               value={String(it.amount_paise / 100)}
               onChange={(e) => {
                 const n = Math.round(Number(e.target.value) * 100);
-                setItems(items.map((x, j) => (j === i ? { ...x, amount_paise: Number.isFinite(n) ? n : 0 } : x)));
+                setItems(
+                  items.map((x, j) =>
+                    j === i ? { ...x, amount_paise: Number.isFinite(n) ? n : 0 } : x,
+                  ),
+                );
               }}
             />
           </div>
         ))}
         {problems.length ? <p className="ui-hint">{problems[0]}</p> : null}
-        {err ? <p role="alert">{err.kind === 'invalid' && err.message ? err.message : t.error}</p> : null}
+        {err ? (
+          <p role="alert">{err.kind === 'invalid' && err.message ? err.message : t.error}</p>
+        ) : null}
         <Button disabled={problems.length > 0 || send.isPending} onClick={() => send.mutate()}>
           {t.send}
         </Button>

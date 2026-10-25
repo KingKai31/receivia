@@ -31,11 +31,17 @@ export interface CreditCheck {
 }
 
 /** Limit = daily billing x days the money typically stays out (credit days + usual delay) x headroom. */
-export function creditLimitFor(i: CreditInput): { limitPaise: number; source: 'manual' | 'model' | 'none' } {
+export function creditLimitFor(i: CreditInput): {
+  limitPaise: number;
+  source: 'manual' | 'model' | 'none';
+} {
   if (i.manualLimitPaise !== null) return { limitPaise: i.manualLimitPaise, source: 'manual' };
   if (i.billedInWindowPaise <= 0) return { limitPaise: Number.MAX_SAFE_INTEGER, source: 'none' };
   const perDay = i.billedInWindowPaise / CREDIT_CONFIG.windowDays;
-  const days = Math.max(i.creditDays + Math.max(i.usualDelayDays, 0), CREDIT_CONFIG.minDaysOfBilling);
+  const days = Math.max(
+    i.creditDays + Math.max(i.usualDelayDays, 0),
+    CREDIT_CONFIG.minDaysOfBilling,
+  );
   return { limitPaise: Math.round(perDay * days * CREDIT_CONFIG.headroom), source: 'model' };
 }
 
@@ -43,5 +49,12 @@ export function checkCredit(i: CreditInput): CreditCheck {
   const { limitPaise, source } = creditLimitFor(i);
   const afterPaise = i.exposurePaise + i.newInvoicePaise;
   const overPaise = source === 'none' ? 0 : Math.max(afterPaise - limitPaise, 0);
-  return { limitPaise, source, afterPaise, overPaise, exceeded: overPaise > 0, usualDelayDays: i.usualDelayDays };
+  return {
+    limitPaise,
+    source,
+    afterPaise,
+    overPaise,
+    exceeded: overPaise > 0,
+    usualDelayDays: i.usualDelayDays,
+  };
 }

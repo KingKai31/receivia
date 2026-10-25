@@ -346,7 +346,14 @@ async function mintPayLink(
 
 async function resendSend(
   env: AgentEnv,
-  a: { from: string; to: string; cc?: string | null; replyTo: string | null; subject: string; text: string },
+  a: {
+    from: string;
+    to: string;
+    cc?: string | null;
+    replyTo: string | null;
+    subject: string;
+    text: string;
+  },
 ): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
   if (!env.resendKey) return { ok: false, error: 'RESEND_API_KEY is not set' };
   try {
@@ -533,7 +540,10 @@ export async function runSend(
         }
       } else {
         // wa.me path: the owner taps the link in Today and confirms the send.
-        const url = (g.customer.ap_phone || g.customer.phone) ? whatsappUrl((g.customer.ap_phone || g.customer.phone)!, body) : null;
+        const url =
+          g.customer.ap_phone || g.customer.phone
+            ? whatsappUrl((g.customer.ap_phone || g.customer.phone)!, body)
+            : null;
         await db
           .from('agent_actions')
           .update({
