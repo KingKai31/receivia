@@ -13,7 +13,8 @@ export function showUpdateToast(): void {
     el.textContent = 'Updated. ';
     const b = document.createElement('button');
     b.textContent = 'Reload';
-    b.style.cssText = 'color:#fff;text-decoration:underline;background:none;border:0;font:inherit;cursor:pointer;min-height:32px';
+    b.style.cssText =
+      'color:#fff;text-decoration:underline;background:none;border:0;font:inherit;cursor:pointer;min-height:32px';
     b.onclick = () => location.reload();
     el.append(b);
     document.body.append(el);

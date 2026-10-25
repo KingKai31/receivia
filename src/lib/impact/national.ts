@@ -5,10 +5,12 @@ import { paise } from '@/lib/money';
 export const NATIONAL_BASELINES = {
   /** Average days MSMEs wait to be paid. */
   avgSettlementDays: 73,
-  avgSettlementSource: 'Recordent, 2026 report (as supplied to this project; verify before quoting)',
+  avgSettlementSource:
+    'Recordent, 2026 report (as supplied to this project; verify before quoting)',
   /** Delayed-payment claims filed on MSME Samadhaan, in crore rupees. */
   samadhaanClaimsCrore: 55244,
-  samadhaanSource: 'MSME Samadhaan portal, as of Aug 2026 (as supplied; verify at samadhaan.msme.gov.in)',
+  samadhaanSource:
+    'MSME Samadhaan portal, as of Aug 2026 (as supplied; verify at samadhaan.msme.gov.in)',
   /** Udyam registrations, in crore. */
   udyamCrore: 6.2,
   udyamSource: 'Udyam Registration portal (as supplied; verify at udyamregistration.gov.in)',
@@ -40,7 +42,8 @@ export interface NationalResult {
   adopterShareOfUdyam: number;
 }
 
-const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, Number.isFinite(n) ? n : lo));
+const clamp = (n: number, lo: number, hi: number) =>
+  Math.min(hi, Math.max(lo, Number.isFinite(n) ? n : lo));
 
 /**
  * Receivables are proportional to days to collect, so collecting d days faster out of B releases d/B of the

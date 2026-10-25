@@ -73,7 +73,8 @@ export function NationalImpactPage() {
         If Indian MSMEs collected faster <span className="nat-tag">Estimate</span>
       </h1>
       <p>
-        Move the sliders. These are estimates built on stated assumptions, not forecasts or promises.
+        Move the sliders. These are estimates built on stated assumptions, not forecasts or
+        promises.
       </p>
       <GlassCard variant="solid" className="impact-card" aria-label="Inputs">
         <Slider
@@ -136,7 +137,11 @@ export function NationalImpactPage() {
         </GlassCard>
         <GlassCard variant="solid" className="impact-card">
           <span>Days faster</span>
-          <CountUp className="nat-big" value={r.daysFaster} format={(n) => `${n.toFixed(1)} days`} />
+          <CountUp
+            className="nat-big"
+            value={r.daysFaster}
+            format={(n) => `${n.toFixed(1)} days`}
+          />
         </GlassCard>
       </section>
       <h2>Where the baselines come from</h2>

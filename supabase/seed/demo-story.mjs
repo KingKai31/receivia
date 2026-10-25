@@ -81,7 +81,16 @@ export const CUSTOMERS = [
   ['aurang', 'Aurangabad Auto Parts', '27', 'firm', 'standard', 'en', 'AAEFA8821L', '9822000020'],
   ['surat', 'Surat Textile Traders', '24', 'firm', 'standard', 'en', 'AAFFS3390R', '9879000021'],
   ['mumbai', 'Mumbai Logistics LLP', '27', 'firm', 'standard', 'en', 'AAMFM1175N', '9822000022'],
-  ['pmh', 'Pune Municipal Hospital', '27', 'government', 'standard', 'en', 'AAALP0482G', '9822000023'],
+  [
+    'pmh',
+    'Pune Municipal Hospital',
+    '27',
+    'government',
+    'standard',
+    'en',
+    'AAALP0482G',
+    '9822000023',
+  ],
 ].map(([key, name, state, entity_type, tier, language, pan, phone]) => ({
   key,
   name,

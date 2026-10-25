@@ -13,9 +13,21 @@ describe('nationalImpact', () => {
     expect(nationalImpact({ ...NATIONAL_DEFAULTS, adopters: 0 }).annualInterestSaved).toBe(0);
   });
   it('caps days at the baseline and clamps bad input', () => {
-    const r = nationalImpact({ adopters: 10, receivablesRupees: 100, daysFaster: 500, borrowingRatePct: 12 });
+    const r = nationalImpact({
+      adopters: 10,
+      receivablesRupees: 100,
+      daysFaster: 500,
+      borrowingRatePct: 12,
+    });
     expect(r.releasedShare).toBe(1);
-    expect(nationalImpact({ adopters: NaN, receivablesRupees: -5, daysFaster: -1, borrowingRatePct: NaN }).workingCapitalFreed).toBe(0);
+    expect(
+      nationalImpact({
+        adopters: NaN,
+        receivablesRupees: -5,
+        daysFaster: -1,
+        borrowingRatePct: NaN,
+      }).workingCapitalFreed,
+    ).toBe(0);
   });
   it('is monotonic in days faster', () => {
     const a = nationalImpact({ ...NATIONAL_DEFAULTS, daysFaster: 5 }).workingCapitalFreed;

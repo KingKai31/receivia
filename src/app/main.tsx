@@ -12,7 +12,10 @@ registerSW({
   onRegisteredSW(_url, reg) {
     // Look for a new deploy when the tab is opened again and every 30 minutes.
     const check = () => void reg?.update().catch(() => undefined);
-    document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && check());
+    document.addEventListener(
+      'visibilitychange',
+      () => document.visibilityState === 'visible' && check(),
+    );
     setInterval(check, 30 * 60 * 1000);
   },
 });
