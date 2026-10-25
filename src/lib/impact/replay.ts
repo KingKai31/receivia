@@ -65,9 +65,9 @@ export function receiviaLateDays(
   if (!inv.paidOn) return 0;
   const late = daysBetween(inv.dueDate, inv.paidOn);
   if (late <= 0) return late;
-  // 1. A dispute or hold is fixed up front.
+  // 1. A dispute or hold is fixed up front; friendly reminders pull the rest in.
   const held = Math.min(Math.max(inv.holdDays ?? 0, 0), late);
-  let l = late - held * cfg.payabilityFixShare;
+  let l = (late - held * cfg.payabilityFixShare) * (1 - cfg.friendlyNudgeShare);
   // 2. Reminder stages: after the latest stage that falls before payment, the remaining wait shrinks.
   let k: string | null = null;
   for (const [stage, day] of Object.entries(cfg.stageDays)) {

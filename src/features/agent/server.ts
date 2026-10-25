@@ -250,7 +250,11 @@ export async function runPlan(db: Db, orgId: string, env: AgentEnv): Promise<Pla
             { anthropicKey: env.anthropicKey, fetchImpl: env.fetchImpl },
           )
         : {
-            ...templateDraft(a.stage as MessageStage, g.customer.language, isGovernmentPath(g.customer)),
+            ...templateDraft(
+              a.stage as MessageStage,
+              g.customer.language,
+              isGovernmentPath(g.customer),
+            ),
             source: 'template' as const,
             note: 'draft cap reached: template',
           };

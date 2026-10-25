@@ -24,21 +24,21 @@ describe('receiviaLateDays', () => {
     expect(receiviaLateDays(inv({ dueDate: '2026-06-10', paidOn: null }))).toBe(0);
   });
   it('does not change a payment that came before the first reminder stage (day 7)', () => {
-    expect(receiviaLateDays(inv({ dueDate: '2026-06-10', paidOn: '2026-06-15' }))).toBe(5);
+    expect(receiviaLateDays(inv({ dueDate: '2026-06-10', paidOn: '2026-06-15' }))).toBe(3);
   });
   it('applies the stage factor to the wait that remains after the latest stage', () => {
-    // 20 days late: final (day 15, factor 0.8): 15 + 5 x 0.8 = 19
-    expect(receiviaLateDays(inv({ dueDate: '2026-06-10', paidOn: '2026-06-30' }))).toBe(19);
-    // 60 days late: next_steps (day 45, factor 0.6): 45 + 15 x 0.6 = 54
-    expect(receiviaLateDays(inv({ dueDate: '2026-06-10', paidOn: '2026-08-09' }))).toBe(54);
+    // 20 days late -> 10 after the friendly nudge; firm (day 7, factor 0.9): 7 + 3 x 0.9 = 9.7 -> 10
+    expect(receiviaLateDays(inv({ dueDate: '2026-06-10', paidOn: '2026-06-30' }))).toBe(10);
+    // 60 days late -> 30; final (day 15, factor 0.8): 15 + 15 x 0.8 = 27
+    expect(receiviaLateDays(inv({ dueDate: '2026-06-10', paidOn: '2026-08-09' }))).toBe(27);
   });
   it('removes 70% of hold days first, then recovers half of a missed promise', () => {
-    // 10 days late with 10 hold days: 10 - 7 = 3 (before day 7: no stage), slip 2 -> 3 - 1 = 2
+    // 10 days late with 10 hold days: (10 - 7) x 0.5 = 1.5; slip capped at 1.5 -> 1.5 - 0.75 = 0.75 -> 1
     expect(
       receiviaLateDays(
         inv({ dueDate: '2026-06-10', paidOn: '2026-06-20', holdDays: 10, promiseSlipDays: 2 }),
       ),
-    ).toBe(2);
+    ).toBe(1);
   });
   it('is never later than what happened and never negative for a late invoice', () => {
     fc.assert(
@@ -84,13 +84,13 @@ describe('replayImpact', () => {
     expect(r.borrowingCostAvoidedPaise).toBe(0);
     expect(r.withReceivia).toEqual(r.asHappened);
   });
-  it('hand-computed: one invoice 20 days late saves 1 day', () => {
+  it('hand-computed: one invoice 20 days late is paid 10 days sooner', () => {
     const r = replayImpact(base([inv({ dueDate: '2026-09-10', paidOn: '2026-09-30' })]));
-    expect(r.daysSaved).toBe(1);
+    expect(r.daysSaved).toBe(10);
     expect(r.amountPulledForwardPaise).toBe(100000);
-    expect(r.paiseDaysSaved).toBe(100000);
-    // 100000 paise-days x 12% / 365 = 32.9 paise
-    expect(r.borrowingCostAvoidedPaise).toBe(33);
+    expect(r.paiseDaysSaved).toBe(1000000);
+    // 1,000,000 paise-days x 12% / 365 = 328.8 paise
+    expect(r.borrowingCostAvoidedPaise).toBe(329);
     expect(r.invoicesPaid).toBe(1);
   });
   it('overdue at month end is lower or equal with Receivia; unpaid invoices are unchanged', () => {
@@ -181,6 +181,9 @@ describe('demo org replay and ROI', () => {
     expect(r.invoicesPaid).toBeGreaterThan(20);
     expect(r.withReceivia.avgDaysToCollect).toBeLessThan(r.asHappened.avgDaysToCollect);
     expect(r.withReceivia.overdueLatestPaise).toBeLessThanOrEqual(r.asHappened.overdueLatestPaise);
+    const gain = 1 - r.withReceivia.avgDaysToCollect / r.asHappened.avgDaysToCollect;
+    expect(gain).toBeGreaterThanOrEqual(0.15);
+    expect(gain).toBeLessThanOrEqual(0.45);
     expect(r.borrowingCostAvoidedPaise).toBeGreaterThan(0);
     expect(r.asHappened.collectedPaise).toBeGreaterThan(0);
     expect(JSON.stringify(replayImpact(replayIn))).toBe(JSON.stringify(r));
