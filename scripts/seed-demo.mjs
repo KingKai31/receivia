@@ -54,8 +54,8 @@ try {
       ex.rows[0]?.id ??
       (
         await c.query(
-          `insert into public.customers (org_id, name, gstin, state_code, entity_type, tier, language, phone, email, credit_days, has_written_agreement)
-           values ($1, $2, $3, $4, $5, $6, $7, $8, $9, 30, true) returning id`,
+          `insert into public.customers (org_id, name, gstin, state_code, entity_type, tier, language, phone, email, credit_days, has_written_agreement, is_psu)
+           values ($1, $2, $3, $4, $5, $6, $7, $8, $9, 30, true, $10) returning id`,
           [
             DEMO_ORG,
             cu.name,
@@ -66,6 +66,7 @@ try {
             cu.language,
             cu.phone,
             cu.email,
+            cu.is_psu,
           ],
         )
       ).rows[0].id;

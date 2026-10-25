@@ -22,8 +22,8 @@ describe('demo org story', () => {
   const d = build('2026-10-26');
   const T = '2026-10-26';
 
-  it('has 12 customers, about 45 invoices over 6 months, GSTINs with valid check digits', () => {
-    expect(story.CUSTOMERS).toHaveLength(12);
+  it('has 13 customers, about 45 invoices over 6 months, GSTINs with valid check digits', () => {
+    expect(story.CUSTOMERS).toHaveLength(13);
     expect(story.buildInvoices(T).length).toBeGreaterThanOrEqual(40);
     expect(
       d.hist.map((h: { issueDate: string }) => h.issueDate).sort()[0] <= addDays(T, -150),

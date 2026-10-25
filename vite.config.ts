@@ -32,6 +32,17 @@ export default defineConfig({
         navigateFallbackDenylist: [/^\/functions\//],
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
         maximumFileSizeToCacheInBytes: 3_000_000,
+        skipWaiting: true,
+        clientsClaim: true,
+        cleanupOutdatedCaches: true,
+        // index.html is always fetched from the network first so a new deploy is never hidden by the cache.
+        runtimeCaching: [
+          {
+            urlPattern: ({ request }) => request.mode === 'navigate',
+            handler: 'NetworkFirst',
+            options: { cacheName: 'html', networkTimeoutSeconds: 3 },
+          },
+        ],
       },
       devOptions: { enabled: false },
     }),
