@@ -286,16 +286,13 @@ export function explainSolverCost(plan: GapPlan, sources: ExplainSource[] = []) 
   });
 }
 
-// TODO-merge: call src/lib/payability from feat/payability (see payabilityAdapter.ts).
-const PENDING = 'Computed by the payability engine; shown here once that engine is merged.';
-
 export function explainPayability(d: CustomerDelay, sources: ExplainSource[] = []) {
-  const score = payabilityEngine.score(d);
   return make({
-    value: score ?? 'pending',
-    display: score === null ? 'pending' : `${score} / 100`,
-    title: 'Payability score',
-    formula: PENDING,
+    value: d.grade,
+    display: `Grade ${d.grade}`,
+    title: 'Payment reliability grade',
+    formula:
+      'The grade comes from how late this customer has paid before. With few paid invoices the customer own history is blended with your overall average: weight on own history = n / (n + k). The 80th-percentile days late is shown below.',
     inputs: [
       { label: 'Paid invoices (n)', value: String(d.n) },
       { label: 'Weight on own history', value: pct(d.weight) },
@@ -310,12 +307,13 @@ export function explainCreditLimit(
   args: { monthlyBilledPaise: number; creditDays: number; p80Late: number },
   sources: ExplainSource[] = [],
 ) {
-  const limit = payabilityEngine.creditLimit(args);
+  const { limitPaise: limit } = payabilityEngine.creditLimit(args);
   return make({
-    value: limit ?? 'pending',
-    display: limit === null ? 'pending' : inr(limit),
+    value: limit,
+    display: inr(limit),
     title: 'Suggested credit limit',
-    formula: PENDING,
+    formula:
+      'Limit = daily billing x days the money typically stays out (credit days + P80 days late, at least 30) x 1.25 headroom. A manual limit on the customer overrides it.',
     inputs: [
       { label: 'Average monthly billing', value: inr(args.monthlyBilledPaise) },
       { label: 'Credit days', value: String(args.creditDays) },

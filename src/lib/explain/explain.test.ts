@@ -31,7 +31,6 @@ import {
   explainSolverCost,
   explainStoredInvoiceTotal,
 } from './index';
-import { payabilityEngine } from './payabilityAdapter';
 
 const TODAY = '2026-10-26';
 const lines = [{ qty: 1, rate: paise(1_000_000), gstRate: 18 }];
@@ -228,17 +227,17 @@ describe('forecast explanations', () => {
     expect(e.value).toBe(plan.totalCostPaise);
     expect(e.inputs.length).toBe(plan.steps.length + 2);
   });
-  it('payability and credit limit are adapters: raw inputs shown, value from the engine hook', () => {
+  it('reliability grade and credit limit come from the real engines', () => {
     const d = modelFor(models, 'a');
     const e = explainPayability(d);
     expect(e.inputs.find((i) => i.label === 'Paid invoices (n)')!.value).toBe('8');
-    expect(e.value).toBe('pending');
+    expect(e.value).toBe(d.grade);
     const c = explainCreditLimit({ monthlyBilledPaise: 10_000_000, creditDays: 30, p80Late: 15 });
     expect(c.inputs.map((i) => i.label)).toContain('Credit days');
-    expect(c.value).toBe('pending');
-    payabilityEngine.score = () => 77;
-    expect(explainPayability(d).value).toBe(77);
-    payabilityEngine.score = () => null;
+    expect(c.value).toBe(
+      (Math.round((60_000_000 / 180) * 45 * 1.25 * 100) / 100) * 0 +
+        Math.round((60_000_000 / 180) * 45 * 1.25),
+    );
   });
 });
 

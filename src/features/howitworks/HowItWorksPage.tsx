@@ -22,6 +22,8 @@ import {
 } from '@/lib/legal';
 import { formatINR, formatINRShort, paise } from '@/lib/money';
 import testsJson from '@/generated/tests.json';
+import aiEval from '@/generated/ai-eval.json';
+import { ImpactCard } from '@/features/impact/ImpactCards';
 import { DISCLAIMER, LAWS, SITES, TOC } from './content';
 import './howitworks.css';
 
@@ -684,6 +686,22 @@ function RealSection() {
   );
 }
 
+function AiSection() {
+  const e = aiEval;
+  return (
+    <Section id="ai" title="AI and impact">
+      <p>
+        The model only reads and classifies; every figure it shows is taken from a tool result and
+        every reply is checked by rules before it is used. Live check on {e.replies} sample buyer
+        replies: intent right {e.intent} of {e.replies}, intent plus date and amount right {e.full}{' '}
+        of {e.replies}. Ask your books: {e.qmodel} of {e.questions} questions answered by the model
+        with checked figures, {e.qok} fully correct; the rest fall back to the rules answer.
+      </p>
+      <ImpactCard />
+    </Section>
+  );
+}
+
 export function HowItWorksPage() {
   return (
     <main id="main" className="app-main hw">
@@ -712,6 +730,7 @@ export function HowItWorksPage() {
       <ForecastSection />
       <ChaseSection />
       <AgentSection />
+      <AiSection />
       <SecuritySection />
       <RealSection />
       <p>

@@ -56,7 +56,10 @@ export async function callModel(
   } catch {
     throw new ModelError('model unreachable');
   }
-  if (!res.ok) throw new ModelError(`model error ${res.status}`);
+  if (!res.ok) {
+    const detail = await res.text().catch(() => '');
+    throw new ModelError(`model error ${res.status} ${detail.slice(0, 200)}`);
+  }
   const data = (await res.json()) as { content?: Block[] };
   return data.content ?? [];
 }

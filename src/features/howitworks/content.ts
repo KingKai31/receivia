@@ -31,6 +31,7 @@ export const TOC: [string, string][] = [
   ['forecast', 'Forecast'],
   ['chase', 'Chase score and gap solver'],
   ['agent', 'Agent workflow'],
+  ['ai', 'AI and impact'],
   ['security', 'Security'],
   ['real', 'Real vs simulated'],
 ];

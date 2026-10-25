@@ -64,7 +64,7 @@ describe('reply validation', () => {
     });
     const sent = JSON.parse(body);
     expect(sent.tools).toHaveLength(1);
-    expect(sent.tool_choice).toEqual({ type: 'tool', name: 'record_reply' });
+    expect(sent.tools).toHaveLength(1);
     expect(sent.messages[0].content.match(/<\/buyer_reply>/g)).toHaveLength(1);
     expect(res.source).toBe('rules');
     expect(res.intent).toBe('promise');

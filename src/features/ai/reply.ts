@@ -65,7 +65,7 @@ const TOOL: ToolDef = {
   },
 };
 
-export const REPLY_SYSTEM = `You read a buyer's reply to a payment reminder from a small Indian business. The reply may be English, Hindi, Marathi, or a Latin-script mix (Hinglish).
+export const REPLY_SYSTEM = `Always answer by calling the record_reply tool, never with plain text. You read a buyer's reply to a payment reminder from a small Indian business. The reply may be English, Hindi, Marathi, or a Latin-script mix (Hinglish).
 Call record_reply exactly once.
 - intent: promise (names when they will pay), dispute (wrong goods, quality, price, not received, not owed), paid_claim (says they already paid), partial (will pay or paid only part), question (asks something: copy, statement, bank details), other.
 - date: only a date the buyer states or clearly implies, resolved against "today" in the facts. Otherwise null.
@@ -266,7 +266,6 @@ export async function classifyReply(
       system: REPLY_SYSTEM,
       messages: [{ role: 'user', content: buildReplyPrompt(clean, today, invoices) }],
       tools: [TOOL],
-      toolChoice: { type: 'tool', name: 'record_reply' },
       maxTokens: 400,
     });
     const use = blocks.find((b) => b.type === 'tool_use' && b.name === 'record_reply');
