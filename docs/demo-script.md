@@ -21,10 +21,13 @@ Criteria tags: **[I]** Innovation, **[T]** Technical Execution, **[D]** Design &
 | 2:35 | Payments: import bank CSV, suggested matches with reasons | "Now the bank statement. Every line gets a suggested match and a reason: invoice number, customer name, amount. Nothing is applied until the owner confirms." | T |
 | 2:55 | City Hospital line: "Short by TDS", press **Confirm** | "City Hospital paid ₹6,400 less. Receivia recognises 2% GST TDS on the taxable value, records the TDS, and settles the invoice." | I, T |
 | 3:10 | Forecast again: the band has moved | "The forecast just updated from the matched payments." | P |
+| 3:15 | New invoice: payability checklist, then a Why drawer on Forecast | "Before sending, the checklist scores whether the invoice will be paid on time, and every number has a Why button with its formula and the law." | I, T |
+| 3:17 | Collect: paste a Hindi reply; Ask your books | "Paste what the buyer wrote and Receivia files it as a promise or a claim. Ask your books answers from read-only tools, never from guesses." | I |
+| 3:19 | Pay link: statement, pay in parts; /how-it-works impact card | "The buyer can see a statement and ask to pay in parts. The impact replay shows days to collect before and after, with assumptions." | Im |
 | 3:20 | Pay page footer or a reminder showing the lens line | "Reminders carry one hedged line about the buyer's own tax position, for example the 180-day input tax credit rule or Section 43B(h). Each ends with 'General information, not legal or tax advice.'" | I |
 | 3:30 | Architecture diagram from the README | "How it is built: React and Vite on Render, Supabase Postgres with row-level security on every table, edge functions for the agent, and a Render Workflow with retries that runs it every morning at ten." | T |
 | 3:45 | /trust page, all green | "Every table has isolation tests, the audit log is append-only, pay tokens are stored hashed. The trust page runs the GST, matching and forecast checks live in your browser." | T, P |
-| 3:55 | Real vs simulated list | "What is simulated, honestly: Razorpay has no keys yet, WhatsApp goes out as links, the AI account has no credits so templates are used, and the data is made up." | T, P |
+| 3:55 | Real vs simulated list | "What is simulated, honestly: Razorpay has no keys yet, WhatsApp goes out as links, and the data is made up." | T, P |
 | 4:10 | Today screen, tiles | "The impact: an owner sees the cash gap three weeks early, chases the right buyer first, and spends minutes, not afternoons, on collections." | Im |
 | 4:20 | Roadmap line | "Next: live Razorpay and WhatsApp, IMS and Account Aggregator feeds, native Hindi and Marathi review." | Im |
 | 4:25 | End card: **receivia.onrender.com**, team names, deck link | "Try it now: receivia dot onrender dot com." | P |

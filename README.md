@@ -28,6 +28,12 @@ Late payment is the main cash problem for small suppliers. The Recordent *SME Re
 | **Reconciliation and TDS** | Bank CSV import, suggested matches with reasons, TDS-aware (a short payment explained as 2% GST TDS, 194C or 194Q), a certificates page and a 26AS/AIS check. |
 | **Probabilistic forecast and gap solver** | 13-week cash forecast with a P10/P50/P90 band, what-ifs, a ranked "chase these first" list, and a plan that closes a shortfall with named, costed steps. |
 | **Owner brief** | A daily email in the owner's language: "3 to chase today, ₹2.1L, shortfall risk week 3", with an Approve-all link. (WhatsApp via links, see *Real vs simulated*.) |
+| **Payability** | Before an invoice is issued, a checklist scores how likely it is to be paid on time (PO, GSTIN, HSN digits, e-way bill, accounts-payable contact, due date). Below the threshold it asks you to fix the gaps; at 85 or more the invoice is marked *ready to get paid*. |
+| **Acceptance, statements and instalments** | Each invoice records how it was accepted (assumed, buyer confirmed, proof uploaded) for the 43B(h) clock. The pay link also offers a customer statement and "pay in parts" instalment requests that the owner approves. |
+| **Explainability** | A "?" on every computed figure opens the formula, inputs, source rows and law. [/how-it-works](https://receivia.onrender.com/how-it-works) lists every rule and shows the live AI accuracy and the impact replay. |
+| **AI reply understanding and Ask your books** | A pasted buyer reply (English, Hindi, Marathi, Hinglish) becomes a promise, claim or dispute that rules re-check; "Ask your books" answers questions from read-only tools, and every figure is taken from a tool result. Both fall back to rules without the model. |
+| **Impact replay** | Replays the last 6 months with and without Receivia (days to collect, interest saved, hours saved) with the assumptions shown. Estimates, not promises. |
+| **Government buyers** | Government and PSU customers get formal email only, formal wording and no WhatsApp. |
 | **Trust layer** | A public [/trust](https://receivia.onrender.com/trust) page that runs the GST, GSTIN, words, ladder, matching and forecast checks in your browser. |
 
 ### Buyer Compliance Lens
@@ -111,7 +117,7 @@ React 18, Vite, TypeScript (strict), Tailwind, TanStack Query, zod, react-hook-f
 
 | Suite | Command | Count |
 |---|---|---|
-| Unit and property tests (money, GST, GSTIN, legal, ladder, matching, forecast, agent, i18n, trust) | `npm test` | 375 |
+| Unit and property tests (money, GST, GSTIN, legal, ladder, matching, forecast, agent, i18n, trust) | `npm test` | 456 |
 | Database tests on PGlite with the real migrations | `npm run test:db` | 49 |
 | Isolation and numbering on real Postgres | `npm run test:db:remote` | 207 |
 | Browser tests (axe, 360 px, offline, the live demo story) | `npm run e2e` (live: `LIVE_URL=https://receivia.onrender.com PW_CHANNEL=chrome npx playwright test tests/e2e/demo-story.spec.ts`) | 6-step story |
@@ -125,7 +131,7 @@ Run the app: `npm install && npm run dev` (needs `.env` from `.env.example`). Re
 | Invoicing, GST maths, import, ladder, forecast, solver, matching, TDS logic, pay portal, claims, disputes, Inbox | **Razorpay**: no account keys are set, so the pay page says "Online payment not configured"; the payment path is verified with a signed mock webhook. UPI QR works. |
 | Email through Resend (to the owner only in test mode) | **WhatsApp**: sent as `wa.me` links the owner taps; the Cloud API code path exists but is off. |
 | Supabase auth, RLS, audit, edge functions, Render cron and Workflow | **GST IMS and Account Aggregator**: not connected; the IMS table and bank-statement import stand in. |
-| AI wording through the Anthropic API from edge functions | The API account has no credits at the time of writing, so reminders use the stage templates. |
+| AI wording and reply understanding through the Anthropic API from edge functions | Live. Falls back to stage templates and rules when the model is unavailable. Accuracy on the sample set is on /how-it-works. |
 | | **Data**: Shree Ganesh Corrugators, its customers, GSTINs, phones and bank details are made up. The Hindi and Marathi text is machine-written and awaits a native-speaker review. |
 
 ## What is next

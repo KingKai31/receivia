@@ -24,7 +24,9 @@ Team: `TEAM_NAMES_PLACEHOLDER`
 - Probabilistic 13-week forecast from each customer's own payment habit.
 - A gap solver that names the steps and their cost.
 - A governed agent that drafts the reminder, in the buyer's language, for the owner's approval.
-- A phone-first pay page for the buyer: UPI QR, "I have paid", dispute, promise.
+- A phone-first pay page for the buyer: UPI QR, "I have paid", dispute, promise, statement and pay in parts.
+- A payability checklist before an invoice is issued, acceptance proof for the 43B(h) clock, and a government-buyer path.
+- Explain-everything: a Why drawer on each figure and /how-it-works; AI reply understanding and Ask your books with checked figures; an impact replay of the last 6 months.
 Screenshot: `docs/screens/today-1280-light.png`
 
 ## Slide 4: How it works

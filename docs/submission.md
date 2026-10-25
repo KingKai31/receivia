@@ -8,6 +8,8 @@ Receivia imports invoices, then forecasts the next 13 weeks from each customer's
 
 A governed collections agent drafts reminders in the buyer's language (English, Hindi or Marathi) for the owner's approval. The model writes words only; every number, date and link comes from the database, and a validator rejects any draft that contains digits or links. Reminders carry one hedged line about the buyer's own position (CGST s16(2) 180-day ITC, Income-tax Act s43B(h), MSMED ss15-16). Demand letters are called Payment Demand Letters, never legal notices.
 
+Before an invoice goes out, a payability checklist scores its chance of being paid on time. Every computed figure has a Why button with the formula, inputs and law, and /how-it-works shows the rules, the live AI accuracy and an impact replay of the last six months. Pasted buyer replies in English, Hindi or Marathi are understood by the model and re-checked by rules, and Ask your books answers from read-only tools with every figure taken from a tool result. Government buyers get a formal, email-only path.
+
 Buyers get a phone-first pay page with UPI QR and one-tap "I have paid", dispute or promise. Bank statements are matched with reasons and TDS-aware (GST TDS 2%, 194C, 194Q); the forecast updates when a match is confirmed.
 
 Engineering: React, Vite and TypeScript on Render; Supabase Postgres with row-level security on every table and isolation tests; append-only audit log; hashed expiring pay tokens; edge functions; a Render Workflow with retries for the daily run. Simulated and said so: Razorpay (test mode, no keys), WhatsApp as links, IMS and Account Aggregator, and the sample data.
