@@ -3,7 +3,13 @@ import { fromPgError } from '@/lib/service/errors';
 import { supabase } from '@/lib/supabase';
 import type { ISODate } from '@/lib/dates';
 import type { Answer } from './books';
-import { LOW_CONFIDENCE, validateReply, type Intent, type OpenInv, type ReplyResult } from './reply';
+import {
+  LOW_CONFIDENCE,
+  validateReply,
+  type Intent,
+  type OpenInv,
+  type ReplyResult,
+} from './reply';
 
 export type ReadResult = ReplyResult & { note: string };
 

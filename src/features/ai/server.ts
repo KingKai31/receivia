@@ -50,9 +50,9 @@ export async function loadBooks(
     today,
     bufferPaise: ctx.bufferPaise,
     openingBalancePaise: ctx.openingBalancePaise,
-    customers: ((cu.data ?? []) as { id: string; name: string; state_code: string | null; tier: string }[]).map(
-      (x) => ({ id: x.id, name: x.name, stateCode: x.state_code, tier: x.tier }),
-    ),
+    customers: (
+      (cu.data ?? []) as { id: string; name: string; state_code: string | null; tier: string }[]
+    ).map((x) => ({ id: x.id, name: x.name, stateCode: x.state_code, tier: x.tier })),
     invoices: ctx.invoices,
     expenses: ctx.expenses,
     occurrences: ctx.occurrences,

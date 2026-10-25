@@ -2,12 +2,7 @@
 // Writes nothing: the owner applies it in the app. Body: {org_id, customer_id, text}
 import { cors, json } from '../_shared/http.ts';
 import { agentEnv, authorize, serviceClient } from '../_shared/agent-auth.ts';
-import {
-  classifyReply,
-  loadOpenInvoices,
-  loadProfile,
-  planDay,
-} from '../_shared/agent.bundle.js';
+import { classifyReply, loadOpenInvoices, loadProfile, planDay } from '../_shared/agent.bundle.js';
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });

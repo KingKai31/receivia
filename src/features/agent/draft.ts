@@ -236,8 +236,6 @@ export function toneFor(f: DraftFacts): { tone: string; why: string } {
   return { tone: parts.join('; '), why: `Why this tone: ${why.join('; ')}.` };
 }
 
-  history?: CustomerHistory | null;
-  openDispute?: boolean;
 export interface DraftFacts {
   history?: CustomerHistory | null;
   openDispute?: boolean;
@@ -318,7 +316,12 @@ export async function draftMessage(facts: DraftFacts, env: DraftEnv): Promise<Dr
       .join('');
     const check = validateDraft(parseModelJson(text), facts.stage);
     if (!check.ok) return fallback(`draft rejected (${check.reason}): template`);
-    return { ...check.draft, source: 'ai', note: 'model wording, validated', why: toneFor(facts).why };
+    return {
+      ...check.draft,
+      source: 'ai',
+      note: 'model wording, validated',
+      why: toneFor(facts).why,
+    };
   } catch {
     return fallback('model unreachable: template');
   }

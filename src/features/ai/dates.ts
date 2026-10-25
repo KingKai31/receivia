@@ -2,10 +2,23 @@ import { addDays, type ISODate } from '@/lib/dates';
 
 const DEV = '०१२३४५६७८९';
 /** Devanagari digits to ASCII. */
-export const asciiDigits = (s: string): string => s.replace(/[०-९]/g, (d) => String(DEV.indexOf(d)));
+export const asciiDigits = (s: string): string =>
+  s.replace(/[०-९]/g, (d) => String(DEV.indexOf(d)));
 
 const MONTHS: Record<string, number> = {
-  jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, sept: 9, oct: 10, nov: 11, dec: 12,
+  jan: 1,
+  feb: 2,
+  mar: 3,
+  apr: 4,
+  may: 5,
+  jun: 6,
+  jul: 7,
+  aug: 8,
+  sep: 9,
+  sept: 9,
+  oct: 10,
+  nov: 11,
+  dec: 12,
 };
 const WEEKDAYS: [RegExp, number][] = [
   [/\b(mon(day)?|somvar|सोमवार|सोमवारी)\b|सोमवार/i, 1],
@@ -47,18 +60,32 @@ export function parseDate(raw: string, today: ISODate): ISODate | null {
     const d = valid(y, +m[2]!, +m[1]!);
     if (d) return !m[3] && d < today ? valid(y + 1, +m[2]!, +m[1]!) : d;
   }
-  if ((m = s.match(/\b(\d{1,2})(?:st|nd|rd|th)?\s+(jan|feb|mar|apr|may|jun|jul|aug|sept?|oct|nov|dec)[a-z]*\b/))) {
+  if (
+    (m = s.match(
+      /\b(\d{1,2})(?:st|nd|rd|th)?\s+(jan|feb|mar|apr|may|jun|jul|aug|sept?|oct|nov|dec)[a-z]*\b/,
+    ))
+  ) {
     const d = valid(yr, MONTHS[m[2]!]!, +m[1]!);
     if (d) return d < today ? valid(yr + 1, MONTHS[m[2]!]!, +m[1]!) : d;
   }
   if (/\b(day after tomorrow|parso|parson)\b|परसों|परवा/.test(s)) return addDays(today, 2);
   if (/\b(tomorrow|tmrw|kal|udya)\b|कल |कल$|उद्या/.test(s)) return addDays(today, 1);
   if (/\b(today|aaj|aj)\b|आज/.test(s)) return today;
-  if (/next week|agle hafte|agle week|अगले हफ्ते|अगले सप्ताह|पुढच्या आठवड्यात|पुढील आठवड्यात/.test(s))
+  if (
+    /next week|agle hafte|agle week|अगले हफ्ते|अगले सप्ताह|पुढच्या आठवड्यात|पुढील आठवड्यात/.test(s)
+  )
     return addDays(today, 7);
-  if ((m = s.match(/(?:by |on |til |till |tak |ko )?\b(\d{1,2})\s*(?:st|nd|rd|th)?\s*(?:tarikh|tareekh|tarikhe?|tak\b)|(\d{1,2})\s*(?:तारीख|तारखेला|तारखेपर्यंत|तारिख|तक)/))
+  if (
+    (m = s.match(
+      /(?:by |on |til |till |tak |ko )?\b(\d{1,2})\s*(?:st|nd|rd|th)?\s*(?:tarikh|tareekh|tarikhe?|tak\b)|(\d{1,2})\s*(?:तारीख|तारखेला|तारखेपर्यंत|तारिख|तक)/,
+    ))
+  )
     return nextDayOfMonth(today, +(m[1] ?? m[2])!);
-  if ((m = s.match(/\b(?:by|on|before)\s+(?:the\s+)?(\d{1,2})(?:st|nd|rd|th)\b|\b(\d{1,2})(?:st|nd|rd|th)\b/)))
+  if (
+    (m = s.match(
+      /\b(?:by|on|before)\s+(?:the\s+)?(\d{1,2})(?:st|nd|rd|th)\b|\b(\d{1,2})(?:st|nd|rd|th)\b/,
+    ))
+  )
     return nextDayOfMonth(today, +(m[1] ?? m[2])!);
   for (const [re, wd] of WEEKDAYS) {
     if (re.test(s)) {
@@ -71,19 +98,23 @@ export function parseDate(raw: string, today: ISODate): ISODate | null {
 
 /** First rupee amount named, as integer paise. Understands 50,000 / 50k / 2 lakh / 25 hazar / हजार. */
 export function parseAmountPaise(raw: string): number | null {
-  const s = asciiDigits(raw).toLowerCase().replace(/,/g, '');
-  const m = s.match(
-    /(?:₹|rs\.?|inr|rupees?)?\s*(\d+(?:\.\d+)?)\s*(lakhs?|lacs?|lakh|लाख|k\b|hazaar|hazar|hajar|हजार|हज़ार|crores?|करोड़|करोड)?/,
-  );
-  if (!m) return null;
-  // skip numbers that are clearly dates or invoice numbers
-  const hasCurrency = /₹|rs\.?\s*\d|inr|rupee|rupay|रुपय|रुपये|रु\./.test(s);
-  const unit = m[2];
-  let n = Number(m[1]);
-  if (unit) {
-    if (/^(lakh|lac|लाख)/.test(unit)) n *= 100_000;
-    else if (/^(k|haz|haj|हज)/.test(unit)) n *= 1000;
-    else n *= 10_000_000;
-  } else if (!hasCurrency && n < 1000) return null;
-  return Math.round(n * 100);
+  const s = asciiDigits(raw)
+    .toLowerCase()
+    .replace(/\d{1,2}[/.-]\d{1,2}[/.-]\d{2,4}/g, ' ')
+    .replace(/(utr|ref|reference|txn|inv|invoice|no\.?|#)\s*[:#-]?\s*[\w/-]+/g, ' ')
+    .replace(/(\d),(?=\d)/g, '$1');
+  const re =
+    /(₹|rs\.?|inr|rupees?)?\s*(\d+(?:\.\d+)?)\s*(lakhs?|lacs?|लाख|k\b|hazaar|hazar|hajar|हजार|हज़ार|crores?|करोड़|करोड|rupees?|rupay|रुपये|रुपय|रु(?![\u0900-\u097F]))?/g;
+  for (const m of s.matchAll(re)) {
+    const unit = m[3];
+    let n = Number(m[2]);
+    const money = Boolean(m[1]) || (unit !== undefined && /^(rupe|rupay|रुप|रु)/.test(unit));
+    if (unit && !money) {
+      if (/^(lakh|lac|लाख)/.test(unit)) n *= 100_000;
+      else if (/^(k|haz|haj|हज)/.test(unit)) n *= 1000;
+      else n *= 10_000_000;
+    } else if (!money && n < 1000) continue;
+    return Math.round(n * 100);
+  }
+  return null;
 }

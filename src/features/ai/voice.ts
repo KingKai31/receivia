@@ -50,7 +50,9 @@ export function spokenBrief(f: VoiceFacts, lang: VoiceLang): string {
   const s = SAY[lang] ?? SAY.en;
   const head =
     f.toChase > 0
-      ? s.chase.replace('{n}', String(f.toChase)).replace('{amt}', spokenAmount(f.amountPaise, lang))
+      ? s.chase
+          .replace('{n}', String(f.toChase))
+          .replace('{amt}', spokenAmount(f.amountPaise, lang))
       : s.none;
   const risk = f.shortfallWeek ? s.risk.replace('{w}', String(f.shortfallWeek)) : s.ok;
   return `${head} ${risk}`;

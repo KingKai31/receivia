@@ -1,14 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui';
-import {
-  asVoiceLang,
-  speak,
-  spokenBrief,
-  stopSpeaking,
-  voiceFor,
-  type VoiceFacts,
-} from './voice';
+import { asVoiceLang, speak, spokenBrief, stopSpeaking, voiceFor, type VoiceFacts } from './voice';
 
 /** Reads the daily brief aloud in the app language. Hidden when the browser has no voice for it. */
 export function ListenButton({ facts }: { facts: VoiceFacts }) {

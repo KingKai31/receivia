@@ -46,7 +46,12 @@ export function AskBooks() {
             {t('Ask')}
           </Button>
           {CHIPS.map((c) => (
-            <Button key={c} variant="ghost" disabled={ask.isPending || !org.data} onClick={() => go(c)}>
+            <Button
+              key={c}
+              variant="ghost"
+              disabled={ask.isPending || !org.data}
+              onClick={() => go(c)}
+            >
               {t(c)}
             </Button>
           ))}

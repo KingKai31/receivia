@@ -58,7 +58,7 @@ export default defineConfig({
     ],
   },
   test: {
-    include: ['src/**/*.test.{ts,tsx}'],
+    include: ['src/**/*.test.{ts,tsx}', 'tests/ai-evals/**/*.test.ts'],
     setupFiles: ['src/test-setup.ts'],
     environment: 'node',
   },
