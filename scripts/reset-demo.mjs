@@ -23,6 +23,8 @@ try {
     'delivery_proofs',
     'statement_responses',
     'statement_tokens',
+    'negotiation_log',
+    'discount_offers',
   ]) {
     // These exist only once migration 0012 is applied; they must go before invoices and customers.
     const has = (await c.query('select to_regclass($1) as t', [`public.${t}`])).rows[0].t;
