@@ -435,3 +435,6 @@ verify_jwt = false
 
 [functions.read-invoice]
 verify_jwt = false
+
+[functions.buyer-chat]
+verify_jwt = false
