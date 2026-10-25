@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button, Card, Input, Loading, useToast } from '@/components/ui';
+import { ReplyBox } from '@/features/ai/ReplyBox';
 import { useOrg } from '@/features/auth/useOrg';
 import { formatINR, paise } from '@/lib/money';
 import { errorMessage } from '@/lib/service/errors';
@@ -197,6 +198,7 @@ export function InboxPage() {
   return (
     <>
       <h1>{t('Inbox')}</h1>
+      <ReplyBox />
       <p>{t('What buyers have told you through the pay page or that you have logged.')}</p>
       {q.isLoading ? <Loading /> : null}
       {q.error ? <p role="alert">{errorMessage(q.error)}</p> : null}

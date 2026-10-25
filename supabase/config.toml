@@ -426,3 +426,9 @@ verify_jwt = false
 
 [functions.approve-actions]
 verify_jwt = false
+
+[functions.classify-reply]
+verify_jwt = false
+
+[functions.ask-books]
+verify_jwt = false

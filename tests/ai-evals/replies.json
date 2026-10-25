@@ -1,0 +1,94 @@
+[
+  {
+    "id": "en1",
+    "lang": "en",
+    "text": "We will pay by 30th October.",
+    "intent": "promise",
+    "date": "2026-10-30"
+  },
+  {
+    "id": "en2",
+    "lang": "en",
+    "text": "The goods were damaged on arrival, we cannot pay this invoice.",
+    "intent": "dispute"
+  },
+  {
+    "id": "en3",
+    "lang": "en",
+    "text": "We have already paid this via NEFT on 20/10/2026, UTR 12345.",
+    "intent": "paid_claim",
+    "date": "2026-10-20"
+  },
+  {
+    "id": "en4",
+    "lang": "en",
+    "text": "Can you send me a copy of the invoice?",
+    "intent": "question"
+  },
+  {
+    "id": "en5",
+    "lang": "en",
+    "text": "We will pay Rs 20,000 now and the remaining next week.",
+    "intent": "partial",
+    "date": "2026-11-01",
+    "amount": 20000
+  },
+  {
+    "id": "hi1",
+    "lang": "hi",
+    "text": "हम 30 तारीख तक पेमेंट कर देंगे।",
+    "intent": "promise",
+    "date": "2026-10-30"
+  },
+  {
+    "id": "hi2",
+    "lang": "hi",
+    "text": "माल खराब आया था, इसलिए हम भुगतान नहीं करेंगे।",
+    "intent": "dispute"
+  },
+  {
+    "id": "hi3",
+    "lang": "hi",
+    "text": "हमने पैसे भेज दिए हैं, 20/10/2026 को।",
+    "intent": "paid_claim",
+    "date": "2026-10-20"
+  },
+  { "id": "hi4", "lang": "hi", "text": "कृपया बिल की कॉपी चाहिए।", "intent": "question" },
+  {
+    "id": "hi5",
+    "lang": "hi",
+    "text": "अभी 20,000 रुपये भेजेंगे, बाकी अगले हफ्ते।",
+    "intent": "partial",
+    "date": "2026-11-01",
+    "amount": 20000
+  },
+  {
+    "id": "mr1",
+    "lang": "mr",
+    "text": "आम्ही 30 तारखेला पैसे देऊ.",
+    "intent": "promise",
+    "date": "2026-10-30"
+  },
+  {
+    "id": "mr2",
+    "lang": "mr",
+    "text": "माल खराब आला होता, त्यामुळे पैसे देणार नाही.",
+    "intent": "dispute"
+  },
+  {
+    "id": "mr3",
+    "lang": "mr",
+    "text": "आम्ही पैसे आधीच पाठवले आहेत, 20/10/2026 रोजी.",
+    "intent": "paid_claim",
+    "date": "2026-10-20"
+  },
+  { "id": "mr4", "lang": "mr", "text": "बिलाची प्रत हवी आहे.", "intent": "question" },
+  {
+    "id": "mr5",
+    "lang": "mr",
+    "text": "10,000 रुपये आता देतो, बाकी पुढच्या आठवड्यात.",
+    "intent": "partial",
+    "date": "2026-11-01",
+    "amount": 10000
+  }
+]

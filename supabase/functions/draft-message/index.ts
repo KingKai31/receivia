@@ -1,5 +1,6 @@
 // Drafts reminder wording with the model (facts only, validated, falls back to the stage template).
-// Body: {org_id, stage, language, tier, lens_allowed, business, customer_text?}
+// Body: {org_id, stage, language, tier, lens_allowed, business, customer_text?, history?, open_dispute?}
+// Returns {subject, body, source, note, why}: `why` is the one-line reason for the tone.
 import { cors, json } from '../_shared/http.ts';
 import { agentEnv, authorize } from '../_shared/agent-auth.ts';
 import { draftMessage } from '../_shared/agent.bundle.js';
@@ -22,6 +23,8 @@ Deno.serve(async (req) => {
       lensAllowed: b.lens_allowed === true,
       business: String(b.business ?? '').slice(0, 80),
       customerText: typeof b.customer_text === 'string' ? b.customer_text : null,
+      history: b.history && typeof b.history === 'object' ? b.history : null,
+      openDispute: b.open_dispute === true,
     },
     { anthropicKey: agentEnv().anthropicKey },
   );

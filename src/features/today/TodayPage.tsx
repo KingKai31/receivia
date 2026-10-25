@@ -3,6 +3,8 @@ import { tr } from '@/app/i18n';
 import { useTranslation } from 'react-i18next';
 import { AgentPanel } from '@/features/agent/AgentPanel';
 import { ImpactCard, RoiCardView } from '@/features/impact/ImpactCards';
+import { AskBooks } from '@/features/ai/AskBooks';
+import { ListenButton } from '@/features/ai/ListenButton';
 import { Link } from 'react-router-dom';
 import {
   Alert,
@@ -67,6 +69,13 @@ export function TodayPage() {
         </div>
       </HeroCard>
       <Freshness updatedAt={updatedAt} offline={offline} />
+      <ListenButton
+        facts={{
+          toChase: chase.length,
+          amountPaise: chase.reduce((s, c) => s + c.balancePaise, 0),
+          shortfallWeek: sf?.week ?? null,
+        }}
+      />
 
       {sf && plan ? (
         <Alert urgent>
@@ -183,6 +192,8 @@ export function TodayPage() {
       <RoiCardView />
 
       <AgentPanel compact />
+
+      <AskBooks />
 
       <div className="grid-2">
         <div>

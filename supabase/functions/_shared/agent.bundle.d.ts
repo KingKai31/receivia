@@ -49,3 +49,21 @@ export function draftMessage(
   facts: Record<string, unknown>,
   env: { anthropicKey?: string | null },
 ): Promise<{ subject: string; body: string; source: string; note: string }>;
+export function classifyReply(
+  text: string,
+  invoices: { id: string; number: string; balancePaise: number }[],
+  today: string,
+  env: { anthropicKey?: string | null; onFallback?: (why: string) => void },
+): Promise<Record<string, unknown>>;
+export function askBooks(
+  question: string,
+  data: unknown,
+  env: { anthropicKey?: string | null; onFallback?: (why: string) => void },
+): Promise<Record<string, unknown>>;
+export function loadBooks(db: Db, orgId: string, today: string): Promise<unknown>;
+export function loadOpenInvoices(
+  db: Db,
+  orgId: string,
+  customerId: string,
+): Promise<{ id: string; number: string; balancePaise: number }[]>;
+export function planDay(p: Record<string, unknown>, now: Date): string;

@@ -1,0 +1,22 @@
+[
+  { "q": "Who owes me most from Gujarat?", "tool": "list_overdue", "contains": "Alpha Traders" },
+  { "q": "Will I manage salaries?", "tool": "forecast_summary", "contains": "Salaries" },
+  {
+    "q": "Which customer has the biggest overdue amount?",
+    "tool": "list_overdue",
+    "contains": "Alpha Traders"
+  },
+  {
+    "q": "How much does Gamma Foods owe me?",
+    "tool": "customer_summary",
+    "contains": "Gamma Foods"
+  },
+  {
+    "q": "Why is my overdue number what it is?",
+    "tool": "explain_number",
+    "contains": "due date is before today"
+  },
+  { "q": "Is cash tight in the coming weeks?", "tool": "forecast_summary", "contains": "week" },
+  { "q": "Send reminders to everyone", "tool": null, "contains": "can only read" },
+  { "q": "Who owes the most in Karnataka?", "tool": "list_overdue", "contains": "No overdue" }
+]
