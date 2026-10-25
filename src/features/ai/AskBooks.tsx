@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
-import { useState } from 'react';
+import { asVoiceLang, canListen, listenOnce, speak, stopSpeaking, voiceFor } from './voice';
+import { useEffect, useRef, useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { Button, GlassCard, Input, Skeleton, useToast } from '@/components/ui';
 import { useOrg } from '@/features/auth/useOrg';
@@ -11,14 +12,33 @@ const CHIPS = ['Who owes me most from Gujarat?', 'Will I manage salaries?'];
 
 /** A question box over the owner's own books. Answers are rendered from read-only tool results. */
 export function AskBooks() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const toast = useToast();
   const org = useOrg();
   const [q, setQ] = useState('');
   const [answer, setAnswer] = useState<Answer | null>(null);
+  const lang = asVoiceLang(i18n.language);
+  const [listening, setListening] = useState(false);
+  const [speaking, setSpeaking] = useState(false);
+  const spoken = useRef(false); // true when the current question was asked by voice
+  const stop = useRef<(() => void) | null>(null);
+  const [micOk] = useState(canListen);
+  useEffect(
+    () => () => {
+      stop.current?.();
+      stopSpeaking();
+    },
+    [],
+  );
   const ask = useMutation({
     mutationFn: (question: string) => askBooksRemote(org.data!.orgId, question),
-    onSuccess: setAnswer,
+    onSuccess: (a) => {
+      setAnswer(a);
+      // A question asked by voice is answered aloud when the browser has a voice for the language.
+      if (spoken.current && voiceFor(lang))
+        setSpeaking(speak(a.text, lang, () => setSpeaking(false)));
+      spoken.current = false;
+    },
     onError: (e) => toast.show(errorMessage(e)),
   });
   const go = (question: string) => {
@@ -45,6 +65,32 @@ export function AskBooks() {
           <Button type="submit" disabled={ask.isPending || !q.trim() || !org.data}>
             {t('Ask')}
           </Button>
+          {micOk ? (
+            <Button
+              variant="ghost"
+              aria-pressed={listening}
+              disabled={ask.isPending || !org.data}
+              onClick={() => {
+                if (listening) {
+                  stop.current?.();
+                  return;
+                }
+                stopSpeaking();
+                setListening(true);
+                stop.current = listenOnce(
+                  lang,
+                  (text) => {
+                    spoken.current = true;
+                    go(text);
+                  },
+                  () => setListening(false),
+                );
+                if (!stop.current) setListening(false);
+              }}
+            >
+              {listening ? t('Listening…') : t('Speak')}
+            </Button>
+          ) : null}
           {CHIPS.map((c) => (
             <Button
               key={c}
@@ -66,6 +112,20 @@ export function AskBooks() {
       {answer && !ask.isPending ? (
         <div className="seq" aria-live="polite">
           <p>{answer.text}</p>
+          {voiceFor(lang) ? (
+            <Button
+              variant="ghost"
+              aria-pressed={speaking}
+              onClick={() => {
+                if (speaking) {
+                  stopSpeaking();
+                  setSpeaking(false);
+                } else setSpeaking(speak(answer.text, lang, () => setSpeaking(false)));
+              }}
+            >
+              {speaking ? t('Stop') : t('Read aloud')}
+            </Button>
+          ) : null}
           {answer.cites.length ? (
             <p className="ui-hint">
               {t('Based on')}: {answer.cites.map((c) => c.name.replace(/_/g, ' ')).join(', ')}
