@@ -96,3 +96,49 @@ export function speak(text: string, lang: VoiceLang, onEnd: () => void): boolean
 }
 
 export const stopSpeaking = () => synth()?.cancel();
+
+/** Speech recognition (Web Speech API). Chrome and Edge only; everywhere else the mic is hidden. */
+interface Recognition {
+  lang: string;
+  interimResults: boolean;
+  maxAlternatives: number;
+  onresult: ((e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null;
+  onend: (() => void) | null;
+  onerror: (() => void) | null;
+  start(): void;
+  stop(): void;
+}
+type RecognitionCtor = new () => Recognition;
+
+function recognitionCtor(): RecognitionCtor | null {
+  if (typeof window === 'undefined') return null;
+  const w = window as unknown as {
+    SpeechRecognition?: RecognitionCtor;
+    webkitSpeechRecognition?: RecognitionCtor;
+  };
+  return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null;
+}
+
+export const canListen = () => recognitionCtor() !== null;
+
+/** Listens for one phrase in the app language. Returns a stop function, or null when unsupported. */
+export function listenOnce(
+  lang: VoiceLang,
+  onText: (text: string) => void,
+  onEnd: () => void,
+): (() => void) | null {
+  const Ctor = recognitionCtor();
+  if (!Ctor) return null;
+  const r = new Ctor();
+  r.lang = SPEECH_TAG[lang];
+  r.interimResults = false;
+  r.maxAlternatives = 1;
+  r.onresult = (e) => {
+    const t = e.results[0]?.[0]?.transcript?.trim();
+    if (t) onText(t);
+  };
+  r.onend = onEnd;
+  r.onerror = onEnd;
+  r.start();
+  return () => r.stop();
+}

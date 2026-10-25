@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Button, Card, ResponsiveTable, Select, useToast } from '@/components/ui';
 import { useOrg } from '@/features/auth/useOrg';
 import { getBusinessProfile } from '@/features/settings/businessProfileService';
@@ -165,6 +166,9 @@ export function ImportPage() {
   return (
     <>
       <h1>{t('Import')}</h1>
+      <p>
+        <Link to="/invoices/scan">{t('Scan invoice')}</Link>
+      </p>
       <Card>
         <div className="grid gap-3">
           <Select

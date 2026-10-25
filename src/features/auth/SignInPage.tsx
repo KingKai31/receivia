@@ -108,7 +108,8 @@ export function SignInPage() {
       </Card>
       <p className="text-center">
         <Link to="/how-it-works">{t('How it works')}</Link> {t('·')}{' '}
-        <Link to="/trust">{t('pages.trust')}</Link> {t('·')}{' '}
+        <Link to="/impact">{t('Impact')}</Link> {t('�')} <Link to="/impact">{t('Impact')}</Link>{' '}
+        {t('�')} <Link to="/trust">{t('pages.trust')}</Link> {t('·')}{' '}
         <Link to="/privacy">{t('Privacy notice')}</Link>
       </p>
     </main>

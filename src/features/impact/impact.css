@@ -63,3 +63,44 @@
     transition: none;
   }
 }
+
+.nat-page {
+  max-width: 44rem;
+  margin: 0 auto;
+  padding: 16px;
+}
+.nat-slider {
+  margin: 12px 0;
+}
+.nat-slider label {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+.nat-slider input {
+  width: 100%;
+}
+.nat-out {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  margin: 16px 0;
+}
+.nat-out .impact-card {
+  margin: 0;
+  display: grid;
+  gap: 4px;
+}
+.nat-big {
+  font-size: 1.75rem;
+  font-weight: 700;
+}
+.nat-tag {
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  padding: 2px 8px;
+  vertical-align: middle;
+}

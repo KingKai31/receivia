@@ -47,6 +47,7 @@ export const PROFILE = {
   bank_ifsc: 'HDFC0000001',
   upi_id: 'shreeganesh@upi',
   employees: 8,
+  neg_enabled: true,
 };
 
 // key, name, state, entity, tier, language, pan (fictional), phone, credit days 30
@@ -81,6 +82,16 @@ export const CUSTOMERS = [
   ['aurang', 'Aurangabad Auto Parts', '27', 'firm', 'standard', 'en', 'AAEFA8821L', '9822000020'],
   ['surat', 'Surat Textile Traders', '24', 'firm', 'standard', 'en', 'AAFFS3390R', '9879000021'],
   ['mumbai', 'Mumbai Logistics LLP', '27', 'firm', 'standard', 'en', 'AAMFM1175N', '9822000022'],
+  [
+    'pmh',
+    'Pune Municipal Hospital',
+    '27',
+    'government',
+    'standard',
+    'en',
+    'AAALP0482G',
+    '9822000023',
+  ],
 ].map(([key, name, state, entity_type, tier, language, pan, phone]) => ({
   key,
   name,
@@ -91,6 +102,7 @@ export const CUSTOMERS = [
   gstin: pan ? gstin(state, pan) : null,
   phone,
   email: `${key}@example.test`,
+  is_psu: key === 'pmh',
 }));
 
 // customer, issue offset, taxable rupees, days paid after the due date (null = still open). Credit is 30 days.
@@ -146,7 +158,9 @@ const ROWS = [
 export function buildInvoices(today) {
   const state = Object.fromEntries(CUSTOMERS.map((c) => [c.key, c.state_code]));
   const sorted = ROWS.map((r, i) => ({ r, i })).sort((a, b) => a.r[1] - b.r[1] || a.i - b.i);
-  return sorted.map(({ r: [customer, issueOff, rupees, delay] }, k) => {
+  // Government buyer: one invoice overdue 32 days, numbered after the others so existing numbers do not move.
+  const all = [...sorted.map(({ r }) => r), ['pmh', -62, 240000, null]];
+  return all.map(([customer, issueOff, rupees, delay], k) => {
     const taxable = rupees * 100;
     const igst = state[customer] !== '27';
     const half = Math.round((taxable * 9) / 100);

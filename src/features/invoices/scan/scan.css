@@ -1,0 +1,46 @@
+.scan-steps {
+  display: flex;
+  gap: 8px;
+  list-style: none;
+  padding: 0;
+  margin: 16px 0;
+}
+.scan-steps li {
+  flex: 1;
+  padding: 8px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border, #d4d4d8);
+  text-align: center;
+  opacity: 0.55;
+  transition:
+    opacity 0.3s ease,
+    background 0.3s ease;
+}
+.scan-steps li[data-state='active'] {
+  opacity: 1;
+  animation: scan-pulse 1s ease-in-out infinite;
+}
+.scan-steps li[data-state='done'] {
+  opacity: 1;
+}
+.scan-findings {
+  list-style: none;
+  padding: 0;
+}
+.scan-findings li {
+  margin: 6px 0;
+}
+.scan-findings li[data-level='error'] {
+  font-weight: 600;
+}
+@keyframes scan-pulse {
+  50% {
+    opacity: 0.6;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .scan-steps li {
+    animation: none !important;
+    transition: none;
+  }
+}

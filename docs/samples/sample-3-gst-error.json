@@ -1,0 +1,24 @@
+{
+  "invoice_no": "SG/26-27/016",
+  "date": "2026-10-15",
+  "seller_gstin": "27AAJFS4821K1ZV",
+  "buyer_gstin": "24AABCM3140D1Z6",
+  "place_of_supply": "24",
+  "lines": [
+    {
+      "description": "Corrugated box",
+      "hsn": "48191010",
+      "qty": 100,
+      "rate": 500.0,
+      "discount": 0.0,
+      "gst_rate": 18
+    }
+  ],
+  "printed": {
+    "taxable": 50000.0,
+    "total": 59000.0,
+    "cgst": 4500.0,
+    "sgst": 4500.0,
+    "igst": 0
+  }
+}

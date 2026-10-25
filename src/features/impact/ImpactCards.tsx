@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
 import { tr } from '@/app/i18n';
 import { Button, CountUp, GlassCard, Loading } from '@/components/ui';
 import { useOrg } from '@/features/auth/useOrg';
@@ -199,6 +200,9 @@ export function RoiCardView() {
           </small>
         </div>
       </dl>
+      <p>
+        <Link to="/impact">{t('See the national estimate')}</Link>
+      </p>
     </GlassCard>
   );
 }

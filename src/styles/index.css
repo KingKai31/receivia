@@ -312,3 +312,22 @@ input[type='number'] {
     transform: none;
   }
 }
+
+.chat-log {
+  display: grid;
+  gap: 8px;
+  max-height: 18rem;
+  overflow-y: auto;
+  margin: 8px 0;
+}
+.chat-turn {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: var(--surface-2, #f4f4f5);
+  max-width: 90%;
+}
+.chat-turn[data-role='buyer'] {
+  justify-self: end;
+  background: var(--surface-3, #e4e4e7);
+}

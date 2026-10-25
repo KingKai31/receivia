@@ -1,0 +1,32 @@
+{
+  "invoice_no": "SG/26-27/014",
+  "date": "2026-10-12",
+  "seller_gstin": "27AAJFS4821K1ZV",
+  "buyer_gstin": "27AAEFP7712C1ZG",
+  "place_of_supply": "27",
+  "lines": [
+    {
+      "description": "Corrugated box",
+      "hsn": "48191010",
+      "qty": 500,
+      "rate": 120.0,
+      "discount": 0.0,
+      "gst_rate": 18
+    },
+    {
+      "description": "Kraft sheet",
+      "hsn": "48025510",
+      "qty": 200,
+      "rate": 45.5,
+      "discount": 100.0,
+      "gst_rate": 18
+    }
+  ],
+  "printed": {
+    "taxable": 69000.0,
+    "total": 81420.0,
+    "cgst": 6210.0,
+    "sgst": 6210.0,
+    "igst": 0
+  }
+}

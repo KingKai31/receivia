@@ -206,6 +206,15 @@ export const INSERTS: Record<string, Builder> = {
     `insert into instalment_plans (org_id, invoice_id, total_paise) values ($1, $2, 118000)`,
     [o, r.invoice],
   ],
+  negotiation_log: (o, r) => [
+    `insert into negotiation_log (org_id, invoice_id, role, content) values ($1, $2, 'buyer', 'hello')`,
+    [o, r.invoice],
+  ],
+  discount_offers: (o, r) => [
+    `insert into discount_offers (org_id, invoice_id, discount_pct, discount_paise, pay_by)
+     values ($1, $2, 2, 2360, '2026-11-10')`,
+    [o, r.invoice],
+  ],
   instalments: (o) => [
     `insert into instalments (org_id, plan_id, seq, due_on, amount_paise)
      select $1, id, 1, '2026-11-10', 59000 from instalment_plans where org_id = $1 limit 1`,
@@ -255,6 +264,8 @@ export const STANDARD_TABLES = [
   'instalment_plans',
   'instalments',
   'statement_responses',
+  'negotiation_log',
+  'discount_offers',
 ] as const;
 
 export const ALL_ORG_TABLES = [
@@ -311,6 +322,8 @@ export async function seedOrg(admin: pg.Client, org: string): Promise<Refs> {
     'instalments',
     'statement_tokens',
     'statement_responses',
+    'negotiation_log',
+    'discount_offers',
   ]) {
     await one(t, refs, fx);
   }

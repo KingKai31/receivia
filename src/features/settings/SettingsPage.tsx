@@ -5,6 +5,7 @@ import { useOrg } from '@/features/auth/useOrg';
 import { ForecastSettings } from '@/features/forecast/ForecastSettings';
 import { AgentSettings } from '@/features/agent/AgentSettings';
 import { WorkflowRuns } from '@/features/agent/WorkflowRuns';
+import { NegotiationSettings } from '@/features/negotiate/NegotiationSettings';
 import { LadderSettings } from '@/features/collect/LadderSettings';
 import { DataPrivacyCard } from '@/features/privacy/DataPrivacyCard';
 import { BusinessProfileForm } from './BusinessProfileForm';
@@ -37,6 +38,7 @@ export function SettingsPage() {
       <ForecastSettings />
       <LadderSettings />
       <AgentSettings />
+      <NegotiationSettings />
       <WorkflowRuns />
       <DataPrivacyCard />
     </>

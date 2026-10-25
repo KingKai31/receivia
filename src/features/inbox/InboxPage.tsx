@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { ChatActivity } from '@/features/negotiate/ChatActivity';
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
@@ -219,6 +220,7 @@ export function InboxPage() {
           {d.promises.map((p) => (
             <PromiseCard key={p.id} item={p} done={refresh} />
           ))}
+          <ChatActivity />
           {more ? (
             <Button variant="secondary" onClick={() => setLimit(limit + STEP)}>
               {t('Show more')}

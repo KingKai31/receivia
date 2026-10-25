@@ -10,6 +10,7 @@ import type { BuyerFacts, InvoiceFacts, SellerFacts } from '@/lib/legal';
 import { formatINR, paise } from '@/lib/money';
 import { supabase } from '@/lib/supabase';
 import { PAY_TEXT, type PayLang } from './payText';
+import { TalkToAccounts } from './TalkToAccounts';
 
 export interface PayView {
   business_name: string;
@@ -317,6 +318,7 @@ function PayBody({ token, v, onChanged }: { token: string; v: PayView; onChanged
 
           <ReceivedCard token={token} v={v} t={t} onDone={onChanged} />
           <PartsCard token={token} v={v} t={t} onDone={onChanged} />
+          <TalkToAccounts token={token} lang={lang} onChanged={onChanged} />
           <ActionForms
             token={token}
             t={t}
