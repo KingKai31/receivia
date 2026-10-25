@@ -68,6 +68,33 @@ export function TodayPage() {
           </ButtonLink>
         </div>
       </HeroCard>
+      {chase.length > 0 ? (
+        <GlassCard variant="solid" style={{ padding: 18, marginBottom: 16 }}>
+          <h2>{t('3 things to do now')}</h2>
+          <ol style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+            {[...chase]
+              .sort((a, b) => b.balancePaise - a.balancePaise)
+              .slice(0, 3)
+              .map((c) => (
+                <li
+                  key={c.invoiceId}
+                  className="flex flex-wrap items-center justify-between gap-2"
+                  style={{ padding: '6px 0' }}
+                >
+                  <span className="tnum">
+                    {t('{{name}} owes {{money}}', {
+                      name: c.customerName,
+                      money: money(c.balancePaise),
+                    })}
+                  </span>
+                  <ButtonLink to="/collect" variant="dark">
+                    {t('Remind')}
+                  </ButtonLink>
+                </li>
+              ))}
+          </ol>
+        </GlassCard>
+      ) : null}
       <Freshness updatedAt={updatedAt} offline={offline} />
       <ListenButton
         facts={{

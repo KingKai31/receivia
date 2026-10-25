@@ -47,7 +47,7 @@ export function AskBooks() {
     ask.mutate(question);
   };
   return (
-    <GlassCard variant="solid" style={{ padding: 18, marginBottom: 16 }}>
+    <GlassCard variant="solid" style={{ padding: 18, marginBottom: 16 }} id="ask">
       <h2>{t('Ask your books')}</h2>
       <form
         onSubmit={(e) => {

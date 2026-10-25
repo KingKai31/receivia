@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { LanguagePicker } from '@/components/ui';
 import { useOrg } from '@/features/auth/useOrg';
@@ -32,7 +32,11 @@ export function Layout() {
   const [more, setMore] = useState(false);
   const orgId = org.data?.orgId ?? null;
   useEffect(() => setErrorContext(orgId), [orgId]);
-  useEffect(() => setMore(false), [pathname]);
+  const [fab, setFab] = useState(false);
+  useEffect(() => {
+    setMore(false);
+    setFab(false);
+  }, [pathname]);
   const moreActive = MORE.some((i) => (i.end ? pathname === i.to : pathname.startsWith(i.to)));
   return (
     <div className="app-shell md:flex">
@@ -78,6 +82,25 @@ export function Layout() {
           ))}
         </div>
       ) : null}
+      <div className="fab-wrap md:hidden">
+        {fab ? (
+          <div className="fab-menu glass glass-solid" id="fab-menu">
+            <Link to="/invoices/new">{t('New invoice')}</Link>
+            <Link to="/invoices/scan">{t('Scan invoice')}</Link>
+            <Link to="/#ask">{t('Ask')}</Link>
+          </div>
+        ) : null}
+        <button
+          type="button"
+          className="fab"
+          aria-label={t('Quick actions')}
+          aria-expanded={fab}
+          aria-controls="fab-menu"
+          onClick={() => setFab((v) => !v)}
+        >
+          +
+        </button>
+      </div>
       <nav aria-label={t('nav.main')} className="app-bottom-nav glass fixed flex md:hidden">
         {TABS.map((i) => (
           <NavLink
