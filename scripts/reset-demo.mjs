@@ -18,6 +18,17 @@ await c.connect();
 try {
   await c.query('begin');
   for (const t of [
+    'instalments',
+    'instalment_plans',
+    'delivery_proofs',
+    'statement_responses',
+    'statement_tokens',
+  ]) {
+    // These exist only once migration 0012 is applied; they must go before invoices and customers.
+    const has = (await c.query('select to_regclass($1) as t', [`public.${t}`])).rows[0].t;
+    if (has) await c.query(`delete from public.${t} where org_id = $1`, [DEMO_ORG]);
+  }
+  for (const t of [
     'tds_entries',
     'allocations',
     'bank_txns',

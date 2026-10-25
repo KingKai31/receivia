@@ -165,6 +165,81 @@ try {
     ],
   );
 
+  // S10 story rows (need migration 0012): a draft that fails payability, one buyer-confirmed acceptance,
+  // one pending instalment request, one confirmed statement. Skipped until the migration is applied.
+  const s10 = (await c.query("select to_regclass('public.instalment_plans') as t")).rows[0].t;
+  if (s10) {
+    const raj = ids.raj;
+    const draftRef = 'demo:s10-draft';
+    if (
+      !(
+        await c.query('select 1 from public.invoices where org_id = $1 and source_ref = $2', [
+          DEMO_ORG,
+          draftRef,
+        ])
+      ).rowCount
+    ) {
+      const d = (
+        await c.query(
+          `insert into public.invoices (org_id, customer_id, fy, status, source, issue_date, due_date, supplier_state_code,
+             place_of_supply, taxable_paise, cgst_paise, sgst_paise, igst_paise, total_paise, source_ref, payability_score)
+           values ($1, $2, $3, 'draft', 'manual', $4, $5, '27', '27', 10000000, 900000, 900000, 0, 11800000, $6, 45) returning id`,
+          [DEMO_ORG, raj, fyOf(TODAY), TODAY, addDays(TODAY, 30), draftRef],
+        )
+      ).rows[0].id;
+      await c.query(
+        `insert into public.invoice_lines (org_id, invoice_id, position, description, qty, rate_paise, gst_rate, taxable_paise, cgst_paise, sgst_paise, total_paise)
+         values ($1, $2, 1, 'Corrugated boxes, 5-ply', 1000, 10000, 18, 10000000, 900000, 900000, 11800000)`,
+        [DEMO_ORG, d],
+      );
+    }
+    await c.query(
+      `update public.invoices set accepted_on = $3, acceptance_source = 'buyer_confirmed', acceptance_note = 'Received at gate, signed by stores'
+       where id = $1 and org_id = $2`,
+      [invId[b.puneOverdue.number], DEMO_ORG, addDays(b.puneOverdue.issue, 2)],
+    );
+    const mi = b.mithaiOverdue;
+    if (
+      !(
+        await c.query(
+          'select 1 from public.instalment_plans where org_id = $1 and invoice_id = $2',
+          [DEMO_ORG, invId[mi.number]],
+        )
+      ).rowCount
+    ) {
+      const half = Math.floor(mi.total_paise / 2);
+      const plan = (
+        await c.query(
+          `insert into public.instalment_plans (org_id, invoice_id, customer_id, total_paise) values ($1, $2, $3, $4) returning id`,
+          [DEMO_ORG, invId[mi.number], ids[mi.customer], mi.total_paise],
+        )
+      ).rows[0].id;
+      for (const [seq, off, amt] of [
+        [1, 10, half],
+        [2, 24, mi.total_paise - half],
+      ])
+        await c.query(
+          `insert into public.instalments (org_id, plan_id, seq, due_on, amount_paise) values ($1, $2, $3, $4, $5)`,
+          [DEMO_ORG, plan, seq, addDays(TODAY, off), amt],
+        );
+    }
+    const open = invoices.filter(
+      (i) => i.customer === b.puneOverdue.customer && i.paid_off === null,
+    );
+    if (
+      !(
+        await c.query(
+          'select 1 from public.statement_responses where org_id = $1 and customer_id = $2',
+          [DEMO_ORG, ids[b.puneOverdue.customer]],
+        )
+      ).rowCount
+    )
+      await c.query(
+        `insert into public.statement_responses (org_id, customer_id, kind, balance_paise) values ($1, $2, 'confirmed', $3)`,
+        [DEMO_ORG, ids[b.puneOverdue.customer], open.reduce((n, i) => n + i.total_paise, 0)],
+      );
+  }
+
   let expenses = 0;
   for (const e of EXPENSES) {
     const ex = await c.query('select 1 from public.expenses where org_id = $1 and name = $2', [

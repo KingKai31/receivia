@@ -25,6 +25,7 @@ interface Row {
 export interface Statement {
   business_name: string;
   customer_name: string;
+  language?: L;
   as_of: string;
   invoices: Row[];
   credit_notes: Row[];
@@ -42,6 +43,82 @@ async function call<T>(body: Record<string, unknown>): Promise<T> {
   }
   return res.data as T;
 }
+
+type L = 'en' | 'hi' | 'mr';
+const TEXT: Record<L, Record<string, string>> = {
+  en: {
+    title: 'Statement of account',
+    asOf: 'as of',
+    balance: 'Balance outstanding',
+    nothing: 'Nothing is outstanding.',
+    invoice: 'Invoice',
+    date: 'Invoice date',
+    due: 'due',
+    query: 'query open',
+    credit: 'Credit note',
+    payment: 'Payment',
+    tds: 'TDS',
+    bal: 'Balance',
+    dispute: 'Dispute this line',
+    what: 'What is wrong with this line?',
+    send: 'Send',
+    confirm: 'Confirm balance',
+    confirmed: 'You confirmed this balance',
+    raised: 'You raised a question on a line',
+    on: 'on',
+    error: 'Something went wrong. Please try again.',
+    bad: 'This link is not valid or has expired. Please ask the business for a new one.',
+    many: 'Too many attempts. Please wait a few minutes.',
+  },
+  hi: {
+    title: 'खाता विवरण',
+    asOf: 'दिनांक',
+    balance: 'बकाया राशि',
+    nothing: 'कुछ भी बकाया नहीं है.',
+    invoice: 'चालान',
+    date: 'चालान की तारीख',
+    due: 'देय',
+    query: 'प्रश्न खुला है',
+    credit: 'क्रेडिट नोट',
+    payment: 'भुगतान',
+    tds: 'टीडीएस',
+    bal: 'बकाया',
+    dispute: 'इस पंक्ति पर आपत्ति',
+    what: 'इस पंक्ति में क्या गलत है?',
+    send: 'भेजें',
+    confirm: 'बकाया की पुष्टि करें',
+    confirmed: 'आपने इस बकाया की पुष्टि की',
+    raised: 'आपने एक पंक्ति पर प्रश्न उठाया',
+    on: 'को',
+    error: 'कुछ गलत हो गया. कृपया फिर कोशिश करें.',
+    bad: 'यह लिंक मान्य नहीं है या समाप्त हो गया है. कृपया व्यवसाय से नई लिंक माँगें.',
+    many: 'बहुत अधिक प्रयास. कृपया कुछ मिनट रुकें.',
+  },
+  mr: {
+    title: 'खाते विवरण',
+    asOf: 'दिनांक',
+    balance: 'थकबाकी रक्कम',
+    nothing: 'काहीही थकबाकी नाही.',
+    invoice: 'बिल',
+    date: 'बिलाची तारीख',
+    due: 'देय',
+    query: 'प्रश्न उघडा आहे',
+    credit: 'क्रेडिट नोट',
+    payment: 'पेमेंट',
+    tds: 'टीडीएस',
+    bal: 'थकबाकी',
+    dispute: 'या ओळीवर आक्षेप',
+    what: 'या ओळीत काय चुकले आहे?',
+    send: 'पाठवा',
+    confirm: 'थकबाकीची पुष्टी करा',
+    confirmed: 'तुम्ही ही थकबाकी मान्य केली',
+    raised: 'तुम्ही एका ओळीवर प्रश्न विचारला',
+    on: 'रोजी',
+    error: 'काहीतरी चुकले. कृपया पुन्हा प्रयत्न करा.',
+    bad: 'ही लिंक वैध नाही किंवा मुदत संपली आहे. कृपया व्यवसायाकडून नवीन लिंक मागा.',
+    many: 'खूप प्रयत्न झाले. कृपया काही मिनिटे थांबा.',
+  },
+};
 
 const inr = (n: number | undefined) => formatINR(paise(n ?? 0));
 
@@ -75,13 +152,14 @@ export function StatementPage() {
       <main className="app-main" style={{ maxWidth: 720 }}>
         <p role="alert">
           {q.error instanceof Error && q.error.message === 'rate_limited'
-            ? 'Too many attempts. Please wait a few minutes.'
-            : 'This link is not valid or has expired. Please ask the business for a new one.'}
+            ? TEXT.en.many
+            : TEXT.en.bad}
         </p>
       </main>
     );
   }
   const s = q.data;
+  const x = TEXT[s.language ?? 'en'];
   const noteFor = (id: string | undefined) => s.credit_notes.filter((n) => n.invoice_id === id);
   const lines = (rows: Row[], id: string | undefined) => rows.filter((r) => r.invoice_id === id);
   return (
@@ -89,12 +167,12 @@ export function StatementPage() {
       <div className="app-top">
         <strong className="brand">{s.business_name}</strong>
       </div>
-      <h1>Statement of account</h1>
+      <h1>{x.title}</h1>
       <p className="ui-hint">
-        {s.customer_name} · as of <span className="num">{s.as_of}</span>
+        {s.customer_name} · {x.asOf} <span className="num">{s.as_of}</span>
       </p>
       <section className="hero page-enter" aria-label="Balance">
-        <span className="hero-label">Balance outstanding</span>
+        <span className="hero-label">{x.balance}</span>
         <div className="hero-big">{inr(s.balance_paise)}</div>
       </section>
       {s.last_response ? (
@@ -107,20 +185,20 @@ export function StatementPage() {
       ) : null}
       {s.invoices.length === 0 ? (
         <Card>
-          <p style={{ margin: 0 }}>Nothing is outstanding.</p>
+          <p style={{ margin: 0 }}>{x.nothing}</p>
         </Card>
       ) : null}
       {s.invoices.map((i) => (
         <Card key={i.id}>
           <h2 style={{ marginTop: 0 }}>{i.number}</h2>
           <p className="ui-hint num">
-            Invoice date {i.issue_date} · due {i.due_date}
-            {i.disputed ? ' · query open' : ''}
+            {x.date} {i.issue_date} · {x.due} {i.due_date}
+            {i.disputed ? ` · ${x.query}` : ''}
           </p>
           <table className="ui-table">
             <tbody>
               <tr>
-                <td>Invoice</td>
+                <td>{x.invoice}</td>
                 <td className="num">{inr(i.total_paise)}</td>
               </tr>
               {noteFor(i.id).map((n) => (
@@ -133,7 +211,9 @@ export function StatementPage() {
               ))}
               {lines(s.payments, i.id).map((p, k) => (
                 <tr key={k}>
-                  <td>Payment {p.date}</td>
+                  <td>
+                    {x.payment} {p.date}
+                  </td>
                   <td className="num">− {inr(p.amount_paise)}</td>
                 </tr>
               ))}
@@ -146,7 +226,7 @@ export function StatementPage() {
                 </tr>
               ))}
               <tr>
-                <th scope="row">Balance</th>
+                <th scope="row">{x.bal}</th>
                 <th className="num">{inr(i.balance_paise)}</th>
               </tr>
             </tbody>
@@ -160,12 +240,12 @@ export function StatementPage() {
               }}
             >
               <Input
-                label="What is wrong with this line?"
+                label={x.what ?? ''}
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
               />
               <Button type="submit" disabled={!reason.trim() || act.isPending}>
-                Send
+                {x.send}
               </Button>
             </form>
           ) : (
@@ -178,9 +258,9 @@ export function StatementPage() {
       {s.invoices.length ? (
         <Card>
           <Button disabled={act.isPending} onClick={() => act.mutate({ kind: 'confirm' })}>
-            Confirm balance
+            {x.confirm}
           </Button>
-          {act.isError ? <p role="alert">Something went wrong. Please try again.</p> : null}
+          {act.isError ? <p role="alert">{x.error}</p> : null}
         </Card>
       ) : null}
     </main>
