@@ -87,6 +87,9 @@ const StubPage = lazy(() =>
 const TrustPage = lazy(() =>
   import('@/features/trust/TrustPage').then((m) => ({ default: m.TrustPage })),
 );
+const NationalImpactPage = lazy(() =>
+  import('@/features/impact/NationalImpactPage').then((m) => ({ default: m.NationalImpactPage })),
+);
 const HowItWorksPage = lazy(() =>
   import('@/features/howitworks/HowItWorksPage').then((m) => ({ default: m.HowItWorksPage })),
 );
@@ -161,6 +164,14 @@ export function App() {
                 element={
                   <Guard>
                     <HowItWorksPage />
+                  </Guard>
+                }
+              />
+              <Route
+                path="/impact"
+                element={
+                  <Guard>
+                    <NationalImpactPage />
                   </Guard>
                 }
               />

@@ -734,7 +734,7 @@ export function HowItWorksPage() {
       <SecuritySection />
       <RealSection />
       <p>
-        <Link to="/trust">Trust checks</Link> · <Link to="/privacy">Privacy notice</Link> ·{' '}
+        <Link to="/impact">National impact estimate</Link> · <Link to="/trust">Trust checks</Link> · <Link to="/privacy">Privacy notice</Link> ·{' '}
         <Link to="/sign-in">Sign in</Link>
       </p>
     </main>
