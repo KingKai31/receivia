@@ -432,3 +432,6 @@ verify_jwt = false
 
 [functions.ask-books]
 verify_jwt = false
+
+[functions.read-invoice]
+verify_jwt = false

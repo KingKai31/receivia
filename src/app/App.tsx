@@ -90,6 +90,9 @@ const TrustPage = lazy(() =>
 const NationalImpactPage = lazy(() =>
   import('@/features/impact/NationalImpactPage').then((m) => ({ default: m.NationalImpactPage })),
 );
+const ScanInvoicePage = lazy(() =>
+  import('@/features/invoices/scan/ScanInvoicePage').then((m) => ({ default: m.ScanInvoicePage })),
+);
 const HowItWorksPage = lazy(() =>
   import('@/features/howitworks/HowItWorksPage').then((m) => ({ default: m.HowItWorksPage })),
 );
@@ -230,6 +233,14 @@ export function App() {
                     element={
                       <Guard>
                         <InvoicesPage />
+                      </Guard>
+                    }
+                  />
+                  <Route
+                    path="/invoices/scan"
+                    element={
+                      <Guard>
+                        <ScanInvoicePage />
                       </Guard>
                     }
                   />

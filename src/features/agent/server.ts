@@ -825,3 +825,5 @@ export async function runAll(
 }
 
 export { askBooks, classifyReply, loadBooks, loadOpenInvoices } from '@/features/ai/server';
+
+export { readInvoiceFile } from '@/features/invoices/scan/read';

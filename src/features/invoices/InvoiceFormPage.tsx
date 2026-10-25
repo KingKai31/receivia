@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Button, Card, Input, Select, useToast } from '@/components/ui';
@@ -21,6 +21,8 @@ import {
   type DraftLine,
 } from './invoiceModel';
 import { getInvoice, issueInvoice, overridePayability, saveDraft } from './invoiceService';
+import { takePrefill } from './scan/scanService';
+import type { ScannedInvoice } from './scan/audit';
 import { PayabilityChecklist } from './PayabilityChecklist';
 import { creditWarning, loadCreditContext, scoreDraft } from './payabilityService';
 import { PAYABILITY_CONFIG } from '@/lib/payability';
@@ -113,6 +115,40 @@ export function InvoiceFormPage() {
       })),
     });
   }, [existing.data, reset]);
+
+  // "Scan invoice" hands over a reading once; the owner reviews and saves it, nothing is saved here.
+  const scanned = useRef<ScannedInvoice | null | undefined>(undefined);
+  useEffect(() => {
+    if (id || !params.get('scan') || scanned.current !== undefined) return;
+    const s = takePrefill();
+    scanned.current = s;
+    if (!s) return;
+    const slabs = GST_RATES as readonly number[];
+    setValue('issueDate', s.date ?? todayIST());
+    setValue(
+      'notes',
+      `Read from invoice ${s.invoice_no ?? ''} by AI. Check every line before saving.`,
+    );
+    if (s.lines.length)
+      setValue(
+        'lines',
+        s.lines.map((l) => ({
+          description: l.description,
+          hsn_sac: l.hsn,
+          qty: String(l.qty),
+          unit: 'Nos',
+          rate: l.rate.toFixed(2),
+          discount: l.discount ? l.discount.toFixed(2) : '',
+          gst_rate: slabs.includes(l.gst_rate) ? l.gst_rate : 18,
+        })),
+      );
+  }, [id, params, setValue]);
+  useEffect(() => {
+    const s = scanned.current;
+    if (!s?.buyer_gstin || getValues('customerId') || !customers.data) return;
+    const match = customers.data.rows.find((c) => c.gstin === s.buyer_gstin);
+    if (match) setValue('customerId', match.id);
+  }, [customers.data, getValues, setValue]);
 
   const customerId = watch('customerId');
   const customer = useQuery({

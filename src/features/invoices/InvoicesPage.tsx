@@ -73,6 +73,9 @@ export function InvoicesPage() {
           <ButtonLink to="/invoices/new" variant="dark">
             {t('New invoice')}
           </ButtonLink>
+          <ButtonLink to="/invoices/scan" variant="light">
+            {t('Scan invoice')}
+          </ButtonLink>
           <ButtonLink to="/import" variant="light">
             {t('Import')}
           </ButtonLink>
