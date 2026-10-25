@@ -15,6 +15,8 @@ export const NAV_ITEMS = [
   { to: '/forecast', key: 'forecast', end: false },
   { to: '/expenses', key: 'expenses', end: false },
   { to: '/settings', key: 'settings', end: false },
+  { to: '/how-it-works', key: 'how', end: false },
+  { to: '/impact', key: 'impact', end: false },
 ] as const;
 
 /** Phone tab bar: the four daily screens, everything else under More. */

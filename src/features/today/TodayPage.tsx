@@ -78,16 +78,20 @@ export function TodayPage() {
               .map((c) => (
                 <li
                   key={c.invoiceId}
-                  className="flex flex-wrap items-center justify-between gap-2"
+                  className="flex items-center justify-between gap-2"
                   style={{ padding: '6px 0' }}
                 >
-                  <span className="tnum">
+                  <span className="tnum" style={{ minWidth: 0 }}>
                     {t('{{name}} owes {{money}}', {
                       name: c.customerName,
                       money: money(c.balancePaise),
                     })}
                   </span>
-                  <ButtonLink to="/collect" variant="dark">
+                  <ButtonLink
+                    to="/collect"
+                    variant="dark"
+                    style={{ minHeight: 40, height: 40, padding: '0 14px', flexShrink: 0 }}
+                  >
                     {t('Remind')}
                   </ButtonLink>
                 </li>
@@ -214,6 +218,10 @@ export function TodayPage() {
           note={t('week {{lowestWeek}}', { lowestWeek: tiles.lowestWeek })}
         />
       </HorizontalTiles>
+
+      <GlassCard variant="solid" style={{ padding: 14, marginBottom: 16 }}>
+        <Link to="/how-it-works">{t('How Receivia decides')} →</Link>
+      </GlassCard>
 
       <ImpactCard dismissible />
       <RoiCardView />

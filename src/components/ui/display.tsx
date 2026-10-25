@@ -357,13 +357,15 @@ export function ButtonLink({
   to,
   variant = 'light',
   children,
+  style,
 }: {
   to: string;
   variant?: 'light' | 'dark' | 'ghost';
   children: ReactNode;
+  style?: CSSProperties;
 }) {
   return (
-    <Link to={to} className="ui-button" data-variant={variant}>
+    <Link to={to} className="ui-button" data-variant={variant} style={style}>
       {children}
     </Link>
   );

@@ -52,6 +52,14 @@ export function SignInPage() {
       <h1 className="hero-big" style={{ color: 'var(--ink)', textAlign: 'left', fontSize: 40 }}>
         {t('brand')}
       </h1>
+      <p style={{ margin: 0, fontSize: 18 }}>
+        {t('Get paid on time. See cash gaps 3 weeks early.')}
+      </p>
+      <ul style={{ margin: 0, paddingLeft: 20 }}>
+        <li>{t('Forecast & gap plan')}</li>
+        <li>{t('AI that reads replies and invoices')}</li>
+        <li>{t('GST-correct, law-aware reminders')}</li>
+      </ul>
       <Button disabled={busy} onClick={() => run(openLiveDemo)}>
         {t('auth.demo')}
       </Button>
@@ -107,10 +115,9 @@ export function SignInPage() {
         ) : null}
       </Card>
       <p className="text-center">
-        <Link to="/how-it-works">{t('How it works')}</Link> {t('·')}{' '}
-        <Link to="/impact">{t('Impact')}</Link> {t('�')} <Link to="/impact">{t('Impact')}</Link>{' '}
-        {t('�')} <Link to="/trust">{t('pages.trust')}</Link> {t('·')}{' '}
-        <Link to="/privacy">{t('Privacy notice')}</Link>
+        <Link to="/how-it-works">{t('How it works')}</Link> {'·'}{' '}
+        <Link to="/impact">{t('Impact')}</Link> {'·'} <Link to="/trust">{t('pages.trust')}</Link>{' '}
+        {'·'} <Link to="/privacy">{t('Privacy notice')}</Link>
       </p>
     </main>
   );

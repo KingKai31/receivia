@@ -274,6 +274,16 @@ try {
     [DEMO_ORG, opening, TODAY, BUFFER_PAISE],
   );
 
+  // One confirmed GST TDS entry (2% of Rs 5,00,000, City Hospital), certificate pending, so /payments/tds is not empty.
+  // Not linked to an invoice, so no balance moves and the forecast calibration is untouched.
+  await c.query(
+    `insert into public.tds_entries (org_id, customer_id, section, rate, amount_paise, taxable_paise, deducted_on, financial_year, certificate_status)
+     select $1, cu.id, 'GST_TDS', 2, 1000000, 50000000, $2, $3, 'pending'
+       from public.customers cu where cu.org_id = $1 and cu.name = 'City Hospital'
+        and not exists (select 1 from public.tds_entries t where t.org_id = $1 and t.customer_id = cu.id and t.section = 'GST_TDS')`,
+    [DEMO_ORG, addDays(TODAY, -20), fyOf(TODAY)],
+  );
+
   // Keep the invoice counter ahead of the seeded numbers so the next issued invoice is unique.
   const fy = fyOf(TODAY);
   const upd = await c.query(
