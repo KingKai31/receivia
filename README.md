@@ -34,6 +34,10 @@ Late payment is the main cash problem for small suppliers. The Recordent *SME Re
 | **AI reply understanding and Ask your books** | A pasted buyer reply (English, Hindi, Marathi, Hinglish) becomes a promise, claim or dispute that rules re-check; "Ask your books" answers questions from read-only tools, and every figure is taken from a tool result. Both fall back to rules without the model. |
 | **Impact replay** | Replays the last 6 months with and without Receivia (days to collect, interest saved, hours saved) with the assumptions shown. Estimates, not promises. |
 | **Government buyers** | Government and PSU customers get formal email only, formal wording and no WhatsApp. |
+| **National impact estimate** | A public [/impact](https://receivia.onrender.com/impact) page: sliders for adopters, receivables, days faster and borrowing rate give working capital freed and interest saved a year, with sources and assumptions listed. An estimate, not a promise. |
+| **AI invoice reader** | *Scan invoice* reads a photo or PDF (up to 5 MB, never stored) with Claude vision, then fixed rules audit it: GSTIN check digit, GST recomputed with the app's own engine, CGST/SGST against IGST by state, printed against correct with the rupee difference. It prefills New invoice for review and never saves by itself. Samples in `docs/samples`. |
+| **Buyer negotiation chat** | *Talk to accounts* on the pay page. The model has five tools only (instalments, early-pay discount, promise date, dispute, read-only facts). Every limit (owner-set discount %, instalments, promise days) is enforced in the database, every turn and tool call is logged, and the owner sees it in the Inbox. Off by default; falls back to the buttons. |
+| **Voice ask** | A mic on *Ask your books* (hi-IN, mr-IN, en-IN via the browser's Web Speech API) and answers read aloud. Hidden where the browser does not support it. |
 | **Trust layer** | A public [/trust](https://receivia.onrender.com/trust) page that runs the GST, GSTIN, words, ladder, matching and forecast checks in your browser. |
 
 ### Buyer Compliance Lens

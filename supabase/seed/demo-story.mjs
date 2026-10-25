@@ -47,6 +47,7 @@ export const PROFILE = {
   bank_ifsc: 'HDFC0000001',
   upi_id: 'shreeganesh@upi',
   employees: 8,
+  neg_enabled: true,
 };
 
 // key, name, state, entity, tier, language, pan (fictional), phone, credit days 30

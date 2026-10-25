@@ -14,6 +14,8 @@ Buyers get a phone-first pay page with UPI QR and one-tap "I have paid", dispute
 
 Engineering: React, Vite and TypeScript on Render; Supabase Postgres with row-level security on every table and isolation tests; append-only audit log; hashed expiring pay tokens; edge functions; a Render Workflow with retries for the daily run. Simulated and said so: Razorpay (test mode, no keys), WhatsApp as links, IMS and Account Aggregator, and the sample data.
 
+New: an AI invoice reader that audits GST with fixed rules before anything is saved, a buyer chat whose every limit is enforced in the database, voice questions in Hindi and Marathi, and a public national-impact estimate with sources and assumptions.
+
 Live: https://receivia.onrender.com (press Open live demo).
 
 ## Render track

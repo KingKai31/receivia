@@ -29,7 +29,11 @@ Criteria tags: **[I]** Innovation, **[T]** Technical Execution, **[D]** Design &
 | 3:45 | /trust page, all green | "Every table has isolation tests, the audit log is append-only, pay tokens are stored hashed. The trust page runs the GST, matching and forecast checks live in your browser." | T, P |
 | 3:55 | Real vs simulated list | "What is simulated, honestly: Razorpay has no keys yet, WhatsApp goes out as links, and the data is made up." | T, P |
 | 4:10 | Today screen, tiles | "The impact: an owner sees the cash gap three weeks early, chases the right buyer first, and spends minutes, not afternoons, on collections." | Im |
-| 4:20 | Roadmap line | "Next: live Razorpay and WhatsApp, IMS and Account Aggregator feeds, native Hindi and Marathi review." | Im |
+| 4:12 | /impact: move the sliders | "Scaled to a lakh MSMEs, collecting just a week faster frees working capital and saves interest. Every input is editable and every assumption is listed." | Im |
+| 4:15 | Invoices > Scan invoice: upload docs/samples/sample-3-gst-error.png | "Upload a photo of an invoice. AI reads it, then fixed rules audit it: the seller charged CGST and SGST on an inter-state sale, with the rupee difference. Nothing is saved until the owner reviews it." | I, T |
+| 4:18 | Pay link: Talk to accounts, ask for a 10% discount, then 2% | "The buyer's assistant can only use five tools, and the database refuses anything beyond the owner's limits. Ask for 10%: refused. Ask for 2%: offered, and the owner sees it in the Inbox." | I, T |
+| 4:20 | Ask your books: tap the mic (Chrome) | "Ask in Hindi or Marathi, out loud, and hear the answer." | I |
+| 4:22 | Roadmap line | "Next: live Razorpay and WhatsApp, IMS and Account Aggregator feeds, native Hindi and Marathi review." | Im |
 | 4:25 | End card: **receivia.onrender.com**, team names, deck link | "Try it now: receivia dot onrender dot com." | P |
 
 Recording notes: reduce motion is off in the app, so wait for the count-up to settle before talking about a number. Keep the pointer slow. Do not say "legal notice" anywhere; the product says Payment Demand Letter.
